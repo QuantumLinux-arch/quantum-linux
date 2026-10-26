@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Quantum
+Comment=El escritorio de Quantum Linux
+Exec=/usr/bin/quantum-session
+TryExec=/usr/bin/quantum-session
+Type=Application
+DesktopNames=Quantum;wlroots

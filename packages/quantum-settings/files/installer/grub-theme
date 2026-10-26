@@ -1,0 +1,10 @@
+#!/bin/bash
+# Lo ejecuta Calamares después de grubcfg: aplica el tema de Quantum al GRUB.
+set -eu
+f=/etc/default/grub
+sed -i '/^GRUB_THEME=/d; /^#GRUB_THEME=/d; /^GRUB_GFXMODE=/d' "$f"
+cat >> "$f" <<'CFG'
+GRUB_THEME="/usr/share/grub/themes/quantum/theme.txt"
+GRUB_GFXMODE=auto
+CFG
+sed -i 's/^GRUB_DISTRIBUTOR=.*/GRUB_DISTRIBUTOR="Quantum Linux"/' "$f"

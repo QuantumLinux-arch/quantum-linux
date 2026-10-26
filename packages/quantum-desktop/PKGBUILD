@@ -1,0 +1,36 @@
+# Maintainer: Quantum Linux <https://github.com/quantum-linux>
+# El escritorio de Quantum Linux: sesión sobre Wayfire (ventanas como en
+# Windows), motor de temas (quantum-theme), capturas, inactividad, apps por
+# defecto y archivos iniciales.
+
+pkgname=quantum-desktop
+pkgver=1.0.0
+pkgrel=21
+pkgdesc="Escritorio de Quantum Linux sobre Wayfire"
+arch=('any')
+url="https://github.com/quantum-linux"
+license=('GPL-3.0-or-later')
+depends=('wayfire' 'quantum-wayfire-decor' 'quantum-shell' 'quantum-branding' 'python' 'matugen'
+         'hypridle' 'polkit-gnome' 'xdg-desktop-portal' 'xdg-desktop-portal-wlr' 'xdg-desktop-portal-gtk'
+         'kitty' 'qt6ct' 'qt5ct' 'adw-gtk-theme' 'adwaita-cursors' 'default-cursors' 'papirus-icon-theme'
+         'grim' 'slurp' 'swappy' 'wl-clipboard' 'cliphist' 'brightnessctl' 'playerctl'
+         'libnotify' 'xdg-user-dirs' 'wireplumber')
+backup=('etc/xdg/quantum/settings.json' 'etc/xdg/mimeapps.list')
+
+_files="$startdir/files"
+
+package() {
+  cd "$_files"
+  install -Dm755 bin/quantum-theme "$pkgdir/usr/bin/quantum-theme"
+  install -Dm755 bin/quantum-screenshot "$pkgdir/usr/bin/quantum-screenshot"
+  install -Dm755 bin/quantum-session "$pkgdir/usr/bin/quantum-session"
+  install -Dm755 bin/quantum-update "$pkgdir/usr/bin/quantum-update"
+  install -Dm644 share/palette.json "$pkgdir/usr/share/quantum/palette.json"
+  install -Dm644 wayfire/wayfire.ini "$pkgdir/usr/share/quantum/wayfire/wayfire.ini"
+  install -Dm644 session/hypridle.conf "$pkgdir/usr/share/quantum/hypridle.conf"
+  install -Dm644 session/quantum.desktop "$pkgdir/usr/share/wayland-sessions/quantum.desktop"
+  install -Dm644 session/quantum-portals.conf "$pkgdir/usr/share/xdg-desktop-portal/quantum-portals.conf"
+  install -Dm644 etc/xdg/quantum/settings.json "$pkgdir/etc/xdg/quantum/settings.json"
+  install -Dm644 etc/xdg/mimeapps.list "$pkgdir/etc/xdg/mimeapps.list"
+  install -Dm644 skel/.config/kitty/kitty.conf "$pkgdir/etc/skel/.config/kitty/kitty.conf"
+}

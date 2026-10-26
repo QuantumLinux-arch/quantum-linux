@@ -1,0 +1,49 @@
+#!/bin/bash
+# Lo ejecuta Calamares en el sistema instalado: deja solo los drivers y
+# herramientas que corresponden a este equipo.
+set -u
+
+remove_if_installed() {
+    local pkgs
+    pkgs=$(pacman -Qq "$@" 2>/dev/null)
+    [ -n "$pkgs" ] && pacman -Rns --noconfirm $pkgs
+    return 0
+}
+
+# NVIDIA: clase PCI 03xx (pantalla) con fabricante 10de
+if lspci -nd 10de: | awk '{print $2}' | grep -q '^03'; then
+    echo "GPU NVIDIA detectada: se conservan los drivers"
+else
+    remove_if_installed nvidia-open-dkms nvidia-utils lib32-nvidia-utils nvidia-settings
+fi
+
+# En máquinas virtuales el cursor por hardware falla (se ve volteado o queda una
+# "X" pegada del cursor de la pantalla de inicio). Wayfire ya usa cursor por
+# software en VMs (quantum-session); aquí se hace lo mismo con X11 (SDDM).
+virt="$(systemd-detect-virt 2>/dev/null || true)"
+if [ -n "$virt" ] && [ "$virt" != none ]; then
+    mkdir -p /etc/X11/xorg.conf.d
+    cat > /etc/X11/xorg.conf.d/20-quantum-vm-cursor.conf <<'XORG'
+# Quantum Linux: cursor por software en máquinas virtuales
+Section "Device"
+    Identifier "quantum-vm-gpu"
+    Driver "modesetting"
+    Option "SWcursor" "on"
+EndSection
+XORG
+fi
+
+# Herramientas para máquinas virtuales
+case "$virt" in
+    oracle)
+        systemctl enable vboxservice.service
+        remove_if_installed qemu-guest-agent spice-vdagent ;;
+    kvm|qemu)
+        systemctl enable qemu-guest-agent.service 2>/dev/null || true
+        remove_if_installed virtualbox-guest-utils ;;
+    *)
+        remove_if_installed virtualbox-guest-utils qemu-guest-agent spice-vdagent ;;
+esac
+# El ISO deja habilitado vboxservice; si se quitó el paquete, queda un enlace roto
+[ -e /usr/lib/systemd/system/vboxservice.service ] || rm -f /etc/systemd/system/multi-user.target.wants/vboxservice.service
+exit 0

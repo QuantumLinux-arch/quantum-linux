@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Abrir programa de Windows
+Comment=Abre programas de Windows (.exe y .msi) con Wine
+Exec=quantum-exe %f
+Icon=wine
+Terminal=false
+NoDisplay=true
+MimeType=application/x-ms-dos-executable;application/x-msdownload;application/vnd.microsoft.portable-executable;application/x-msi;application/x-ms-installer;application/x-wine-extension-msp;

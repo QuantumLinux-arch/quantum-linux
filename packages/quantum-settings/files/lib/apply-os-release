@@ -1,0 +1,11 @@
+#!/bin/sh
+# Mantiene la identidad de Quantum Linux aunque se actualicen filesystem o lsb-release.
+set -e
+install -m644 /usr/share/quantum/os-release /usr/lib/os-release
+if [ -f /etc/lsb-release ]; then
+    cat > /etc/lsb-release <<'LSB'
+DISTRIB_ID="Quantum"
+DISTRIB_RELEASE="rolling"
+DISTRIB_DESCRIPTION="Quantum Linux"
+LSB
+fi

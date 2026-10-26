@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Instalar app de Android
+Comment=Instala un APK con Quantum Store
+Exec=quantum-store --page android --apk %f
+Icon=quantum-store
+Terminal=false
+NoDisplay=true
+MimeType=application/vnd.android.package-archive;

@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Centro Quantum
+Name[en]=Quantum Center
+GenericName=Bienvenida y ajustes
+Comment=Instala apps, cambia la apariencia y mantén tu sistema al día
+Comment[en]=Install apps, change the look and keep your system up to date
+Exec=quantum-center
+Icon=quantum-linux
+Categories=System;Settings;
+Keywords=bienvenida;welcome;ajustes;settings;fondo;wallpaper;tema;theme;quantum;
+StartupNotify=true

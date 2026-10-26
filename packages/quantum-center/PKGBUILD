@@ -1,0 +1,28 @@
+# Maintainer: Quantum Linux <https://github.com/quantum-linux>
+
+pkgname=quantum-center
+pkgver=1.0.0
+pkgrel=14
+pkgdesc="Centro Quantum: bienvenida, ajustes y mantenimiento de Quantum Linux"
+arch=('any')
+url="https://github.com/quantum-linux"
+license=('GPL-3.0-or-later')
+depends=('python' 'python-pyqt6' 'quantum-branding' 'quantum-desktop' 'kitty' 'flatpak'
+         'pacman-contrib' 'reflector' 'quantum-migrate')
+optdepends=('nm-connection-editor: ajustes de red'
+            'blueman: ajustes de Bluetooth'
+            'pavucontrol: ajustes de sonido'
+            'nwg-look: apariencia de apps GTK'
+            'mission-center: monitor del sistema')
+
+_src="$startdir/src"
+
+package() {
+  install -Dm755 "$_src/quantum_center.py" "$pkgdir/usr/bin/quantum-center"
+  install -Dm644 "$_src/quantum-center.desktop" "$pkgdir/usr/share/applications/quantum-center.desktop"
+  install -Dm755 "$startdir/files/performance" "$pkgdir/usr/lib/quantum/performance"
+  install -Dm644 "$startdir/files/lauty.png" "$pkgdir/usr/share/quantum/credits/lauty.png"
+  install -d "$pkgdir/usr/share/quantum/app-icons"
+  install -m644 "$startdir"/files/app-icons/*.png "$pkgdir/usr/share/quantum/app-icons/"
+  install -Dm644 "$startdir/files/interactive-proyects.png" "$pkgdir/usr/share/quantum/credits/interactive-proyects.png"
+}

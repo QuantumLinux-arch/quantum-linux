@@ -1,0 +1,42 @@
+#!/bin/bash
+# Lo ejecuta Calamares dentro del sistema recién copiado (chroot), antes de
+# crear el usuario: quita todo lo que solo tiene sentido en el sistema en vivo.
+set -u
+
+# Usuario y accesos del modo en vivo
+userdel -rf liveuser 2>/dev/null || true
+rm -f /etc/sysusers.d/liveuser.conf \
+      /etc/sudoers.d/10-liveuser \
+      /etc/sddm.conf.d/00-live-autologin.conf \
+      /etc/polkit-1/rules.d/49-liveuser.rules \
+      /etc/xdg/autostart/quantum-install.desktop
+
+# Ajustes del ISO que no deben quedar en el disco
+rm -f /etc/systemd/journald.conf.d/volatile-storage.conf \
+      /etc/systemd/logind.conf.d/do-not-suspend.conf
+
+# Arranque: el initramfs del ISO no sirve en el disco
+rm -f /etc/mkinitcpio.conf.d/archiso.conf
+install -m644 /usr/share/quantum/installer/linux-zen.preset /etc/mkinitcpio.d/linux-zen.preset
+
+# mkarchiso borra /boot; el kernel también está en /usr/lib/modules
+for d in /usr/lib/modules/*/; do
+    if [ "$(cat "$d/pkgbase" 2>/dev/null)" = "linux-zen" ]; then
+        install -Dm644 "$d/vmlinuz" /boot/vmlinuz-linux-zen
+    fi
+done
+
+# Servicios exclusivos del ISO (el llavero en tmpfs se perdería en cada arranque)
+rm -f /etc/systemd/system/multi-user.target.wants/pacman-init.service \
+      /etc/systemd/system/pacman-init.service \
+      /etc/systemd/system/etc-pacman.d-gnupg.mount
+
+# Llavero de pacman propio para el sistema instalado
+rm -rf /etc/pacman.d/gnupg
+pacman-key --init
+pacman-key --populate archlinux quantum
+
+# El instalador no hace falta en el sistema instalado
+pkgs=$(pacman -Qq calamares quantum-calamares-config quantum-installer 2>/dev/null)
+[ -n "$pkgs" ] && pacman -Rns --noconfirm $pkgs
+exit 0

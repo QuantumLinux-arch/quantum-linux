@@ -1,0 +1,26 @@
+// Recursos de «Pasar a Quantum.exe»: ícono, manifiesto y datos del archivo
+#include <winver.h>
+1 ICON "app.ico"
+1 24 "app.manifest"
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION 1,0,0,0
+PRODUCTVERSION 1,0,0,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "0C0A04B0"
+    BEGIN
+      VALUE "CompanyName", "Quantum Linux"
+      VALUE "FileDescription", "Pasar a Quantum: lleva tus cosas de Windows a Quantum Linux"
+      VALUE "FileVersion", "1.0.0"
+      VALUE "ProductName", "Pasar a Quantum"
+      VALUE "ProductVersion", "1.0.0"
+      VALUE "LegalCopyright", "GPL-3.0-or-later"
+      VALUE "OriginalFilename", "Pasar a Quantum.exe"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x0C0A, 1200
+  END
+END

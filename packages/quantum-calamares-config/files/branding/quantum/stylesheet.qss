@@ -1,0 +1,85 @@
+/* Calamares en los colores de Quantum Linux.
+   Calamares corre como root y no ve el tema del usuario, así que aquí se
+   define el aspecto completo (texto claro sobre fondo oscuro). */
+
+QWidget {
+    font-family: "Inter";
+    color: #E4E0EE;
+    background: #13121C;
+}
+QLabel, QCheckBox, QRadioButton, QGroupBox { background: transparent; }
+#sidebarApp, #sidebarApp QWidget { background: #0D0B14; }
+#mainApp { background: #13121C; }
+
+QLineEdit, QSpinBox, QPlainTextEdit, QTextEdit, QTextBrowser {
+    background: #1F1F28; color: #E4E0EE;
+    border: 1px solid #474553; border-radius: 8px; padding: 6px 10px;
+    selection-background-color: #6A5CFF; selection-color: #FFFFFF;
+}
+QLineEdit:focus, QPlainTextEdit:focus { border-color: #C5C0FF; }
+
+QComboBox {
+    background: #2A2933; color: #E4E0EE;
+    border: 1px solid #474553; border-radius: 8px; padding: 6px 10px;
+}
+QComboBox QAbstractItemView {
+    background: #1F1F28; color: #E4E0EE;
+    selection-background-color: #6A5CFF; selection-color: #FFFFFF;
+}
+
+QListView, QTreeView, QTableView, QListWidget, QTreeWidget {
+    background: #1B1A24; color: #E4E0EE; alternate-background-color: #1F1F28;
+    border: 1px solid #474553; border-radius: 8px;
+    selection-background-color: #6A5CFF; selection-color: #FFFFFF;
+}
+QHeaderView::section {
+    background: #2A2933; color: #C8C4D4; border: none; padding: 6px;
+}
+
+QPushButton {
+    background: #2A2933; color: #E4E0EE;
+    border: 1px solid #474553; border-radius: 8px;
+    padding: 7px 16px; font-weight: 600;
+}
+QPushButton:hover { background: #35343E; }
+QPushButton:disabled { color: #928F9E; background: #1B1A24; }
+#view-button-next {
+    border: none; color: #FFFFFF;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #4FD8FF, stop:0.5 #6A5CFF, stop:1 #B14DFF);
+}
+
+QCheckBox, QRadioButton { color: #E4E0EE; spacing: 8px; }
+QGroupBox { border: 1px solid #474553; border-radius: 10px; margin-top: 14px; padding-top: 8px; }
+QGroupBox::title { subcontrol-origin: margin; left: 10px; color: #C5C0FF; }
+
+QScrollBar:vertical { background: transparent; width: 10px; }
+QScrollBar::handle:vertical { background: #474553; border-radius: 4px; min-height: 30px; }
+QScrollBar::add-line, QScrollBar::sub-line { height: 0; }
+
+QToolTip { background: #2A2933; color: #E4E0EE; border: 1px solid #474553; }
+QMenu { background: #1F1F28; color: #E4E0EE; border: 1px solid #474553; }
+QMenu::item:selected { background: #6A5CFF; color: #FFFFFF; }
+
+QProgressBar {
+    background: #2A2933; border: none; border-radius: 4px;
+    height: 8px; text-align: center; color: transparent;
+}
+QProgressBar::chunk {
+    border-radius: 4px;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #4FD8FF, stop:0.5 #6A5CFF, stop:1 #B14DFF);
+}
+
+/* Indicadores de casillas y opciones (si no se definen, quedan invisibles) */
+QRadioButton::indicator, QCheckBox::indicator {
+    width: 16px; height: 16px;
+    border: 2px solid #928F9E; background: #1B1A24;
+}
+QRadioButton::indicator { border-radius: 9px; }
+QCheckBox::indicator { border-radius: 4px; }
+QRadioButton::indicator:hover, QCheckBox::indicator:hover { border-color: #C5C0FF; }
+QRadioButton::indicator:checked {
+    border-color: #C5C0FF;
+    background: qradialgradient(cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5,
+        stop:0 #C5C0FF, stop:0.5 #C5C0FF, stop:0.6 #1B1A24, stop:1 #1B1A24);
+}
+QCheckBox::indicator:checked { border-color: #C5C0FF; background: #6A5CFF; }

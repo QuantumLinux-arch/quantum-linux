@@ -1,0 +1,45 @@
+# Maintainer: Quantum Linux <https://github.com/quantum-linux>
+# Configuración y marca de Calamares para el instalador de Quantum Linux.
+# Solo se usa en el ISO: el propio instalador la desinstala del sistema final.
+
+pkgname=quantum-calamares-config
+pkgver=1.0.0
+pkgrel=10
+pkgdesc="Configuración del instalador de Quantum Linux"
+arch=('any')
+url="https://github.com/quantum-linux"
+license=('GPL-3.0-or-later')
+depends=('calamares' 'quantum-branding' 'quantum-settings' 'sudo')
+
+_files="$startdir/files"
+
+package() {
+  cd "$_files"
+  install -Dm644 settings.conf "$pkgdir/etc/calamares/settings.conf"
+  for f in modules/*.conf; do
+    install -Dm644 "$f" "$pkgdir/etc/calamares/$f"
+  done
+
+  local b="$pkgdir/etc/calamares/branding/quantum"
+  install -Dm644 branding/quantum/branding.desc "$b/branding.desc"
+  install -Dm644 branding/quantum/show.qml "$b/show.qml"
+  install -Dm644 branding/quantum/stylesheet.qss "$b/stylesheet.qss"
+  install -Dm644 branding/quantum/calamares-sidebar.qml "$b/calamares-sidebar.qml"
+  install -Dm644 branding/quantum/calamares-navigation.qml "$b/calamares-navigation.qml"
+  install -Dm644 branding/quantum/quantum-apps.qml "$b/quantum-apps.qml"
+  install -d "$b/apps"
+  install -m644 branding/quantum/apps/*.png "$b/apps/"
+  install -d "$b/slides"
+  install -m644 branding/quantum/slides/*.jpg "$b/slides/"
+  install -d "$b/games"
+  install -m644 branding/quantum/games/*.jpg "$b/games/"
+  ln -s /usr/share/icons/hicolor/256x256/apps/quantum-linux.png "$b/icon.png"
+  ln -s /usr/share/quantum/logos/quantum-mark.png "$b/logo.png"
+  ln -s /usr/share/quantum/logos/quantum-wordmark-light.png "$b/welcome.png"
+
+  install -Dm644 modules/quantumapps/module.desc "$pkgdir/usr/lib/calamares/modules/quantumapps/module.desc"
+  install -Dm644 modules/quantumapps/main.py "$pkgdir/usr/lib/calamares/modules/quantumapps/main.py"
+
+  install -Dm755 bin/quantum-install "$pkgdir/usr/bin/quantum-install"
+  install -Dm644 quantum-install.desktop "$pkgdir/usr/share/applications/quantum-install.desktop"
+}

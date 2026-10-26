@@ -1,0 +1,9 @@
+Pasar a Quantum
+===============
+
+1. Abre «Pasar a Quantum.exe» en tu PC con Windows (doble clic).
+   Si Windows muestra «Windows protegió tu PC», toca «Más información» y luego «Ejecutar de todas formas».
+2. Elige qué llevar y copia todo a este pendrive.
+3. Instala Quantum Linux, entra a tu cuenta y conecta el pendrive: se acomoda todo solo.
+
+Más información: https://quantumlinux-arch.github.io

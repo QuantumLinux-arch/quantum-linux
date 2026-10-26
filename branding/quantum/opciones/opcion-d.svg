@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="q" x1="0.15" y1="0.05" x2="0.85" y2="0.95">
+      <stop offset="0" stop-color="#4FD8FF"/>
+      <stop offset="0.5" stop-color="#6A5CFF"/>
+      <stop offset="1" stop-color="#B14DFF"/>
+    </linearGradient>
+    <linearGradient id="qsoft" x1="0.15" y1="0.05" x2="0.85" y2="0.95">
+      <stop offset="0" stop-color="#4FD8FF" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#B14DFF" stop-opacity="0.35"/>
+    </linearGradient>
+  </defs>
+  <polygon points="128.0,36.0 207.7,82.0 207.7,174.0 128.0,220.0 48.3,174.0 48.3,82.0" fill="none" stroke="url(#q)" stroke-width="10" stroke-linejoin="round"/>
+  <polygon points="128.0,41.1 159.1,59.0 128.0,76.9 96.9,59.0" fill="url(#qsoft)" stroke="url(#q)" stroke-width="5" stroke-linejoin="round"/>
+  <polygon points="88.2,64.1 119.2,82.0 88.2,99.9 57.1,82.0" fill="url(#qsoft)" stroke="url(#q)" stroke-width="5" stroke-linejoin="round"/>
+  <polygon points="167.8,64.1 198.9,82.0 167.8,99.9 136.8,82.0" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="5" stroke-linejoin="round"/>
+  <polygon points="128.0,87.1 159.1,105.0 128.0,122.9 96.9,105.0" fill="url(#qsoft)" stroke="url(#q)" stroke-width="5" stroke-linejoin="round"/>
+  <polygon points="52.7,89.6 83.8,107.5 83.8,143.4 52.7,125.5" fill="url(#qsoft)" stroke="url(#q)" stroke-width="5" stroke-linejoin="round"/>
+  <polygon points="52.7,135.6 83.8,153.5 83.8,189.4 52.7,171.5" fill="url(#qsoft)" stroke="url(#q)" stroke-width="5" stroke-linejoin="round"/>
+  <polygon points="92.5,112.6 123.6,130.5 123.6,166.4 92.5,148.5" fill="url(#qsoft)" stroke="url(#q)" stroke-width="5" stroke-linejoin="round"/>
+  <polygon points="92.5,158.6 123.6,176.5 123.6,212.4 92.5,194.5" fill="url(#qsoft)" stroke="url(#q)" stroke-width="5" stroke-linejoin="round"/>
+  <polygon points="132.4,130.5 163.5,112.6 163.5,148.5 132.4,166.4" fill="url(#qsoft)" stroke="url(#q)" stroke-width="5" stroke-linejoin="round"/>
+  <polygon points="132.4,176.5 163.5,158.6 163.5,194.5 132.4,212.4" fill="url(#qsoft)" stroke="url(#q)" stroke-width="5" stroke-linejoin="round"/>
+  <polygon points="172.2,107.5 203.3,89.6 203.3,125.5 172.2,143.4" fill="url(#qsoft)" stroke="url(#q)" stroke-width="5" stroke-linejoin="round"/>
+  <polygon points="172.2,153.5 203.3,135.6 203.3,171.5 172.2,189.4" fill="url(#qsoft)" stroke="url(#q)" stroke-width="5" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,12 @@
+#!/bin/bash
+# Firma con la llave de este PC lo que arranca: GRUB (en la ESP) y los kernels de /boot.
+# La llaman la configuración inicial y el hook de pacman (cuando se actualiza el kernel).
+D=/var/lib/quantum/secureboot
+[ -f $D/MOK.key ] || exit 0
+ESP=$(findmnt -no TARGET -T /boot/efi 2>/dev/null || echo /boot/efi)
+for f in /boot/vmlinuz-* "$ESP/EFI/quantum/grubx64.efi" "$ESP/EFI/BOOT/grubx64.efi"; do
+    [ -f "$f" ] || continue
+    sbverify --cert $D/MOK.crt "$f" >/dev/null 2>&1 && continue      # ya firmado con esta llave
+    sbsign --key $D/MOK.key --cert $D/MOK.crt --output "$f.firmado" "$f" >/dev/null 2>&1 \
+        && mv -f "$f.firmado" "$f" && echo "firmado: $f"
+done

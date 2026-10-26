@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="q" x1="0.15" y1="0.05" x2="0.85" y2="0.95">
+      <stop offset="0" stop-color="#4FD8FF"/>
+      <stop offset="0.5" stop-color="#6A5CFF"/>
+      <stop offset="1" stop-color="#B14DFF"/>
+    </linearGradient>
+    <linearGradient id="qsoft" x1="0.15" y1="0.05" x2="0.85" y2="0.95">
+      <stop offset="0" stop-color="#4FD8FF" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#B14DFF" stop-opacity="0.35"/>
+    </linearGradient>
+  </defs>
+  <polyline points="171.8,194.7 128.0,220.0 48.3,174.0 48.3,82.0 128.0,36.0 207.7,82.0 207.7,132.6" fill="none" stroke="url(#q)" stroke-width="16"
+            stroke-linejoin="round" stroke-linecap="round"/>
+  <polyline points="48.3,82.0 128.0,128.0 207.7,82.0" fill="none" stroke="url(#q)" stroke-width="10" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"/>
+  <line x1="128.0" y1="128.0" x2="128.0" y2="194.0" stroke="url(#q)" stroke-width="10" stroke-linecap="round" opacity="0.85"/>
+  <line x1="155.9" y1="144.1" x2="230.2" y2="187.0"
+        stroke="url(#q)" stroke-width="16" stroke-linecap="round"/>
+  <circle cx="128.0" cy="128.0" r="11" fill="#FFFFFF"/>
+</svg>

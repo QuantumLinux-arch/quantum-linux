@@ -1,0 +1,66 @@
+# Maintainer: Quantum Linux <https://github.com/quantum-linux>
+# Identidad visual de Quantum Linux: logos, íconos, fondos, pantalla de
+# inicio (SDDM), arranque (Plymouth y GRUB) y fastfetch.
+
+pkgname=quantum-branding
+pkgver=1.0.0
+pkgrel=4
+pkgdesc="Identidad visual de Quantum Linux"
+arch=('any')
+url="https://github.com/quantum-linux"
+license=('GPL-3.0-or-later' 'CC-BY-SA-4.0')
+depends=('inter-font' 'ttf-jetbrains-mono-nerd' 'papirus-icon-theme')
+optdepends=('plymouth: animación de arranque'
+            'grub: tema del menú de arranque'
+            'sddm: pantalla de inicio de sesión'
+            'fastfetch: logo en la terminal')
+makedepends=('python' 'librsvg' 'imagemagick' 'grub' 'inter-font')
+install=quantum-branding.install
+
+_repo="$startdir/../.."
+_files="$startdir/files"
+
+build() {
+  "$_repo/branding/build-assets.sh" "$srcdir/assets"
+}
+
+package() {
+  local a="$srcdir/assets"
+  local share="$pkgdir/usr/share"
+
+  # Íconos y logos
+  install -d "$share/quantum"
+  cp -r "$a/icons" "$share/"
+  cp -r "$a/logos" "$share/quantum/"
+  install -Dm644 "$_files/fastfetch/logo.txt" "$share/quantum/fastfetch-logo.txt"
+  install -Dm644 "$_files/fastfetch/config.jsonc" "$pkgdir/etc/xdg/fastfetch/config.jsonc"
+
+  # Fondos de pantalla
+  install -d "$share/backgrounds/quantum/thumbs"
+  install -m644 "$a/wallpapers/"*.png "$share/backgrounds/quantum/"
+  install -m644 "$a/wallpapers/thumbs/"*.jpg "$share/backgrounds/quantum/thumbs/"
+
+  # Pantalla de inicio (SDDM)
+  local sddm="$share/sddm/themes/quantum"
+  install -d "$sddm"
+  install -m644 "$_files/sddm/quantum/"* "$sddm/"
+  install -m644 "$a/wallpapers/thumbs/orbita.jpg" "$sddm/preview.png"
+  install -Dm644 "$_files/sddm/10-quantum.conf" "$pkgdir/etc/sddm.conf.d/10-quantum.conf"
+  # copia del fondo de cada usuario para la pantalla de inicio (la escribe quantum-theme):
+  # cada uno escribe su archivo, nadie lista ni borra los ajenos (sticky) y SDDM los lee
+  install -dm1733 "$pkgdir/var/lib/quantum/login"
+
+  # Plymouth
+  local ply="$share/plymouth/themes/quantum"
+  install -Dm644 "$_files/plymouth/quantum/quantum.plymouth" "$ply/quantum.plymouth"
+  install -Dm644 "$_files/plymouth/quantum/quantum.script" "$ply/quantum.script"
+  install -m644 "$a/plymouth/"*.png "$ply/"
+
+  # GRUB
+  local grub="$share/grub/themes/quantum"
+  install -Dm644 "$_files/grub/quantum/theme.txt" "$grub/theme.txt"
+  install -m644 "$a/grub/"*.png "$a/grub/"*.pf2 "$grub/"
+
+  # Imagen del menú de arranque del ISO (la usa el perfil de archiso)
+  install -Dm644 "$a/iso/splash.png" "$share/quantum/iso/splash.png"
+}

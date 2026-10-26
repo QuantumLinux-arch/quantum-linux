@@ -1,0 +1,148 @@
+# Tema de arranque de Quantum Linux.
+# El átomo de Quantum al centro: un halo que respira, tres electrones que orbitan
+# dejando estela (como en el fondo vivo del escritorio) y estrellas que titilan.
+# Incluye el cuadro de contraseña para discos cifrados.
+
+Window.SetBackgroundTopColor(0.020, 0.016, 0.047);
+Window.SetBackgroundBottomColor(0.070, 0.043, 0.180);
+
+cx = Window.GetX() + Window.GetWidth() / 2;
+cy = Window.GetY() + Window.GetHeight() / 2 - 30;
+
+# ---------- estrellas ----------
+star_image = Image("star.png");
+for (i = 0; i < 70; i++) {
+    star[i] = Sprite(star_image);
+    star[i].SetX(Window.GetX() + Math.Random() * Window.GetWidth());
+    star[i].SetY(Window.GetY() + Math.Random() * Window.GetHeight());
+    star[i].SetZ(1);
+    star_phase[i] = Math.Random() * 6.28;
+    star_speed[i] = 0.02 + Math.Random() * 0.05;
+    star_base[i] = 0.15 + Math.Random() * 0.45;
+}
+
+# ---------- halo y átomo ----------
+glow.image = Image("glow.png");
+glow.sprite = Sprite(glow.image);
+glow.sprite.SetX(cx - glow.image.GetWidth() / 2);
+glow.sprite.SetY(cy - glow.image.GetHeight() / 2);
+glow.sprite.SetZ(5);
+
+atom.image = Image("atom.png");
+atom.sprite = Sprite(atom.image);
+atom.sprite.SetX(cx - atom.image.GetWidth() / 2);
+atom.sprite.SetY(cy - atom.image.GetHeight() / 2);
+atom.sprite.SetZ(10);
+# el logo mide 256 de lado: escala de las órbitas
+k = atom.image.GetWidth() / 256;
+
+# ---------- electrones y estelas ----------
+# órbita i: elipse de 104 x 38 girada (90, -30, 30 grados), como en el logo
+orbit_rot[0] = 90 * 3.14159 / 180;
+orbit_rot[1] = -30 * 3.14159 / 180;
+orbit_rot[2] = 30 * 3.14159 / 180;
+orbit_speed[0] = 0.040;
+orbit_speed[1] = 0.031;
+orbit_speed[2] = 0.035;
+orbit_phase[0] = 0;
+orbit_phase[1] = 2.09;
+orbit_phase[2] = 4.18;
+trail_image[0] = Image("trail-cyan.png");
+trail_image[1] = Image("trail-indigo.png");
+trail_image[2] = Image("trail-violet.png");
+electron_image = Image("electron.png");
+TRAIL = 7;
+for (o = 0; o < 3; o++) {
+    for (j = 0; j < TRAIL; j++) {
+        trail[o * TRAIL + j] = Sprite(trail_image[o]);
+        trail[o * TRAIL + j].SetZ(15);
+        trail[o * TRAIL + j].SetOpacity(0.55 * (1 - j / TRAIL));
+    }
+    electron[o] = Sprite(electron_image);
+    electron[o].SetZ(20);
+}
+
+fun orbit_point(o, a) {
+    x = 104 * k * Math.Cos(a);
+    y = 38 * k * Math.Sin(a);
+    r = orbit_rot[o];
+    p.x = cx + x * Math.Cos(r) - y * Math.Sin(r);
+    p.y = cy + x * Math.Sin(r) + y * Math.Cos(r);
+    return p;
+}
+
+t = 0;
+fun refresh_callback() {
+    t++;
+    glow.sprite.SetOpacity(0.55 + 0.25 * Math.Sin(t / 25));
+    atom.sprite.SetOpacity(0.92 + 0.08 * Math.Sin(t / 25));
+    for (o = 0; o < 3; o++) {
+        a = orbit_phase[o] + t * orbit_speed[o];
+        for (j = 0; j < TRAIL; j++) {
+            p = orbit_point(o, a - (j + 1) * 0.07);
+            trail[o * TRAIL + j].SetX(p.x - trail_image[o].GetWidth() / 2);
+            trail[o * TRAIL + j].SetY(p.y - trail_image[o].GetHeight() / 2);
+        }
+        p = orbit_point(o, a);
+        electron[o].SetX(p.x - electron_image.GetWidth() / 2);
+        electron[o].SetY(p.y - electron_image.GetHeight() / 2);
+    }
+    for (i = 0; i < 70; i++) {
+        star[i].SetOpacity(star_base[i] * (0.55 + 0.45 * Math.Sin(t * star_speed[i] + star_phase[i])));
+    }
+}
+Plymouth.SetRefreshFunction(refresh_callback);
+
+# ---------- Contraseña (LUKS) ----------
+
+entry.image = Image("entry.png");
+bullet.image = Image("bullet.png");
+
+fun display_normal_callback() {
+    global.status = "normal";
+    if (global.entry_sprite) global.entry_sprite.SetOpacity(0);
+    if (global.prompt_sprite) global.prompt_sprite.SetOpacity(0);
+    for (i = 0; global.bullets[i]; i++) global.bullets[i].SetOpacity(0);
+}
+
+fun display_password_callback(prompt, bullets) {
+    global.status = "password";
+
+    ex = cx - entry.image.GetWidth() / 2;
+    ey = cy + atom.image.GetHeight() / 2 + 30;
+
+    if (!global.entry_sprite) global.entry_sprite = Sprite(entry.image);
+    global.entry_sprite.SetPosition(ex, ey, 30);
+    global.entry_sprite.SetOpacity(1);
+
+    if (prompt == "") prompt = "Contraseña del disco";
+    prompt_image = Image.Text(prompt, 0.61, 0.58, 0.72, 1, "Inter 12");
+    global.prompt_sprite = Sprite(prompt_image);
+    global.prompt_sprite.SetPosition(cx - prompt_image.GetWidth() / 2, ey - prompt_image.GetHeight() - 10, 30);
+
+    for (i = 0; global.bullets[i]; i++) global.bullets[i].SetOpacity(0);
+    max_bullets = Math.Int((entry.image.GetWidth() - 40) / (bullet.image.GetWidth() + 6));
+    for (i = 0; i < bullets && i < max_bullets; i++) {
+        if (!global.bullets[i]) global.bullets[i] = Sprite(bullet.image);
+        global.bullets[i].SetPosition(ex + 20 + i * (bullet.image.GetWidth() + 6),
+                                      ey + entry.image.GetHeight() / 2 - bullet.image.GetHeight() / 2, 31);
+        global.bullets[i].SetOpacity(1);
+    }
+}
+
+Plymouth.SetDisplayNormalFunction(display_normal_callback);
+Plymouth.SetDisplayPasswordFunction(display_password_callback);
+
+# ---------- Mensajes ----------
+
+fun message_callback(text) {
+    msg_image = Image.Text(text, 0.61, 0.58, 0.72, 1, "Inter 11");
+    global.msg_sprite = Sprite(msg_image);
+    global.msg_sprite.SetPosition(cx - msg_image.GetWidth() / 2, Window.GetY() + Window.GetHeight() - 60, 30);
+}
+Plymouth.SetMessageFunction(message_callback);
+
+fun quit_callback() {
+    atom.sprite.SetOpacity(1);
+}
+Plymouth.SetQuitFunction(quit_callback);

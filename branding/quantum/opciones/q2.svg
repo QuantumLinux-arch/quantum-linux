@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="q" x1="0.1" y1="0.05" x2="0.9" y2="0.95">
+      <stop offset="0" stop-color="#4FD8FF"/>
+      <stop offset="0.5" stop-color="#6A5CFF"/>
+      <stop offset="1" stop-color="#B14DFF"/>
+    </linearGradient>
+    <linearGradient id="qsoft" x1="0.1" y1="0.05" x2="0.9" y2="0.95">
+      <stop offset="0" stop-color="#4FD8FF" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#B14DFF" stop-opacity="0.32"/>
+    </linearGradient>
+    <linearGradient id="trail" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#B14DFF" stop-opacity="0"/>
+      <stop offset="1" stop-color="#B14DFF"/>
+    </linearGradient>
+    <mask id="cut" maskUnits="userSpaceOnUse" x="0" y="0" width="256" height="256">
+      <rect width="256" height="256" fill="#fff"/>
+      <line x1="144" y1="144" x2="222" y2="222" stroke="#000" stroke-width="42" stroke-linecap="round"/>
+    </mask>
+  </defs>
+  <polygon points="122.0,30.0 201.7,76.0 201.7,168.0 122.0,214.0 42.3,168.0 42.3,76.0" fill="none" stroke="url(#q)" stroke-width="18" stroke-linejoin="round" mask="url(#cut)"/>
+  <polygon points="122.0,43.8 177.8,76.0 122.0,108.2 66.2,76.0" fill="url(#qsoft)" stroke="url(#q)" stroke-width="5" stroke-linejoin="round" mask="url(#cut)"/>
+  <polygon points="54.3,96.7 110.0,128.9 110.0,193.3 54.3,161.1" fill="url(#qsoft)" stroke="url(#q)" stroke-width="5" stroke-linejoin="round" mask="url(#cut)"/>
+  <polygon points="134.0,128.9 189.7,96.7 189.7,161.1 134.0,193.3" fill="url(#qsoft)" stroke="url(#q)" stroke-width="5" stroke-linejoin="round" mask="url(#cut)"/>
+  <line x1="144" y1="144" x2="222" y2="222" stroke="url(#q)" stroke-width="20" stroke-linecap="round"/>
+  <circle cx="122" cy="122" r="12" fill="#FFFFFF"/>
+</svg>

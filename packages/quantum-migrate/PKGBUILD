@@ -1,0 +1,28 @@
+# Maintainer: Quantum Linux <https://github.com/QuantumLinux-arch>
+
+pkgname=quantum-migrate
+pkgver=1.0.0
+pkgrel=3
+pkgdesc="Pasar desde Windows: trae tus archivos, tu cuenta, tus redes y tus juegos desde un pendrive"
+arch=('any')
+url="https://quantumlinux-arch.github.io"
+license=('GPL-3.0-or-later')
+depends=('python' 'python-pyqt6' 'qt6-declarative' 'qt6-svg' 'quantum-desktop' 'udisks2' 'networkmanager'
+         'accountsservice' 'polkit' 'imagemagick' 'flatpak' 'util-linux' 'xdg-user-dirs')
+
+_src="$startdir/src"
+
+package() {
+  install -d "$pkgdir/usr/lib/quantum-migrate"
+  cp -r "$_src/quantum_migrate" "$pkgdir/usr/lib/quantum-migrate/"
+  find "$pkgdir/usr/lib/quantum-migrate" -name __pycache__ -prune -exec rm -rf {} +
+  # precompilado: abre más rápido (los usuarios no pueden escribir en /usr/lib)
+  python -m compileall -q -j 0 -o 0 -o 1 -s "$pkgdir" -p / "$pkgdir/usr/lib/quantum-migrate"
+  install -Dm755 "$startdir/files/quantum-migrate" "$pkgdir/usr/bin/quantum-migrate"
+  install -Dm644 "$startdir/files/quantum-migrate.desktop" "$pkgdir/usr/share/applications/quantum-migrate.desktop"
+  install -Dm644 "$startdir/files/50-quantum-migrate.rules" "$pkgdir/usr/share/polkit-1/rules.d/50-quantum-migrate.rules"
+  install -Dm644 "$startdir/files/quantum-migrate.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/quantum-migrate.svg"
+  # la app de Windows (para «Preparar un pendrive»); se compila con windows/build-exe.sh
+  install -Dm644 "$startdir/files/Pasar a Quantum.exe" "$pkgdir/usr/share/quantum/migrate/Pasar a Quantum.exe"
+  install -Dm644 "$startdir/files/LEEME.txt" "$pkgdir/usr/share/quantum/migrate/LÉEME.txt"
+}

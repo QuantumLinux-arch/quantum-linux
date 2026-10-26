@@ -1,0 +1,65 @@
+#!/bin/bash
+# Arranque seguro (Secure Boot) del Quantum instalado. Se ejecuta como root (el instalador lo
+# llama al final, dentro del sistema nuevo). Deja:
+#   ESP/EFI/quantum/{shimx64.efi, mmx64.efi, grubx64.efi firmado}  y la entrada «Quantum Linux»
+#   ESP/EFI/BOOT/{BOOTX64.EFI = shim, grubx64.efi, mmx64.efi}       (arranque de respaldo)
+#   el kernel firmado con la llave de este PC (/var/lib/quantum/secureboot, solo root)
+# y pide registrar la llave de este PC en el próximo arranque si todavía no está registrada.
+set -uo pipefail
+D=/var/lib/quantum/secureboot
+S=/usr/share/quantum/secureboot
+ESP=$(findmnt -no TARGET -T /boot/efi 2>/dev/null || echo /boot/efi)
+log() { echo "quantum-secureboot: $*"; }
+
+[ -d /sys/firmware/efi ] || { log "el PC arranca en modo BIOS: no hace falta"; exit 0; }
+
+# 1. llave de este PC (si el instalador de Windows ya dejó una, se usa esa)
+install -d -m 700 $D
+if [ ! -f $D/MOK.key ]; then
+    if [ -f /var/lib/quantum/answers/MOK.key ]; then
+        install -m 600 /var/lib/quantum/answers/MOK.key $D/MOK.key
+        install -m 644 /var/lib/quantum/answers/MOK.crt $D/MOK.crt
+    else
+        openssl req -new -x509 -newkey rsa:2048 -nodes -sha256 -days 7300 \
+            -subj "/CN=Quantum Linux - $(cat /etc/hostname 2>/dev/null || echo PC)/O=Quantum Linux/" \
+            -addext "extendedKeyUsage=codeSigning" -keyout $D/MOK.key -out $D/MOK.crt 2>/dev/null
+        chmod 600 $D/MOK.key
+    fi
+    openssl x509 -in $D/MOK.crt -outform DER -out $D/MOK.cer
+fi
+
+# 2. GRUB en un solo archivo (con firma, todo lo que necesita va adentro: shim no deja cargar módulos sueltos)
+MODS="all_video boot btrfs cat chain configfile echo efifwsetup efinet ext2 fat font gettext gfxmenu gfxterm
+ gfxterm_background gzio halt help iso9660 jpeg keystatus loadenv loopback linux ls lsefi lsefimmap lsefisystab
+ memdisk minicmd normal ntfs part_apple part_msdos part_gpt password_pbkdf2 png probe reboot regexp search
+ search_fs_uuid search_fs_file search_label sleep smbios squash4 test true video cpuid play tpm"
+grub-install --target=x86_64-efi --efi-directory="$ESP" --bootloader-id=quantum --no-nvram \
+    --modules="$MODS" --sbat /usr/share/grub/sbat.csv >/dev/null 2>&1 || { log "grub-install falló"; exit 1; }
+install -m 644 $S/shimx64.efi $S/mmx64.efi "$ESP/EFI/quantum/"
+install -d "$ESP/EFI/BOOT"
+install -m 644 $S/shimx64.efi "$ESP/EFI/BOOT/BOOTX64.EFI"
+install -m 644 $S/mmx64.efi "$ESP/EFI/BOOT/mmx64.efi"
+cp "$ESP/EFI/quantum/grubx64.efi" "$ESP/EFI/BOOT/grubx64.efi"
+
+# 3. firmar GRUB y los kernels
+/usr/lib/quantum/secureboot/sign
+
+# 4. entrada de arranque «Quantum Linux» → shim (reemplaza la que apuntaba a GRUB)
+if command -v efibootmgr >/dev/null && [ -d /sys/firmware/efi/efivars ]; then
+    for n in $(efibootmgr | sed -n 's/^Boot\([0-9A-F]\{4\}\)\*\? \(quantum\|Quantum Linux\).*/\1/Ip'); do efibootmgr -q -b "$n" -B; done
+    PART=$(findmnt -no SOURCE "$ESP"); DISK=/dev/$(lsblk -no PKNAME "$PART"); NUM=$(cat /sys/class/block/${PART#/dev/}/partition)
+    efibootmgr -q -c -d "$DISK" -p "$NUM" -L "Quantum Linux" -l '\EFI\quantum\shimx64.efi' || log "no pude crear la entrada de arranque"
+fi
+
+# 5. registrar la llave de este PC (y la de Quantum, para los pendrives) en el próximo arranque
+if mokutil --sb-state 2>/dev/null | grep -qi enabled || [ -f /var/lib/quantum/answers/secureboot ]; then
+    need=()
+    mokutil --test-key $D/MOK.cer >/dev/null 2>&1 && need+=($D/MOK.cer)
+    mokutil --test-key $S/quantum-sb.cer >/dev/null 2>&1 && need+=($S/quantum-sb.cer)
+    if [ ${#need[@]} -gt 0 ]; then
+        pw=$(cat /var/lib/quantum/answers/mok-password 2>/dev/null || echo quantum)
+        printf '%s\n%s\n' "$pw" "$pw" | mokutil --import "${need[@]}" >/dev/null 2>&1 \
+            && log "llave pedida: al reiniciar, confirma con la clave «$pw»" || log "no pude pedir el registro de la llave"
+    fi
+fi
+log "listo"

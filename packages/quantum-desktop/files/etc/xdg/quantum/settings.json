@@ -1,0 +1,51 @@
+{
+  "appearance": {
+    "mode": "dark",
+    "dynamicColors": false,
+    "accent": "#6A5CFF",
+    "wallpaper": "quantum:live",
+    "panelOpacity": 0.86,
+    "blur": true,
+    "textScale": 1.0,
+    "glass": { "bar": true, "dock": true, "panels": true, "windows": false },
+    "windowOpacity": 0.9
+  },
+  "layout": {
+    "style": "split",
+    "topBar": { "floating": true, "showApp": true }
+  },
+  "dock": {
+    "pinned": ["org.gnome.Nautilus", "firefox", "kitty", "quantum-center"],
+    "floating": true,
+    "align": "center",
+    "size": "medium",
+    "autohide": false,
+    "showSearch": true,
+    "showStart": true,
+    "showTray": true,
+    "showUpdates": true
+  },
+  "clock": { "format24h": true, "showDate": true, "showSeconds": false },
+  "windows": {
+    "tiling": false,
+    "corners": "soft",
+    "animations": "normal",
+    "openAnimation": "zoom",
+    "minimizeAnimation": "zoom",
+    "buttonsLeft": false,
+    "wobbly": false,
+    "titleHeight": 34,
+    "borderSize": 1
+  },
+  "lock": {
+    "left": ["weather", "fetch", "media"],
+    "right": ["stats", "notifs"],
+    "showNotifContent": false,
+    "city": ""
+  },
+  "keyboard": { "layout": "", "variant": "", "options": "grp:alt_shift_toggle" },
+  "notifications": { "dnd": false },
+  "ai": { "model": "" },
+  "sounds": { "enabled": true, "startup": true, "volume": 0.6 },
+  "ui": { "advanced": false, "style": "quantum", "page": "styles" }
+}

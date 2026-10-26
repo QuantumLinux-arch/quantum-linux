@@ -1,0 +1,59 @@
+# Tema de GRUB de Quantum Linux
+title-text: ""
+desktop-image: "background.png"
+desktop-color: "#07060D"
+terminal-font: "Inter Regular 16"
+terminal-left: "10%"
+terminal-top: "10%"
+terminal-width: "80%"
+terminal-height: "80%"
+terminal-border: "0"
+
++ image {
+    top = 14%
+    left = 50%-190
+    width = 380
+    height = 108
+    file = "logo.png"
+}
+
++ boot_menu {
+    left = 30%
+    top = 38%
+    width = 40%
+    height = 40%
+    item_font = "Inter Regular 20"
+    item_color = "#9C95B8"
+    selected_item_font = "Inter Bold 20"
+    selected_item_color = "#EEEAFB"
+    selected_item_pixmap_style = "select_*.png"
+    item_height = 46
+    item_padding = 18
+    item_spacing = 8
+    icon_width = 0
+    icon_height = 0
+    item_icon_space = 0
+    scrollbar = false
+}
+
++ progress_bar {
+    id = "__timeout__"
+    left = 35%
+    top = 84%
+    width = 30%
+    height = 4
+    show_text = false
+    fg_color = "#8F86FF"
+    bg_color = "#2A2640"
+    border_color = "#2A2640"
+}
+
++ label {
+    left = 0
+    top = 88%
+    width = 100%
+    align = "center"
+    color = "#6E6890"
+    font = "Inter Regular 16"
+    text = "Flechas para elegir · Enter para arrancar · E para editar"
+}

@@ -1,0 +1,30 @@
+#!/bin/bash
+# Lo ejecuta Calamares en el sistema instalado: activa los puntos de
+# restauración automáticos si la raíz es btrfs.
+set -eu
+
+if [ "$(findmnt -no FSTYPE /)" != "btrfs" ]; then
+    echo "La raíz no es btrfs: se omiten los puntos de restauración"
+    exit 0
+fi
+
+if [ ! -e /etc/snapper/configs/root ]; then
+    # snapper crea su propio subvolumen y falla si /.snapshots ya existe
+    rmdir /.snapshots 2>/dev/null || true
+    snapper --no-dbus -c root create-config /
+fi
+
+sed -i \
+    -e 's/^TIMELINE_CREATE=.*/TIMELINE_CREATE="no"/' \
+    -e 's/^NUMBER_LIMIT=.*/NUMBER_LIMIT="10"/' \
+    -e 's/^NUMBER_LIMIT_IMPORTANT=.*/NUMBER_LIMIT_IMPORTANT="5"/' \
+    -e 's/^ALLOW_GROUPS=.*/ALLOW_GROUPS="wheel"/' \
+    /etc/snapper/configs/root
+chown :wheel /.snapshots
+chmod 750 /.snapshots
+
+systemctl enable snapper-cleanup.timer grub-btrfsd.service
+
+snapper --no-dbus -c root create \
+    --description "Instalación limpia de Quantum Linux" \
+    --cleanup-algorithm number --userdata important=yes

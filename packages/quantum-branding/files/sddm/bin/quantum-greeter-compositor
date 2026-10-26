@@ -1,0 +1,14 @@
+#!/bin/bash
+# Compositor de la pantalla de inicio (SDDM en modo Wayland). Weston en modo kiosco:
+# muestra solo la pantalla de inicio a pantalla completa y se cierra al entrar a la
+# sesión (con Xorg, el servidor de la pantalla de inicio quedaba vivo y gastaba ~130 MB).
+# El teclado es el del sistema (el que eligió el instalador).
+conf=/etc/X11/xorg.conf.d/00-keyboard.conf
+if [ -r "$conf" ]; then
+    l=$(awk -F'"' '/XkbLayout/ {print $4}' "$conf")
+    v=$(awk -F'"' '/XkbVariant/ {print $4}' "$conf")
+    [ -n "$l" ] && export XKB_DEFAULT_LAYOUT="$l"
+    [ -n "$v" ] && export XKB_DEFAULT_VARIANT="$v"
+fi
+export XCURSOR_THEME=Adwaita XCURSOR_SIZE=24
+exec weston --shell=kiosk --idle-time=0 "$@"

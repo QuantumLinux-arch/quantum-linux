@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="q" x1="0.1" y1="0.05" x2="0.9" y2="0.95">
+      <stop offset="0" stop-color="#4FD8FF"/>
+      <stop offset="0.5" stop-color="#6A5CFF"/>
+      <stop offset="1" stop-color="#B14DFF"/>
+    </linearGradient>
+    <linearGradient id="qsoft" x1="0.1" y1="0.05" x2="0.9" y2="0.95">
+      <stop offset="0" stop-color="#4FD8FF" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#B14DFF" stop-opacity="0.32"/>
+    </linearGradient>
+    <linearGradient id="trail" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#B14DFF" stop-opacity="0"/>
+      <stop offset="1" stop-color="#B14DFF"/>
+    </linearGradient>
+    <mask id="cut" maskUnits="userSpaceOnUse" x="0" y="0" width="256" height="256">
+      <rect width="256" height="256" fill="#fff"/>
+      <line x1="150" y1="150" x2="214" y2="214" stroke="#000" stroke-width="52" stroke-linecap="round"/>
+    </mask>
+  </defs>
+  <circle cx="122" cy="122" r="80" fill="none" stroke="url(#q)" stroke-width="26" mask="url(#cut)"/>
+  <line x1="150" y1="150" x2="214" y2="214" stroke="url(#q)" stroke-width="26" stroke-linecap="round"/>
+  <circle cx="122" cy="122" r="16" fill="#FFFFFF"/>
+</svg>

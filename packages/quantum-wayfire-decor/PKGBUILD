@@ -1,0 +1,42 @@
+# Maintainer: Quantum Linux <https://github.com/quantum-linux>
+# Decoración de ventanas de Quantum para Wayfire: copia del plugin "decoration"
+# de Wayfire 0.11.0 (MIT) con botones estilo Windows (–, □, × claros; fondo al
+# pasar el mouse, rojo en cerrar) y título con margen.
+# Se compila contra la ABI del Wayfire instalado; si Wayfire cambia de ABI,
+# quantum-theme vuelve a la decoración normal hasta recompilar este paquete.
+
+pkgname=quantum-wayfire-decor
+pkgver=0.11.0
+pkgrel=4
+pkgdesc="Decoración de ventanas de Quantum Linux para Wayfire"
+arch=('x86_64')
+url="https://github.com/quantum-linux"
+license=('MIT')
+depends=('wayfire' 'cairo' 'pango')
+makedepends=('glm' 'pkgconf')
+
+_src="$startdir/src"
+
+build() {
+  cd "$_src"
+  local flags
+  flags="$(pkg-config --cflags wayfire cairo pango pangocairo pixman-1 wayland-server libdrm wlroots-0.20)"
+  g++ -std=c++20 -O2 -fPIC -shared -DWLR_USE_UNSTABLE -DWAYFIRE_PLUGIN \
+      -I. -I/usr/include/wayfire $flags $CXXFLAGS $LDFLAGS \
+      decoration.cpp deco-subsurface.cpp deco-button.cpp deco-layout.cpp deco-theme.cpp \
+      $(pkg-config --libs cairo pango pangocairo) \
+      -o "$srcdir/libquantum-decor.so"
+  # el plugin usa cairo y pango: sin enlazarlas, con -z now (LDFLAGS de Arch)
+  # Wayfire no puede cargarlo y las ventanas quedan sin barra de título
+  if ldd -r "$srcdir/libquantum-decor.so" 2>&1 | grep -q "undefined symbol: \(cairo\|pango\)"; then
+    echo "libquantum-decor.so tiene símbolos de cairo/pango sin resolver" >&2; return 1
+  fi
+  pkg-config --variable=pluginabi wayfire > "$srcdir/decor-abi"
+}
+
+package() {
+  install -Dm755 "$srcdir/libquantum-decor.so" "$pkgdir/usr/lib/wayfire/libquantum-decor.so"
+  install -Dm644 "$_src/quantum-decor.xml" "$pkgdir/usr/share/wayfire/metadata/quantum-decor.xml"
+  install -Dm644 "$srcdir/decor-abi" "$pkgdir/usr/share/quantum/decor-abi"
+  install -Dm644 "$_src/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

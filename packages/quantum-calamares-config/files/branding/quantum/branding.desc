@@ -1,0 +1,44 @@
+---
+componentName:  quantum
+
+welcomeStyleCalamares: false
+welcomeExpandingLogo:  true
+
+windowExpanding:  normal
+windowSize:       1120px,720px
+windowPlacement:  center
+
+sidebar:    qml
+navigation: qml
+
+strings:
+    productName:         "Quantum Linux"
+    shortProductName:    "Quantum"
+    version:             "1.0"
+    shortVersion:        "1.0"
+    versionedName:       "Quantum Linux 1.0 «Quark»"
+    shortVersionedName:  "Quantum 1.0"
+    bootloaderEntryName: "Quantum"
+    productUrl:          "https://quantumlinux-arch.github.io"
+    supportUrl:          "https://github.com/QuantumLinux-arch"
+    knownIssuesUrl:      "https://github.com/QuantumLinux-arch"
+    releaseNotesUrl:     "https://quantumlinux-arch.github.io"
+
+images:
+    productIcon:    "icon.png"
+    productLogo:    "logo.png"
+    productWelcome: "welcome.png"
+
+style:
+   SidebarBackground:        "#0D0B14"
+   SidebarText:              "#9C95B8"
+   SidebarTextCurrent:       "#FFFFFF"
+   SidebarBackgroundCurrent: "#6A5CFF"
+
+slideshow:    "show.qml"
+slideshowAPI: 2
+
+uploadServer:
+    type:      "fiche"
+    url:       "http://termbin.com:9999"
+    sizeLimit: -1

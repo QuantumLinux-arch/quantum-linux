@@ -1,0 +1,2 @@
+#!/bin/sh
+PYTHONPATH=/usr/lib/quantum-foton:/usr/lib/quantum-store${PYTHONPATH:+:$PYTHONPATH} exec python3 -m foton "$@"

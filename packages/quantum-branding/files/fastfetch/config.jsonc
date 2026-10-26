@@ -1,0 +1,35 @@
+// Configuración de fastfetch por defecto en Quantum Linux.
+// Para personalizarla: fastfetch --gen-config y edita ~/.config/fastfetch/config.jsonc
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "type": "file",
+    "source": "/usr/share/quantum/fastfetch-logo.txt",
+    "color": {
+      "1": "38;2;79;216;255",
+      "2": "38;2;143;134;255",
+      "3": "38;2;238;234;251",
+      "4": "38;2;177;77;255"
+    },
+    "padding": { "top": 1, "right": 3 }
+  },
+  "display": {
+    "separator": "  ",
+    "color": { "keys": "38;2;143;134;255", "title": "38;2;79;216;255" }
+  },
+  "modules": [
+    "title",
+    "separator",
+    { "type": "os", "key": "󰣇 Sistema" },
+    { "type": "kernel", "key": " Kernel" },
+    { "type": "uptime", "key": "󰅐 Encendido" },
+    { "type": "packages", "key": "󰏖 Paquetes" },
+    { "type": "wm", "key": " Escritorio" },
+    { "type": "cpu", "key": " CPU" },
+    { "type": "gpu", "key": "󰍛 GPU" },
+    { "type": "memory", "key": " Memoria" },
+    { "type": "disk", "key": "󰋊 Disco" },
+    "break",
+    "colors"
+  ]
+}

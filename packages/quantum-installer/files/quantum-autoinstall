@@ -1,0 +1,19 @@
+#!/bin/bash
+# Lo arranca la sesión en vivo: si hay un pendrive con respuestas del instalador de Windows
+# (partición QUANTUMINST con quantum-install/answers.json), instala Quantum sin preguntar nada.
+# Las cosas de Windows están en la otra partición del pendrive (QUANTUMDATA).
+[ -d /run/archiso ] || exit 0
+ans=""
+for m in /run/archiso/bootmnt /run/quantum-install; do
+    [ -f $m/quantum-install/answers.json ] && ans=$m/quantum-install/answers.json && break
+done
+if [ -z "$ans" ]; then
+    dev=$(blkid -L QUANTUMINST 2>/dev/null) || exit 0
+    sudo -n mkdir -p /run/quantum-install && sudo -n mount -o ro "$dev" /run/quantum-install 2>/dev/null
+    [ -f /run/quantum-install/quantum-install/answers.json ] || exit 0
+    ans=/run/quantum-install/quantum-install/answers.json
+fi
+if data=$(blkid -L QUANTUMDATA 2>/dev/null); then
+    sudo -n mkdir -p /run/quantum-datos && sudo -n mount -o ro "$data" /run/quantum-datos 2>/dev/null
+fi
+exec python3 /usr/lib/quantum/install/progress.py "$ans"

@@ -1,0 +1,11 @@
+[Trigger]
+Type = Package
+Operation = Install
+Operation = Upgrade
+Target = filesystem
+Target = lsb-release
+
+[Action]
+Description = Aplicando la identidad de Quantum Linux...
+When = PostTransaction
+Exec = /usr/lib/quantum/apply-os-release

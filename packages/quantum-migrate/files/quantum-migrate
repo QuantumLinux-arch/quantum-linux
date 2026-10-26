@@ -1,0 +1,2 @@
+#!/bin/sh
+PYTHONPATH=/usr/lib/quantum-migrate${PYTHONPATH:+:$PYTHONPATH} exec python3 -m quantum_migrate "$@"

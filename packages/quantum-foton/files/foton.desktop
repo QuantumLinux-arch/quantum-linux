@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=Fotón
+GenericName=Juegos
+Comment=Todos tus juegos en un solo lugar y una tienda de juegos gratis
+Exec=foton
+Icon=foton
+Terminal=false
+Categories=Game;
+Keywords=juegos;games;steam;epic;gog;heroic;proton;mangohud;fps;biblioteca;tienda;gratis;windows;exe;roblox;minecraft;
+StartupWMClass=foton
+Actions=tienda;
+
+[Desktop Action tienda]
+Name=Tienda de juegos
+Exec=foton --tienda

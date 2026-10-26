@@ -1,0 +1,546 @@
+#!/usr/bin/env python3
+"""quantum-theme: aplica los ajustes de apariencia de Quantum Linux.
+
+Lee ~/.config/quantum/settings.json (con valores por defecto del sistema en
+/etc/xdg/quantum/settings.json), calcula la paleta (dinámica desde el fondo
+de pantalla con matugen, o la paleta fija de Quantum) y escribe los archivos
+que usan el shell, Wayfire, kitty, GTK y Qt.
+
+Uso:
+  quantum-theme apply              regenera todo con los ajustes actuales
+  quantum-theme set CLAVE VALOR    cambia un ajuste (p. ej. appearance.mode light) y aplica
+  quantum-theme wallpaper RUTA     cambia el fondo y aplica
+  quantum-theme get CLAVE          muestra un ajuste
+  quantum-theme gamemode on|off    modo juego (sin animaciones ni desenfoque)
+"""
+import json
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+HOME = Path.home()
+CONFIG = Path(os.environ.get("XDG_CONFIG_HOME", HOME / ".config"))
+STATE = Path(os.environ.get("XDG_STATE_HOME", HOME / ".local" / "state")) / "quantum"
+SETTINGS = CONFIG / "quantum" / "settings.json"
+SYSTEM_SETTINGS = Path("/etc/xdg/quantum/settings.json")
+SHARE = Path(os.environ.get("QUANTUM_SHARE", "/usr/share/quantum"))
+MARKER = "Generado por quantum-theme"
+# En modo desarrollo (Wayfire anidado) no se tocan ajustes globales del usuario.
+DEV = bool(os.environ.get("QUANTUM_DEV"))
+
+BRAND_ACCENT = "#6A5CFF"
+FALLBACK_SETTINGS = {
+    "appearance": {
+        "mode": "dark",
+        "dynamicColors": False,
+        "accent": BRAND_ACCENT,
+        "wallpaper": "quantum:live",
+        "blur": True,
+        "glass": {"bar": True, "dock": True, "panels": True, "windows": False},
+        "windowOpacity": 0.9,
+    },
+    # Personalizar (Quantum Shell): ventanas y animaciones
+    "windows": {"tiling": False, "animations": "normal", "openAnimation": "zoom",
+                "minimizeAnimation": "zoom", "buttonsLeft": False, "wobbly": False, "titleHeight": 34, "borderSize": 1},
+    "keyboard": {"layout": "", "variant": "", "options": "grp:alt_shift_toggle"},
+    "notifications": {"dnd": False},
+}
+
+
+# ------------------------------------------------------------------ ajustes
+
+def deep_merge(base, extra):
+    out = dict(base)
+    for k, v in extra.items():
+        out[k] = deep_merge(out[k], v) if isinstance(v, dict) and isinstance(out.get(k), dict) else v
+    return out
+
+
+def read_json(path):
+    try:
+        return json.loads(Path(path).read_text())
+    except (OSError, ValueError):
+        return {}
+
+
+def load_settings():
+    s = deep_merge(FALLBACK_SETTINGS, read_json(SYSTEM_SETTINGS))
+    return deep_merge(s, read_json(SETTINGS))
+
+
+def save_settings(s):
+    SETTINGS.parent.mkdir(parents=True, exist_ok=True)
+    tmp = SETTINGS.with_suffix(".tmp")
+    tmp.write_text(json.dumps(s, indent=2, ensure_ascii=False) + "\n")
+    tmp.replace(SETTINGS)
+
+
+def parse_value(v):
+    if v in ("true", "false"):
+        return v == "true"
+    try:
+        return int(v)
+    except ValueError:
+        return v
+
+
+def set_key(s, dotted, value):
+    node = s
+    *parents, last = dotted.split(".")
+    for p in parents:
+        node = node.setdefault(p, {})
+    node[last] = value
+
+
+def get_key(s, dotted):
+    node = s
+    for p in dotted.split("."):
+        node = node[p]
+    return node
+
+
+def system_keyboard():
+    """Distribución de teclado elegida en el instalador (xorg.conf.d)."""
+    layout = variant = ""
+    try:
+        for line in Path("/etc/X11/xorg.conf.d/00-keyboard.conf").read_text().splitlines():
+            parts = line.split('"')
+            if len(parts) >= 4 and "XkbLayout" in parts[1]:
+                layout = parts[3]
+            elif len(parts) >= 4 and "XkbVariant" in parts[1]:
+                variant = parts[3]
+    except OSError:
+        pass
+    return layout, variant
+
+
+# ------------------------------------------------------------------ colores
+
+def hue_rotate(hex_color, degrees):
+    import colorsys
+    h = hex_color.lstrip("#")
+    r, g, b = (int(h[i:i + 2], 16) / 255 for i in (0, 2, 4))
+    hh, ll, ss = colorsys.rgb_to_hls(r, g, b)
+    r, g, b = colorsys.hls_to_rgb((hh + degrees / 360) % 1, ll, ss)
+    return "#%02x%02x%02x" % (round(r * 255), round(g * 255), round(b * 255))
+
+
+def hue_of(hex_color):
+    import colorsys
+    h = hex_color.lstrip("#")
+    return colorsys.rgb_to_hls(*(int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)))[0] * 360
+
+
+def accent_palette(mode, accent):
+    """Paleta con otro color de acento: matugen si está; si no, la de Quantum girada de tono."""
+    if shutil.which("matugen"):
+        try:
+            out = subprocess.run(
+                ["matugen", "color", "hex", accent, "--json", "hex", "--dry-run", "-m", mode,
+                 "-t", "scheme-tonal-spot", "-q"],
+                capture_output=True, text=True, timeout=30, check=True).stdout
+            colors = json.loads(out)["colors"]
+            return {k: v["default"]["color"] for k, v in colors.items()}
+        except (subprocess.SubprocessError, ValueError, KeyError) as e:
+            print(f"quantum-theme: matugen falló con el acento ({e}); giro la paleta", file=sys.stderr)
+    base = read_json(SHARE / "palette.json")[mode]
+    delta = hue_of(accent) - hue_of(BRAND_ACCENT)
+    keep = ("error", "on_error", "error_container", "on_error_container")
+    return {k: v if k in keep or not str(v).startswith("#") else hue_rotate(v, delta) for k, v in base.items()}
+
+
+def palette(s):
+    mode = "light" if s["appearance"]["mode"] == "light" else "dark"
+    wall = s["appearance"].get("wallpaper", "")
+    if s["appearance"].get("dynamicColors") and shutil.which("matugen") and Path(wall).is_file():
+        try:
+            out = subprocess.run(
+                ["matugen", "image", wall, "--json", "hex", "--dry-run", "-m", mode,
+                 "-t", "scheme-vibrant", "--prefer", "saturation", "-q"],
+                capture_output=True, text=True, timeout=30, check=True).stdout
+            colors = json.loads(out)["colors"]
+            return mode, {k: v["default"]["color"] for k, v in colors.items()}, True
+        except (subprocess.SubprocessError, ValueError, KeyError) as e:
+            print(f"quantum-theme: matugen falló ({e}); uso la paleta fija", file=sys.stderr)
+    accent = str(s["appearance"].get("accent") or BRAND_ACCENT)
+    if accent.lower() != BRAND_ACCENT.lower() and len(accent) == 7 and accent.startswith("#"):
+        return mode, accent_palette(mode, accent), False
+    return mode, read_json(SHARE / "palette.json")[mode], False
+
+
+def rgba(hex_color, alpha="ff"):
+    return f"rgba({hex_color.lstrip('#')}{alpha})"
+
+
+# ------------------------------------------------------------------ salidas
+
+def write_if_ours(path, content):
+    """Escribe solo si el archivo no existe o lo generamos nosotros."""
+    path = Path(path)
+    if path.exists() and MARKER not in path.read_text(errors="ignore"):
+        print(f"quantum-theme: {path} fue editado a mano; no lo toco", file=sys.stderr)
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content)
+
+
+def write_state(mode, c, s, dynamic):
+    STATE.mkdir(parents=True, exist_ok=True)
+    data = dict(c)
+    data["mode"] = mode
+    (STATE / "colors.json").write_text(json.dumps(data, indent=1) + "\n")
+
+    write_wayfire(c, s)
+
+
+# Plugins de Wayfire. El modo juego quita los efectos; el mosaico agrega simple-tile.
+WAYFIRE_PLUGINS = ("animate autostart blur command DECOR expo ext-toplevel fast-switcher "
+                   "foreign-toplevel grid gtk-shell idle ipc ipc-rules move place resize "
+                   "session-lock shortcuts-inhibit vswitch window-rules wm-actions "
+                   "xdg-activation").split()
+GAME_MODE_OFF = {"animate", "wobbly", "blur"}
+
+
+def wf_color(hex_color, alpha="ff"):
+    # En el ini de Wayfire "#" inicia un comentario: se escapa como "\#".
+    return "\\#" + hex_color.lstrip("#").upper() + alpha.upper()
+
+
+def merge_ini(base, extra):
+    """Aplica las secciones/opciones de `extra` sobre `base` (texto ini de Wayfire)."""
+    sections, order, current = {}, [], None
+    for text in (base, extra):
+        for line in text.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("[") and stripped.endswith("]"):
+                current = stripped[1:-1]
+                if current not in sections:
+                    sections[current] = {}
+                    order.append(current)
+            elif current and "=" in stripped and not stripped.startswith("#"):
+                key, value = stripped.split("=", 1)
+                sections[current][key.strip()] = value.strip()
+    out = [f"# {MARKER}: no editar. Cambia tus ajustes en ~/.config/quantum/wayfire-user.ini", ""]
+    for name in order:
+        out.append(f"[{name}]")
+        out.extend(f"{k} = {v}" for k, v in sections[name].items())
+        out.append("")
+    return "\n".join(out)
+
+
+def in_vm():
+    try:
+        return subprocess.run(["systemd-detect-virt", "-q"], timeout=3).returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
+def decor_plugin():
+    """quantum-decor (botones estilo Windows) solo si fue compilado para el Wayfire
+    instalado; si Wayfire se actualizó y cambió su ABI, se usa la decoración normal."""
+    pc = Path(os.environ.get("QUANTUM_WAYFIRE_PC", "/usr/lib/pkgconfig/wayfire.pc"))
+    built = SHARE / "decor-abi"
+    try:
+        abi = next(l.split("=", 1)[1].strip() for l in pc.read_text().splitlines() if l.startswith("pluginabi="))
+        if built.read_text().strip() == abi:
+            return "quantum-decor"
+    except (OSError, StopIteration):
+        pass
+    return "decoration"
+
+
+# Efecto vidrio (Personalizar): superficies del shell (namespace de layer-shell) por parte
+GLASS_SURFACES = {
+    "bar": ["quantum-bar"],
+    "dock": ["quantum-dock"],
+    "panels": ["quantum-launcher", "quantum-panel", "quantum-dashboard", "quantum-wallpapers",
+               "quantum-notifications", "quantum-session", "quantum-osd"],
+}
+
+
+def glass_ini(s):
+    a = s["appearance"]
+    g = {**FALLBACK_SETTINGS["appearance"]["glass"], **(a.get("glass") or {})}
+    out = []
+    if a.get("blur", True):
+        rules = ['app_id is "kitty"']
+        for part, names in GLASS_SURFACES.items():
+            if g.get(part):
+                rules += [f'app_id is "{n}"' for n in names]
+        out += ["[blur]", "blur_by_default = " + " | ".join(rules)]
+    op = max(0.6, min(1.0, float(a.get("windowOpacity", 0.9))))
+    if g.get("windows") and op < 0.995:
+        out += ["[window-rules]", f"quantum_glass = on created if type is \"toplevel\" then set alpha {op:.2f}"]
+    return "\n".join(out) + ("\n" if out else "")
+
+
+# Velocidad de animaciones (Personalizar): multiplicador de las duraciones base
+ANIM_SPEED = {"fast": 0.6, "normal": 1.0, "smooth": 1.6}
+OPEN_ANIMS = {"zoom", "fade", "fire", "spin", "zap", "squeezimize", "none"}
+
+
+def personalize_ini(s, decor):
+    """Opciones de Wayfire que salen de Personalizar (se aplican antes que wayfire-user.ini)."""
+    w = s["windows"]
+    k = ANIM_SPEED.get(w.get("animations", "normal"), 1.0)
+    ms = lambda base: f"{round(base * k)}ms circle"
+    anim = w.get("openAnimation", "zoom")
+    anim = anim if anim in OPEN_ANIMS else "zoom"
+    mini = w.get("minimizeAnimation", "zoom")
+    mini = mini if mini in ("zoom", "squeezimize", "none") else "zoom"
+    th = max(24, min(48, int(w.get("titleHeight", 34))))
+    border = max(0, min(4, int(w.get("borderSize", 1))))
+    out = [
+        "[animate]", f"open_animation = {anim}", f"close_animation = {anim if anim != 'fire' else 'fade'}",
+        f"minimize_animation = {mini}",
+        f"duration = {ms(180)}", f"squeezimize_duration = {ms(200)}", f"fade_duration = {ms(200)}",
+        f"zoom_duration = {ms(180)}", f"fire_duration = {ms(500)}", f"spin_duration = {ms(250)}",
+        "[grid]", f"duration = {ms(220)}",
+        "[expo]", f"duration = {ms(280)}",
+        "[vswitch]", f"duration = {ms(280)}",
+        "[simple-tile]", f"animation_duration = {ms(220)}",
+        f"[{decor}]", f"title_height = {th}", f"border_size = {border}",
+    ]
+    if decor == "quantum-decor":
+        left = bool(w.get("buttonsLeft"))
+        out += [f"button_side = {'left' if left else 'right'}",
+                f"button_order = {'close minimize maximize' if left else 'minimize maximize close'}"]
+    return "\n".join(out) + "\n" + glass_ini(s)
+
+
+def write_wayfire(c, s):
+    layout, variant = s["keyboard"].get("layout"), s["keyboard"].get("variant")
+    if not layout:
+        layout, variant = system_keyboard()
+    decor = decor_plugin()
+    plugins = [decor if p == "DECOR" else p for p in WAYFIRE_PLUGINS]
+    w = s["windows"]
+    if w.get("tiling"):
+        plugins.append("simple-tile")
+    if w.get("wobbly"):
+        plugins.append("wobbly")
+    if w.get("animations") == "none":
+        plugins = [p for p in plugins if p != "animate"]
+    if not s["appearance"].get("blur", True):
+        plugins = [p for p in plugins if p != "blur"]
+    if (STATE / "gamemode").exists():
+        plugins = [p for p in plugins if p not in GAME_MODE_OFF]
+    elif in_vm():
+        # en máquinas virtuales no hay GPU real: el desenfoque cuesta mucho
+        plugins = [p for p in plugins if p != "blur"]
+    values = {
+        "@PLUGINS@": " ".join(plugins),
+        "@KB_LAYOUT@": layout or "latam,es,us",
+        "@KB_VARIANT@": variant or "",
+        "@KB_OPTIONS@": s["keyboard"].get("options", ""),
+        "@ACTIVE_COLOR@": wf_color(c["surface_container_high"]),
+        "@INACTIVE_COLOR@": wf_color(c["surface_container"], "f0"),
+        "@TITLE_COLOR@": wf_color(c["on_surface"]),
+        "@BUTTON_COLOR@": wf_color(c["on_surface"]),
+        "@BUTTON_HOVER@": wf_color(c["on_surface"], "26"),
+        "@SHELL_CMD@": os.environ.get("QUANTUM_SHELL_CMD", "qs -c quantum"),
+    }
+    try:
+        text = (SHARE / "wayfire" / "wayfire.ini").read_text()
+    except OSError:
+        print("quantum-theme: falta la configuración base de Wayfire", file=sys.stderr)
+        return
+    for key, val in values.items():
+        text = text.replace(key, val)
+    if decor == "decoration":
+        # la decoración normal no conoce las opciones de botones
+        text = "\n".join(l for l in text.splitlines()
+                         if not l.startswith(("button_icon_color", "button_hover_color", "close_hover_color")))
+    text = text.replace("[quantum-decor]", f"[{decor}]")
+    user = CONFIG / "quantum" / "wayfire-user.ini"
+    extra = personalize_ini(s, decor) + (user.read_text() if user.exists() else "")
+    # Wayfire vuelve a leer el archivo solo cuando cambia
+    target = STATE / "wayfire.ini"
+    new = merge_ini(text, extra) + "\n"
+    if not target.exists() or target.read_text() != new:
+        target.write_text(new)
+
+
+def write_kitty(c):
+    names = {
+        "background": c["surface"], "foreground": c["on_surface"],
+        "selection_background": c["primary_container"], "selection_foreground": c["on_primary_container"],
+        "cursor": c["primary"], "cursor_text_color": c["on_primary"],
+        "url_color": c["tertiary"], "active_border_color": c["primary"],
+        "inactive_border_color": c["outline_variant"],
+        "active_tab_background": c["primary"], "active_tab_foreground": c["on_primary"],
+        "inactive_tab_background": c["surface_container"], "inactive_tab_foreground": c["on_surface_variant"],
+        "tab_bar_background": c["surface_container_lowest"],
+        # Colores ANSI: tonos fijos legibles, con acentos de la paleta
+        "color0": c["surface_container_high"], "color8": c["outline"],
+        "color1": "#ff6b81", "color9": "#ff8fa0",
+        "color2": "#4ade9a", "color10": "#7beab5",
+        "color3": "#ffc861", "color11": "#ffd98f",
+        "color4": c["primary"], "color12": c["primary_fixed_dim"],
+        "color5": c["tertiary"], "color13": c["tertiary_fixed_dim"],
+        "color6": "#4fd8ff", "color14": "#8ae5ff",
+        "color7": c["on_surface_variant"], "color15": c["on_surface"],
+    }
+    body = "\n".join(f"{k} {v}" for k, v in names.items())
+    write_if_ours(CONFIG / "kitty" / "quantum-theme.conf", f"# {MARKER}\n{body}\n")
+    if not DEV:
+        subprocess.run(["pkill", "-USR1", "-x", "kitty"], capture_output=True)
+
+
+def gtk_buttons(s, sep):
+    if s["windows"].get("buttonsLeft"):
+        return sep.join(["close", "minimize", "maximize"]) + ":appmenu"
+    return "appmenu:" + sep.join(["minimize", "maximize", "close"])
+
+
+def write_gtk(mode, c, s):
+    css = f"""/* {MARKER} */
+@define-color accent_color {c['primary']};
+@define-color accent_bg_color {c['primary']};
+@define-color accent_fg_color {c['on_primary']};
+@define-color window_bg_color {c['surface']};
+@define-color window_fg_color {c['on_surface']};
+@define-color view_bg_color {c['surface_container_low']};
+@define-color view_fg_color {c['on_surface']};
+@define-color headerbar_bg_color {c['surface_container']};
+@define-color headerbar_fg_color {c['on_surface']};
+@define-color headerbar_backdrop_color @window_bg_color;
+@define-color sidebar_bg_color {c['surface_container_low']};
+@define-color sidebar_fg_color {c['on_surface']};
+@define-color sidebar_backdrop_color @sidebar_bg_color;
+@define-color card_bg_color {c['surface_container']};
+@define-color card_fg_color {c['on_surface']};
+@define-color dialog_bg_color {c['surface_container_high']};
+@define-color dialog_fg_color {c['on_surface']};
+@define-color popover_bg_color {c['surface_container_high']};
+@define-color popover_fg_color {c['on_surface']};
+@define-color destructive_bg_color {c['error']};
+@define-color destructive_fg_color {c['on_error']};
+"""
+    for d in ("gtk-3.0", "gtk-4.0"):
+        write_if_ours(CONFIG / d / "gtk.css", css)
+
+    dark = mode == "dark"
+    gsettings = [
+        ("color-scheme", "prefer-dark" if dark else "default"),
+        ("gtk-theme", "adw-gtk3-dark" if dark else "adw-gtk3"),
+        ("icon-theme", "Papirus-Dark" if dark else "Papirus"),
+        ("font-name", "Inter 10"),
+        ("monospace-font-name", "JetBrainsMono Nerd Font 10"),
+        ("cursor-theme", "Adwaita"),
+    ]
+    if shutil.which("gsettings") and not DEV:
+        for key, val in gsettings:
+            subprocess.run(["gsettings", "set", "org.gnome.desktop.interface", key, val], capture_output=True)
+        subprocess.run(["gsettings", "set", "org.gnome.desktop.wm.preferences", "button-layout",
+                        gtk_buttons(s, ",")], capture_output=True)
+    for d in ("gtk-3.0", "gtk-4.0"):
+        write_if_ours(CONFIG / d / "settings.ini", f"""# {MARKER}
+[Settings]
+gtk-decoration-layout={gtk_buttons(s, ",").replace("appmenu", "menu")}
+gtk-application-prefer-dark-theme={1 if dark else 0}
+""")
+
+
+def write_qt(mode, c):
+    # Orden de qt6ct: WindowText, Button, Light, Midlight, Dark, Mid, Text, BrightText,
+    # ButtonText, Base, Window, Shadow, Highlight, HighlightedText, Link, LinkVisited,
+    # AlternateBase, NoRole, ToolTipBase, ToolTipText, PlaceholderText
+    def row(fade=False):
+        fg = c["on_surface_variant"] if fade else c["on_surface"]
+        return ", ".join([
+            fg, c["surface_container_high"], c["surface_bright"], c["surface_container_highest"],
+            c["surface_container_lowest"], c["surface_container"], fg, "#ffffff",
+            fg, c["surface_container_low"], c["surface"], c["shadow"], c["primary"],
+            c["on_primary"], c["primary"], c["tertiary"], c["surface_container"], c["surface"],
+            c["surface_container_highest"], c["on_surface"], c["outline"],
+        ])
+    scheme = f"""# {MARKER}
+[ColorScheme]
+active_colors={row()}
+disabled_colors={row(True)}
+inactive_colors={row()}
+"""
+    write_if_ours(CONFIG / "qt6ct" / "colors" / "Quantum.conf", scheme)
+    write_if_ours(CONFIG / "qt5ct" / "colors" / "Quantum.conf", scheme)
+    icons = "Papirus-Dark" if mode == "dark" else "Papirus"
+    for ver in ("qt6ct", "qt5ct"):
+        write_if_ours(CONFIG / ver / f"{ver}.conf", f"""# {MARKER}
+[Appearance]
+color_scheme_path={CONFIG / ver / 'colors' / 'Quantum.conf'}
+custom_palette=true
+icon_theme={icons}
+standard_dialogs=xdgdesktopportal
+style=Fusion
+
+[Fonts]
+fixed="JetBrainsMono Nerd Font,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
+general="Inter,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
+""")
+
+
+def write_login(s):
+    """La pantalla de inicio (SDDM) no puede leer la carpeta del usuario: se le deja
+    una copia del fondo en /var/lib/quantum/login/<usuario>.jpg (carpeta 1733 de
+    quantum-branding). Con el fondo vivo se borra y SDDM usa el de Quantum."""
+    d = Path("/var/lib/quantum/login")
+    if not d.is_dir() or not os.access(d, os.W_OK | os.X_OK):
+        return
+    dst = d / f"{os.environ.get('USER') or HOME.name}.jpg"
+    wall = Path(str(s["appearance"].get("wallpaper", "")))
+    try:
+        if not wall.is_file():
+            dst.unlink(missing_ok=True)
+        elif not dst.is_file() or dst.stat().st_size != wall.stat().st_size or dst.stat().st_mtime < wall.stat().st_mtime:
+            shutil.copyfile(wall, dst)
+            dst.chmod(0o644)
+    except OSError as e:
+        print(f"quantum-theme: no pude copiar el fondo para el inicio de sesión ({e})", file=sys.stderr)
+
+
+def apply(s):
+    mode, c, dynamic = palette(s)
+    write_state(mode, c, s, dynamic)
+    write_login(s)
+    write_kitty(c)
+    write_gtk(mode, c, s)
+    write_qt(mode, c)
+
+
+def main(argv):
+    cmd = argv[1] if len(argv) > 1 else "apply"
+    s = load_settings()
+    if cmd == "apply":
+        apply(s)
+    elif cmd == "set" and len(argv) == 4:
+        set_key(s, argv[2], parse_value(argv[3]))
+        save_settings(s)
+        apply(s)
+    elif cmd == "gamemode" and len(argv) == 3:
+        STATE.mkdir(parents=True, exist_ok=True)
+        flag = STATE / "gamemode"
+        if argv[2] == "on":
+            flag.touch()
+        else:
+            flag.unlink(missing_ok=True)
+        apply(s)
+    elif cmd == "get" and len(argv) == 3:
+        print(json.dumps(get_key(s, argv[2]), ensure_ascii=False))
+    elif cmd == "wallpaper" and len(argv) == 3:
+        path = Path(argv[2]).expanduser().resolve()
+        if not path.is_file():
+            print(f"quantum-theme: no existe {path}", file=sys.stderr)
+            return 1
+        set_key(s, "appearance.wallpaper", str(path))
+        save_settings(s)
+        apply(s)
+    else:
+        print(__doc__.strip())
+        return 0 if cmd in ("-h", "--help", "help") else 2
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

@@ -1,0 +1,20 @@
+# Maintainer: Quantum Linux <https://github.com/QuantumLinux-arch>
+
+pkgname=quantum-installer
+pkgver=1.0.0
+pkgrel=3
+pkgdesc="Instalación automática de Quantum Linux (la usa el instalador de Windows): motor y pantalla de progreso"
+arch=('any')
+url="https://quantumlinux-arch.github.io"
+license=('GPL-3.0-or-later')
+depends=('python' 'python-pyqt6' 'qt6-declarative' 'qt6-svg' 'quantum-secureboot' 'quantum-settings'
+         'arch-install-scripts' 'gptfdisk' 'parted' 'dosfstools' 'btrfs-progs' 'e2fsprogs' 'squashfs-tools')
+
+package() {
+  local d="$pkgdir/usr/lib/quantum/install"
+  install -Dm755 "$startdir/src/engine.py" "$d/engine.py"
+  install -Dm644 "$startdir/src/progress.py" "$d/progress.py"
+  install -Dm644 "$startdir/src/Progress.qml" "$d/Progress.qml"
+  install -Dm644 "$startdir/src/quantum-atom.svg" "$d/quantum-atom.svg"
+  install -Dm755 "$startdir/files/quantum-autoinstall" "$pkgdir/usr/bin/quantum-autoinstall"
+}

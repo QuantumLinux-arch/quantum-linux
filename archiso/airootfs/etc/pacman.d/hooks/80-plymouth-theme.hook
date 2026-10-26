@@ -1,0 +1,14 @@
+# remove from airootfs!
+# Se ejecuta antes de 90-mkinitcpio-install para que el tema entre al initramfs.
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = plymouth
+Target = quantum-branding
+
+[Action]
+Description = Activando el tema de arranque de Quantum...
+When = PostTransaction
+Depends = plymouth
+Exec = /usr/bin/plymouth-set-default-theme quantum

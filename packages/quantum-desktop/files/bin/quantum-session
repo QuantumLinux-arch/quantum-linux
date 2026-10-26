@@ -1,0 +1,40 @@
+#!/bin/bash
+# Inicia la sesión de Quantum Linux: genera la configuración y arranca Wayfire.
+export XDG_CURRENT_DESKTOP=Quantum
+export XDG_SESSION_DESKTOP=quantum
+export XDG_SESSION_TYPE=wayland
+export XCURSOR_THEME=Adwaita
+export XCURSOR_SIZE=24
+export QT_QPA_PLATFORM="wayland;xcb"
+export QT_QPA_PLATFORMTHEME=qt6ct
+export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+export SDL_VIDEODRIVER="wayland,x11"
+export MOZ_ENABLE_WAYLAND=1
+export ELECTRON_OZONE_PLATFORM_HINT=auto
+
+# En máquinas virtuales (QEMU/virtio, VirtualBox, VMware) el cursor por
+# hardware se dibuja volteado o con la forma equivocada: se usa el cursor
+# por software, que en una VM no tiene costo apreciable.
+if systemd-detect-virt -q 2>/dev/null; then
+    export WLR_NO_HARDWARE_CURSORS=1
+    # Sin Vulkan en la VM: GTK no pierde tiempo probándolo antes de usar OpenGL
+    export GSK_RENDERER=ngl
+    # Sin tarjeta gráfica real: las animaciones continuas del shell (fondo vivo,
+    # bloqueo) bajan sus cuadros por segundo para no gastar el procesador
+    export QUANTUM_SOFTWARE_GL=1
+fi
+
+state="${XDG_STATE_HOME:-$HOME/.local/state}/quantum"
+mkdir -p "$state"
+rm -f "$state/gamemode"   # el modo juego no sobrevive a un reinicio de sesión
+# Si ya hay configuración de la sesión anterior, Wayfire arranca de inmediato y los
+# colores se regeneran en paralelo (Wayfire recarga el archivo si cambia).
+# Tras una actualización (plantilla más nueva) se regenera antes: lo que se agrega al
+# inicio automático solo corre si está en el archivo cuando arranca Wayfire.
+template=/usr/share/quantum/wayfire/wayfire.ini
+if [ -s "$state/wayfire.ini" ] && ! [ "$template" -nt "$state/wayfire.ini" ]; then
+    quantum-theme apply >/dev/null 2>&1 &
+else
+    quantum-theme apply
+fi
+exec wayfire -c "$state/wayfire.ini" "$@"

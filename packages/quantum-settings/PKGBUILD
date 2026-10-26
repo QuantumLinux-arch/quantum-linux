@@ -1,0 +1,42 @@
+# Maintainer: Quantum Linux <https://github.com/quantum-linux>
+# Configuración del sistema de Quantum Linux: identidad, rendimiento y los
+# scripts que usa el instalador.
+
+pkgname=quantum-settings
+pkgver=1.0.0
+pkgrel=9
+pkgdesc="Configuración del sistema de Quantum Linux"
+arch=('any')
+url="https://github.com/quantum-linux"
+license=('GPL-3.0-or-later')
+depends=('quantum-branding' 'quantum-keyring' 'zram-generator' 'pciutils'
+         'snapper' 'snap-pac' 'grub-btrfs' 'inotify-tools')
+backup=('etc/systemd/zram-generator.conf'
+        'etc/sysctl.d/90-quantum.conf')
+install=quantum-settings.install
+
+_files="$startdir/files"
+
+package() {
+  cd "$_files"
+
+  # Identidad del sistema (os-release se reescribe con un hook de pacman)
+  install -Dm644 etc/os-release "$pkgdir/usr/share/quantum/os-release"
+  install -Dm755 lib/apply-os-release "$pkgdir/usr/lib/quantum/apply-os-release"
+  install -Dm644 hooks/quantum-os-release.hook "$pkgdir/usr/share/libalpm/hooks/quantum-os-release.hook"
+
+  # Rendimiento
+  install -Dm644 etc/zram-generator.conf "$pkgdir/etc/systemd/zram-generator.conf"
+  install -Dm644 etc/90-quantum.conf "$pkgdir/etc/sysctl.d/90-quantum.conf"
+
+  # Listas de paquetes en el primer arranque (para Quantum Store)
+  install -Dm644 systemd/quantum-pacman-db.service "$pkgdir/usr/lib/systemd/system/quantum-pacman-db.service"
+  install -d "$pkgdir/usr/lib/systemd/system/multi-user.target.wants"
+  ln -s ../quantum-pacman-db.service "$pkgdir/usr/lib/systemd/system/multi-user.target.wants/quantum-pacman-db.service"
+
+  # Scripts del instalador
+  for f in cleanup-live hw-cleanup setup-snapper grub-theme; do
+    install -Dm755 "installer/$f" "$pkgdir/usr/lib/quantum/installer/$f"
+  done
+  install -Dm644 installer/linux-zen.preset "$pkgdir/usr/share/quantum/installer/linux-zen.preset"
+}

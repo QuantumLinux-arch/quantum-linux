@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=Pasar desde Windows
+GenericName=Trae tus cosas de Windows
+Comment=Pasa a Quantum tus archivos, tu cuenta, tus redes Wi-Fi, tus favoritos y tus juegos desde un pendrive
+Exec=quantum-migrate
+Icon=quantum-migrate
+Terminal=false
+Categories=System;Utility;
+Keywords=windows;migrar;pasar;importar;pendrive;usb;archivos;favoritos;wifi;cuenta;
+StartupWMClass=quantum-migrate
+Actions=preparar;
+
+[Desktop Action preparar]
+Name=Preparar un pendrive para Windows
+Exec=quantum-migrate --preparar

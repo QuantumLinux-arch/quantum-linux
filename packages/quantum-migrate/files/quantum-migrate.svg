@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- Pasar desde Windows: una ventana (Windows) que se vuelca a una caja con el átomo -->
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4FD8FF"/><stop offset=".5" stop-color="#6A5CFF"/><stop offset="1" stop-color="#B14DFF"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="112" height="112" rx="30" fill="url(#g)"/>
+  <!-- cuatro cuadros de una ventana, arriba a la izquierda -->
+  <g fill="#fff" opacity=".95">
+    <rect x="26" y="24" width="14" height="14" rx="3"/><rect x="43" y="24" width="14" height="14" rx="3"/>
+    <rect x="26" y="41" width="14" height="14" rx="3"/><rect x="43" y="41" width="14" height="14" rx="3"/>
+  </g>
+  <!-- flecha curva hacia la bandeja -->
+  <path d="M62 40 C 82 38, 92 46, 92 62" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
+  <path d="M82 56 L92 68 L102 56" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- bandeja -->
+  <path d="M24 74 H50 L56 84 H72 L78 74 H104 V96 a8 8 0 0 1 -8 8 H32 a8 8 0 0 1 -8 -8 Z" fill="#fff"/>
+  <circle cx="64" cy="92" r="5" fill="#6A5CFF"/>
+</svg>

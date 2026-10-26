@@ -1,0 +1,14 @@
+[SddmGreeterTheme]
+Name=Quantum
+Description=Pantalla de inicio de Quantum Linux
+Author=Quantum Linux
+License=GPL-3.0-or-later
+Type=sddm-theme
+Version=1.0
+Website=https://github.com/quantum-linux
+Screenshot=preview.png
+MainScript=Main.qml
+ConfigFile=theme.conf
+Theme-Id=quantum
+Theme-API=2.0
+QtVersion=6

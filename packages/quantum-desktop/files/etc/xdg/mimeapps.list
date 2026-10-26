@@ -1,0 +1,25 @@
+[Default Applications]
+inode/directory=org.gnome.Nautilus.desktop
+text/plain=org.gnome.TextEditor.desktop
+application/pdf=org.gnome.Papers.desktop
+image/png=org.gnome.Loupe.desktop
+image/jpeg=org.gnome.Loupe.desktop
+image/webp=org.gnome.Loupe.desktop
+image/gif=org.gnome.Loupe.desktop
+image/svg+xml=org.gnome.Loupe.desktop
+video/mp4=org.gnome.Showtime.desktop
+video/x-matroska=org.gnome.Showtime.desktop
+video/webm=org.gnome.Showtime.desktop
+audio/mpeg=org.gnome.Showtime.desktop
+audio/flac=org.gnome.Showtime.desktop
+application/vnd.android.package-archive=quantum-store-apk.desktop
+application/x-ms-dos-executable=quantum-exe.desktop
+application/x-msdownload=quantum-exe.desktop
+application/vnd.microsoft.portable-executable=quantum-exe.desktop
+application/x-msi=quantum-exe.desktop
+application/zip=org.gnome.FileRoller.desktop
+application/x-7z-compressed=org.gnome.FileRoller.desktop
+application/vnd.rar=org.gnome.FileRoller.desktop
+x-scheme-handler/http=firefox.desktop
+x-scheme-handler/https=firefox.desktop
+text/html=firefox.desktop

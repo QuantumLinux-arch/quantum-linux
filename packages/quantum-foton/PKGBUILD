@@ -1,0 +1,30 @@
+# Maintainer: Quantum Linux <https://github.com/QuantumLinux-arch>
+
+pkgname=quantum-foton
+pkgver=1.0.0
+pkgrel=4
+pkgdesc="Fotón: la biblioteca y tienda de juegos de Quantum Linux (Steam, Epic, GOG, Windows y juegos gratis)"
+arch=('any')
+url="https://quantumlinux-arch.github.io"
+license=('GPL-3.0-or-later')
+depends=('python' 'python-pyqt6' 'qt6-declarative' 'qt6-svg' 'quantum-store' 'quantum-desktop'
+         'gamemode' 'mangohud' 'flatpak' 'umu-launcher')
+optdepends=('steam: juegos de Steam'
+            'heroic-games-launcher: juegos de Epic, GOG y Amazon (también en Flathub)')
+
+_src="$startdir/src"
+
+package() {
+  install -d "$pkgdir/usr/lib/quantum-foton"
+  cp -r "$_src/foton" "$pkgdir/usr/lib/quantum-foton/"
+  # precompilado: abre más rápido (los usuarios no pueden escribir en /usr/lib)
+  python -m compileall -q -j 0 -o 0 -o 1 -s "$pkgdir" -p / "$pkgdir/usr/lib/quantum-foton"
+  install -Dm755 "$startdir/files/foton" "$pkgdir/usr/bin/foton"
+  install -Dm644 "$startdir/files/foton.desktop" "$pkgdir/usr/share/applications/foton.desktop"
+  install -Dm644 "$startdir/files/foton.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/foton.svg"
+  install -Dm644 "$startdir/files/foton-symbolic.svg" "$pkgdir/usr/share/icons/hicolor/symbolic/apps/foton-symbolic.svg"
+  # catálogo de la tienda (juegos gratis y legales) y su arte
+  install -Dm644 "$startdir/files/catalog/catalog.json" "$pkgdir/usr/share/quantum/foton/catalog.json"
+  install -d "$pkgdir/usr/share/quantum/foton/art"
+  install -m644 "$startdir/files/catalog/art/"*.jpg "$pkgdir/usr/share/quantum/foton/art/"
+}

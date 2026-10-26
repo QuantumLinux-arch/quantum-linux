@@ -1,0 +1,22 @@
+# Maintainer: Quantum Linux <https://github.com/QuantumLinux-arch>
+
+pkgname=quantum-secureboot
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Arranque seguro (Secure Boot) para Quantum Linux: shim, GRUB y kernel firmados con la llave de cada PC"
+arch=('x86_64')
+url="https://quantumlinux-arch.github.io"
+license=('GPL-3.0-or-later' 'BSD-2-Clause')
+depends=('grub' 'efibootmgr' 'sbsigntools' 'mokutil' 'openssl' 'util-linux')
+options=('!strip')
+
+package() {
+  local s="$pkgdir/usr/share/quantum/secureboot"
+  install -Dm644 "$startdir/files/shimx64.efi" "$s/shimx64.efi"
+  install -Dm644 "$startdir/files/mmx64.efi" "$s/mmx64.efi"
+  install -Dm644 "$startdir/files/quantum-sb.cer" "$s/quantum-sb.cer"
+  install -Dm644 "$startdir/files/README-shim.txt" "$s/README-shim.txt"
+  install -Dm755 "$startdir/files/setup" "$pkgdir/usr/lib/quantum/secureboot/setup"
+  install -Dm755 "$startdir/files/sign" "$pkgdir/usr/lib/quantum/secureboot/sign"
+  install -Dm644 "$startdir/files/95-quantum-secureboot.hook" "$pkgdir/usr/share/libalpm/hooks/95-quantum-secureboot.hook"
+}

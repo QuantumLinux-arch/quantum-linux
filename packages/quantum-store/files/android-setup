@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Activa Android (Waydroid) para Quantum Store. Se ejecuta como root vía pkexec.
+set -euo pipefail
+
+# Descarga la imagen de Android (LineageOS) la primera vez
+waydroid init -f
+
+# Sin GPU con render node (VM sin 3D, etc.): Android dibuja por software
+if systemd-detect-virt -q || ! compgen -G "/dev/dri/renderD*" >/dev/null; then
+    cfg=/var/lib/waydroid/waydroid.cfg
+    if ! grep -q '^\[properties\]' "$cfg"; then
+        printf '\n[properties]\n' >> "$cfg"
+    fi
+    sed -i '/^ro.hardware.gralloc/d; /^ro.hardware.egl/d' "$cfg"
+    sed -i '/^\[properties\]/a ro.hardware.gralloc = default\nro.hardware.egl = swiftshader' "$cfg"
+    waydroid upgrade --offline
+fi
+
+systemctl enable --now waydroid-container.service

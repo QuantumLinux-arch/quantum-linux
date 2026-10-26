@@ -1,0 +1,12 @@
+# Firma el kernel nuevo con la llave de este PC (para que arranque con Secure Boot)
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Path
+Target = usr/lib/modules/*/vmlinuz
+Target = usr/lib/initcpio/*
+
+[Action]
+Description = Firmando el kernel para el arranque seguro…
+When = PostTransaction
+Exec = /usr/lib/quantum/secureboot/sign

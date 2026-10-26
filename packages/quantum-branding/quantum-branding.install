@@ -1,0 +1,17 @@
+post_install() {
+  if command -v plymouth-set-default-theme >/dev/null; then
+    plymouth-set-default-theme quantum 2>/dev/null || true
+  fi
+}
+
+post_upgrade() {
+  # El tema de arranque vive dentro del initramfs: al cambiarlo hay que regenerarlo
+  # para que se vea la animación nueva (solo si el tema activo es el de Quantum).
+  if command -v plymouth-set-default-theme >/dev/null \
+     && [ "$(plymouth-set-default-theme 2>/dev/null)" = quantum ]; then
+    echo ":: Actualizando la animación de arranque de Quantum…"
+    plymouth-set-default-theme -R quantum >/dev/null 2>&1 || true
+  else
+    post_install
+  fi
+}

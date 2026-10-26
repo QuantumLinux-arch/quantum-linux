@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Quantum
+Description=Arranque de Quantum Linux: el cubo cuántico late mientras el sistema enciende
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/quantum
+ScriptFile=/usr/share/plymouth/themes/quantum/quantum.script

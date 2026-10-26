@@ -1,0 +1,26 @@
+_tune_pacman_conf() {
+  local f=/etc/pacman.conf
+  sed -i -e 's/^#Color$/Color/' -e 's/^#ParallelDownloads.*/ParallelDownloads = 5/' "$f"
+  grep -q '^ILoveCandy' "$f" || sed -i '/^Color$/a ILoveCandy' "$f"
+  # multilib hace falta para Steam y Wine
+  sed -i '/^#\[multilib\]$/{N;s/#\[multilib\]\n#Include/[multilib]\nInclude/}' "$f"
+  # Repositorio de Quantum en internet: así llegan las mejoras sin reinstalar
+  if ! grep -q '^\[quantum\]' "$f"; then
+    cat >> "$f" <<'CONF'
+
+# Quantum Linux: paquetes propios (barra, Fotón, Store, Centro…), firmados
+[quantum]
+SigLevel = Required
+Server = https://github.com/QuantumLinux-arch/quantum-repo/releases/download/$arch
+CONF
+  fi
+}
+
+post_install() {
+  /usr/lib/quantum/apply-os-release
+  _tune_pacman_conf
+}
+
+post_upgrade() {
+  post_install
+}

@@ -1,0 +1,15 @@
+NAME="Quantum Linux"
+PRETTY_NAME="Quantum Linux"
+ID=quantum
+ID_LIKE=arch
+BUILD_ID=rolling
+VERSION="1.0 (Quark)"
+VERSION_ID=1.0
+VERSION_CODENAME=quark
+ANSI_COLOR="38;2;143;134;255"
+HOME_URL="https://github.com/quantum-linux"
+DOCUMENTATION_URL="https://github.com/quantum-linux/quantum/wiki"
+SUPPORT_URL="https://github.com/quantum-linux/quantum/discussions"
+BUG_REPORT_URL="https://github.com/quantum-linux/quantum/issues"
+PRIVACY_POLICY_URL="https://terms.archlinux.org/docs/privacy-policy/"
+LOGO=quantum-linux

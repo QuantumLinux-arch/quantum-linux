@@ -1,0 +1,28 @@
+#!/bin/bash
+# Abre el instalador de Quantum Linux con permisos de administrador.
+# Si no logra abrirlo, avisa con una notificación y deja el registro en
+# /tmp/quantum-install.log.
+log=/tmp/quantum-install.log
+
+if [ ! -d /run/archiso ]; then
+    echo "El instalador solo funciona desde el USB de Quantum Linux." >&2
+    exit 1
+fi
+
+# Solo las variables que Calamares necesita para mostrarse en Wayland/XWayland.
+keep=WAYLAND_DISPLAY,XDG_RUNTIME_DIR,XDG_SESSION_TYPE,XDG_CURRENT_DESKTOP,DISPLAY,XAUTHORITY,QT_QPA_PLATFORM,LANG,LC_ALL
+
+{
+    echo "== $(date) quantum-install"
+    env | grep -E "^(WAYLAND_DISPLAY|XDG_RUNTIME_DIR|DISPLAY|QT_QPA_PLATFORM|XDG_SESSION_TYPE)="
+} > "$log"
+
+sudo --preserve-env="$keep" calamares "$@" >> "$log" 2>&1
+status=$?
+
+if [ $status -ne 0 ]; then
+    notify-send -u critical -a "Instalador" "No se pudo abrir el instalador" \
+        "Código $status. El detalle está en $log" 2>/dev/null
+    echo "El instalador terminó con código $status. Revisa $log" >&2
+fi
+exit $status

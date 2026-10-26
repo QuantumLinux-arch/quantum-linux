@@ -1,0 +1,52 @@
+#!/bin/bash
+# Actualiza Quantum Linux en una terminal: muestra qué se va a actualizar,
+# pide la contraseña una vez y luego actualiza el sistema y Flatpak.
+# Antes de tocar nada, snap-pac guarda una instantánea (se puede volver atrás desde GRUB).
+
+if [ -z "$QUANTUM_UPDATE_INNER" ]; then
+    exec env QUANTUM_UPDATE_INNER=1 kitty --class quantum-update --title "Actualizar Quantum Linux" "$0" "$@"
+fi
+
+b=$'\e[1m'; c=$'\e[38;2;143;123;255m'; g=$'\e[38;2;34;181;115m'; r=$'\e[38;2;255;80;100m'; n=$'\e[0m'
+printf '\n  %s%sQuantum Linux · Actualizaciones%s\n\n' "$b" "$c" "$n"
+
+list=$(checkupdates 2>/dev/null)
+quantum=$(pacman -Sl quantum 2>/dev/null | awk '{print $2}')
+if [ -z "$list" ] && ! flatpak remote-ls --updates 2>/dev/null | grep -q .; then
+    printf '  %sTodo está al día.%s\n\n' "$g" "$n"
+    qs -c quantum ipc call updates check >/dev/null 2>&1
+    read -rp "  Presiona Enter para cerrar…"
+    exit 0
+fi
+
+if [ -n "$list" ]; then
+    total=$(wc -l <<<"$list")
+    q=$(awk 'NR==FNR {mine[$1]=1; next} ($1 in mine)' <(printf '%s\n' $quantum) - <<<"$list" | wc -l)
+    printf '  Hay %s%s%s paquetes para actualizar' "$b" "$total" "$n"
+    [ "$q" -gt 0 ] && printf ' (%s%s de Quantum%s)' "$c" "$q" "$n"
+    printf '.\n\n'
+    # primero las de Quantum (●), después las de Arch (○)
+    awk -v c="$c" -v n="$n" 'NR==FNR {mine[$1]=1; next}
+        { line = sprintf("%-28s %s → %s", $1, $2, $4) }
+        ($1 in mine) { q[++nq] = "   " c "●" n " " line; next }
+        { a[++na] = "   ○ " line }
+        END { for (i = 1; i <= nq; i++) print q[i]; for (i = 1; i <= na && i <= 25; i++) print a[i] }' \
+        <(printf '%s\n' $quantum) - <<<"$list"
+    [ "$total" -gt 30 ] && printf '   … y más\n'
+    printf '\n  Antes de actualizar se guarda una copia del sistema por si algo falla.\n\n'
+fi
+
+if sudo pacman -Syu --noconfirm; then
+    command -v flatpak >/dev/null && flatpak update -y --noninteractive
+    printf '\n  %s%sListo: Quantum Linux está al día.%s\n' "$b" "$g" "$n"
+    # si ya no están los módulos del kernel en uso, es que se instaló uno nuevo
+    if [ ! -d "/usr/lib/modules/$(uname -r)" ]; then
+        printf '  Se actualizó el kernel: reinicia cuando puedas.\n'
+    fi
+else
+    printf '\n  %sLa actualización no terminó.%s Tu sistema no cambió de forma parcial:\n' "$r" "$n"
+    printf '  si algo quedó mal, elige la copia anterior en el menú de arranque.\n'
+fi
+qs -c quantum ipc call updates check >/dev/null 2>&1
+echo
+read -rp "  Presiona Enter para cerrar…"

@@ -1,0 +1,17 @@
+# Maintainer: Quantum Linux <https://github.com/QuantumLinux-arch>
+
+pkgname=quantum-keyring
+pkgver=20261020
+pkgrel=1
+pkgdesc="Clave con la que se firman los paquetes de Quantum Linux"
+arch=('any')
+url="https://quantumlinux-arch.github.io"
+license=('GPL-3.0-or-later')
+install=quantum-keyring.install
+
+package() {
+  cd "$startdir/files"
+  install -Dm644 quantum.gpg "$pkgdir/usr/share/pacman/keyrings/quantum.gpg"
+  install -Dm644 quantum-trusted "$pkgdir/usr/share/pacman/keyrings/quantum-trusted"
+  install -Dm644 quantum-revoked "$pkgdir/usr/share/pacman/keyrings/quantum-revoked"
+}

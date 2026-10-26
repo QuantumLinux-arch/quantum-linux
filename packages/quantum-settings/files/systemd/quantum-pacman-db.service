@@ -1,0 +1,20 @@
+[Unit]
+Description=Descarga las bases de datos de pacman (primer arranque)
+# El sistema recién instalado no trae las listas de paquetes: sin ellas la
+# búsqueda de Quantum Store no encuentra nada de los repos de Arch.
+ConditionPathExists=!/var/lib/pacman/sync/core.db
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/pacman -Sy --noconfirm
+# trabaja con baja prioridad para no hacer más lento el inicio de sesión
+Nice=19
+IOSchedulingClass=idle
+CPUSchedulingPolicy=idle
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target

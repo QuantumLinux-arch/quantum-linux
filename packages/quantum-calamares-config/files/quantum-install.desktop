@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Instalar Quantum Linux
+Name[en]=Install Quantum Linux
+Comment=Instala Quantum Linux en tu PC
+Comment[en]=Install Quantum Linux on your PC
+Exec=quantum-install
+Icon=quantum-linux
+Terminal=false
+Categories=System;
+Keywords=instalar;install;calamares;

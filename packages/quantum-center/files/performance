@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# Modo rendimiento de Quantum: repos optimizados de CachyOS + planificador para juegos.
+# Uso (como root): performance status|enable|disable
+# El Centro Quantum lo ejecuta en una terminal para que se vea el progreso y las
+# preguntas de pacman.
+set -euo pipefail
+
+STATE=/var/lib/quantum/performance
+REPO_URL=https://mirror.cachyos.org/cachyos-repo.tar.xz
+
+cpu_level() {
+    local out
+    out=$(/lib/ld-linux-x86-64.so.2 --help 2>/dev/null || true)
+    if grep -q "x86-64-v4 (supported" <<<"$out"; then echo v4
+    elif grep -q "x86-64-v3 (supported" <<<"$out"; then echo v3
+    else echo old; fi
+}
+
+status() {
+    local repo=off sched=off
+    grep -q '^\[cachyos' /etc/pacman.conf && repo=on
+    systemctl is-enabled -q scx_loader.service 2>/dev/null && sched=on
+    echo "cpu=$(cpu_level) repo=$repo sched=$sched"
+}
+
+with_cachyos_script() {
+    local tmp
+    tmp=$(mktemp -d)
+    trap 'rm -rf "$tmp"' RETURN
+    echo "==> Descargando el instalador oficial de los repos de CachyOS…"
+    curl -fL --progress-bar -o "$tmp/repo.tar.xz" "$REPO_URL"
+    tar -xf "$tmp/repo.tar.xz" -C "$tmp"
+    (cd "$tmp/cachyos-repo" && ./cachyos-repo.sh "$1")
+}
+
+enable() {
+    if [[ $(cpu_level) == old ]]; then
+        echo "Tu procesador no es compatible con los paquetes optimizados (necesita x86-64-v3)."
+        echo "Solo se activará el planificador para juegos."
+    else
+        with_cachyos_script --install
+    fi
+    echo "==> Activando el planificador para juegos (scx_lavd)…"
+    pacman -S --needed --noconfirm scx-scheds scx-tools
+    cat > /etc/scx_loader.toml <<'EOF'
+# Quantum Linux: planificador para juegos (modo rendimiento)
+default_sched = "scx_lavd"
+default_mode = "Gaming"
+EOF
+    systemctl enable --now scx_loader.service
+    mkdir -p "$(dirname "$STATE")" && touch "$STATE"
+    echo
+    echo "Listo. Reinicia el equipo para usar todos los paquetes optimizados."
+}
+
+disable() {
+    systemctl disable --now scx_loader.service 2>/dev/null || true
+    rm -f /etc/scx_loader.toml
+    if grep -q '^\[cachyos' /etc/pacman.conf; then
+        with_cachyos_script --remove
+    fi
+    rm -f "$STATE"
+    echo
+    echo "Listo. Quantum volvió a los paquetes normales de Arch."
+}
+
+case "${1:-status}" in
+    status) status ;;
+    enable) enable ;;
+    disable) disable ;;
+    *) echo "Uso: $0 status|enable|disable" >&2; exit 2 ;;
+esac

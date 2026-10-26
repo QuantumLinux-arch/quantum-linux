@@ -1,0 +1,40 @@
+# Maintainer: Quantum Linux <https://github.com/quantum-linux>
+# Quantum Shell: barra, menú de apps, centro de control, notificaciones,
+# pantalla de bloqueo y menú de apagado, hechos con Quickshell.
+
+pkgname=quantum-shell
+pkgver=1.0.0
+pkgrel=23
+pkgdesc="El shell de escritorio de Quantum Linux (Quickshell)"
+arch=('any')
+url="https://github.com/quantum-linux"
+license=('GPL-3.0-or-later' 'Apache-2.0')
+depends=('quickshell' 'pacman-contrib' 'libnotify' 'qt6-declarative' 'qt6-svg' 'inter-font'
+         'networkmanager' 'bluez' 'upower' 'power-profiles-daemon' 'pipewire' 'pipewire-audio'
+         'brightnessctl' 'cliphist' 'wl-clipboard' 'pam')
+
+# Fuente de íconos Material Symbols Rounded (Apache 2.0), fijada a un commit.
+_icons_commit=49d4db35df873165d6bd6ba09b063c7dafbac2f4
+source=("MaterialSymbolsRounded.ttf::https://raw.githubusercontent.com/google/material-design-icons/$_icons_commit/variablefont/MaterialSymbolsRounded%5BFILL%2CGRAD%2Copsz%2Cwght%5D.ttf"
+        "MaterialSymbols-LICENSE::https://raw.githubusercontent.com/google/material-design-icons/$_icons_commit/LICENSE")
+sha256sums=('32e4011709e055596eb8d2dd0f7cb547b47c1d40ac9ecb8fad54f7f7eac202e7'
+            '58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd')
+
+package() {
+  install -d "$pkgdir/etc/xdg/quickshell"
+  cp -r "$startdir/files/quantum" "$pkgdir/etc/xdg/quickshell/quantum"
+  find "$pkgdir/etc/xdg/quickshell/quantum" -type f -exec chmod 644 {} +
+  # Personalizar aparece en el menú de apps (y su ventana toma este nombre e ícono)
+  install -Dm644 "$startdir/files/quantum/assets/quantum-personalize.desktop" \
+    "$pkgdir/usr/share/applications/quantum-personalize.desktop"
+  install -Dm644 "$startdir/files/quantum/assets/quantum-personalize.svg" \
+    "$pkgdir/usr/share/icons/hicolor/scalable/apps/quantum-personalize.svg"
+  # Asistente Quantum (IA local con Ollama)
+  install -Dm644 "$startdir/files/quantum/assets/quantum-assistant.desktop" \
+    "$pkgdir/usr/share/applications/quantum-assistant.desktop"
+  install -Dm644 "$startdir/files/quantum/assets/quantum-assistant.svg" \
+    "$pkgdir/usr/share/icons/hicolor/scalable/apps/quantum-assistant.svg"
+
+  install -Dm644 "$srcdir/MaterialSymbolsRounded.ttf" "$pkgdir/usr/share/fonts/quantum/MaterialSymbolsRounded.ttf"
+  install -Dm644 "$srcdir/MaterialSymbols-LICENSE" "$pkgdir/usr/share/licenses/$pkgname/MaterialSymbols-LICENSE"
+}

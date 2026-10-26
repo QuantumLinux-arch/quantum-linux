@@ -1,0 +1,7 @@
+// Modo en vivo: el usuario liveuser no tiene contraseña, así que se le
+// permite todo sin pedirla. El instalador borra este archivo.
+polkit.addRule(function(action, subject) {
+    if (subject.user == "liveuser") {
+        return polkit.Result.YES;
+    }
+});

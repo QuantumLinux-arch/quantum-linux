@@ -1,0 +1,30 @@
+# Resultados de compilación y pruebas
+build/
+out/
+repo/
+branding/generated/
+*.pkg.tar.zst
+*.pkg.tar.zst.sig
+__pycache__/
+packages/*/src/**/__pycache__/
+packages/quantum-migrate/windows/target/
+packages/quantum-migrate/files/pasar-a-quantum.zip
+
+# Fuentes que makepkg descarga solo (están en el PKGBUILD)
+packages/quantum-shell/MaterialSymbolsRounded.ttf
+packages/quantum-shell/MaterialSymbols-LICENSE
+
+# Material de marketing, web (tiene su propio repo) y notas internas
+marketing/
+website/
+Tik tok/
+Colaboradores/
+Ejemplos/
+Tests}/
+modules
+AGENTS.md
+BACKLOG.md
+HANDOFF.md
+PROMPT_INICIAL.md
+OPENCODE_*.md
+.claude/
