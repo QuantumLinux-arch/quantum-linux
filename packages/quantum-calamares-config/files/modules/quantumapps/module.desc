@@ -1,0 +1,6 @@
+# Quantum Linux: instala las apps elegidas en «Tus apps» (o las deja para el primer inicio)
+---
+type:       "job"
+name:       "quantumapps"
+interface:  "python"
+script:     "main.py"
