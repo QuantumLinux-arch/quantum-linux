@@ -100,6 +100,7 @@ struct App {
     cancel: Arc<AtomicBool>,
     logo: egui::TextureHandle,
     confirm_wipe: bool,
+    room: Arc<Mutex<u8>>,      // «Hacer espacio»: 0 sin empezar, 1 trabajando, 2 listo
 }
 
 impl App {
@@ -131,6 +132,7 @@ impl App {
             step: Step::Welcome, pc, drives: vec![], usb: None, mode: None, name, login, login_edited: false,
             pw1: String::new(), pw2: String::new(), autologin: false, chosen, things: true, things_size,
             work: Arc::new(Mutex::new(WorkState::default())), cancel: Arc::new(AtomicBool::new(false)), logo, confirm_wipe: false,
+            room: Arc::new(Mutex::new(0)),
         }
     }
 
@@ -446,10 +448,40 @@ impl App {
             let ok = size >= setup::MIN_QUANTUM && sd.gpt;
             let detail = if ok && pc.uses_unallocated() { format!("Quantum usará {} de espacio sin usar del disco. Windows queda igual. Al encender eliges cuál usar.", gb(size)) }
                          else if ok { format!("Quantum usará {} y Windows se queda con el resto. Al encender eliges cuál usar.", gb(size)) }
+                         else if !sd.gpt { "Tu disco usa el formato antiguo (MBR). Para instalar junto a Windows, usa el ISO.".to_string() }
+                         else if pc.shrink_limited() {
+                             format!("Tienes {} libres, pero Windows solo deja usar {}: algunos de sus archivos (hibernación, paginación) están al final del disco.",
+                                     gb(pc.c_free), gb(size))
+                         }
                          else { format!("No hay espacio suficiente: Quantum necesita al menos {} libres en Windows.", gb(2 * setup::MIN_QUANTUM)) };
             if choice(ui, w, icons::DESKTOP_WINDOWS, 0.1, "Junto a Windows (recomendado)", &detail,
                       ok.then_some(("No se borra nada de Windows: solo se usa espacio libre.", GREEN)), self.mode == Some(Mode::Beside), ok) {
                 self.mode = Some(Mode::Beside);
+            }
+            // cuando Windows no deja achicar: botón para ordenar el disco y volver a medir
+            if !ok && sd.gpt && pc.shrink_limited() {
+                let st = *self.room.lock().unwrap();
+                ui.horizontal(|ui| {
+                    ui.add_space(20.0);
+                    match st {
+                        1 => { ui.spinner(); ui.label(RichText::new("Ordenando el disco de Windows… puede tardar varios minutos. No apagues el PC.").size(14.0).color(MUTED)); }
+                        2 => { ui.label(RichText::new("Listo. Si sigue sin alcanzar, reinicia Windows y vuelve a abrir el instalador.").size(14.0).color(MUTED)); }
+                        _ => {
+                            if secondary(ui, "Hacer espacio", icons::BOLT) {
+                                *self.room.lock().unwrap() = 1;
+                                let (room, pcs) = (self.room.clone(), self.pc.clone());
+                                std::thread::spawn(move || {
+                                    let r = setup::make_room();
+                                    setup::log(&format!("make_room: {r:?}"));
+                                    let i = setup::pc_info();
+                                    *pcs.lock().unwrap() = Some(i);
+                                    *room.lock().unwrap() = 2;
+                                });
+                            }
+                            ui.label(RichText::new("Apaga la hibernación y junta el espacio libre. No borra nada.").size(13.5).color(MUTED));
+                        }
+                    }
+                });
             }
             ui.add_space(6.0);
             if choice(ui, w, icons::WARNING, 0.9, "Reemplazar Windows",

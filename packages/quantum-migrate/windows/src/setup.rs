@@ -45,6 +45,8 @@ impl PcInfo {
         (self.c_free / 2).min(self.c_shrinkable.saturating_sub(GB)) / GB * GB
     }
     pub fn uses_unallocated(&self) -> bool { self.unallocated >= MIN_QUANTUM }
+    /// Hay espacio libre de sobra, pero Windows no deja achicar el disco lo suficiente
+    pub fn shrink_limited(&self) -> bool { self.c_free / 2 >= MIN_QUANTUM && self.beside_size() < MIN_QUANTUM }
     pub fn system_disk(&self) -> Option<&Disk> { self.disks.iter().find(|d| d.system) }
 }
 
@@ -162,6 +164,13 @@ mod imp {
         std::fs::read(&cer).map_err(|e| e.to_string())
     }
 
+    /// Hace que Windows deje achicar más el disco: apaga la hibernación (su archivo no se puede
+    /// mover) y junta el espacio libre al principio del disco (desfragmentar «consolidando»).
+    pub fn make_room() -> Result<(), String> {
+        let _ = ps("powercfg /h off");
+        ps("defrag C: /X /U | Out-Null").map(|_| ())
+    }
+
     pub fn suspend_bitlocker() -> Result<(), String> {
         ps("Suspend-BitLocker -MountPoint C: -RebootCount 3 | Out-Null").map(|_| ())
     }
@@ -227,7 +236,7 @@ mod imp {
     pub fn ps(_s: &str) -> Result<String, String> { Ok(String::new()) }
     pub fn pc_info() -> PcInfo {
         std::thread::sleep(std::time::Duration::from_millis(600));
-        PcInfo { uefi: true, secureboot: true, bitlocker: false, c_free: 180 * GB, c_shrinkable: 200 * GB, ram: 16 * GB, unallocated: 0,
+        PcInfo { uefi: true, secureboot: true, bitlocker: false, c_free: 180 * GB, c_shrinkable: std::env::var("PAQ_SHRINK_GB").ok().and_then(|v| v.parse().ok()).unwrap_or(200) * GB, ram: 16 * GB, unallocated: 0,
             disks: vec![
                 Disk { number: 0, name: "Samsung SSD 970 EVO".into(), size: 512 * GB, serial: "S4EVNX0N".into(), system: true, usb: false, gpt: true },
                 Disk { number: 1, name: "Kingston DataTraveler".into(), size: 32 * GB, serial: "".into(), system: false, usb: true, gpt: false },
@@ -246,6 +255,7 @@ mod imp {
     pub fn unmount_iso(_iso: &Path) {}
     pub fn machine_key(dir: &Path, _c: &str) -> Result<Vec<u8>, String> { let _ = std::fs::write(dir.join("MOK.cer"), b"x"); Ok(b"x".to_vec()) }
     pub fn suspend_bitlocker() -> Result<(), String> { Ok(()) }
+    pub fn make_room() -> Result<(), String> { std::thread::sleep(std::time::Duration::from_secs(4)); Ok(()) }
     pub fn shrink_c(_b: u64) -> Result<(), String> { std::thread::sleep(std::time::Duration::from_secs(3)); Ok(()) }
     pub fn set_var(_n: &str, _g: &str, _d: &[u8], _a: u32) -> Result<(), String> { Ok(()) }
     pub fn get_var(_n: &str, _g: &str) -> Option<Vec<u8>> { None }
