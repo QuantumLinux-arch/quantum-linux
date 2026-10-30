@@ -16,6 +16,7 @@ import "modules/personalize"
 import "modules/assistant"
 import "modules/osd"
 import "modules/session"
+import "modules/welcome"
 import "modules/lock"
 
 // Quantum Shell: el escritorio de Quantum Linux.
@@ -49,6 +50,7 @@ ShellRoot {
             Personalize {}
             Assistant {}
             SessionMenu {}
+            Welcome {}
         }
     }
 }

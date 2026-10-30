@@ -4,7 +4,7 @@
 
 pkgname=quantum-branding
 pkgver=1.0.0
-pkgrel=4
+pkgrel=5
 pkgdesc="Identidad visual de Quantum Linux"
 arch=('any')
 url="https://github.com/quantum-linux"
@@ -39,6 +39,9 @@ package() {
   install -d "$share/backgrounds/quantum/thumbs"
   install -m644 "$a/wallpapers/"*.png "$share/backgrounds/quantum/"
   install -m644 "$a/wallpapers/thumbs/"*.jpg "$share/backgrounds/quantum/thumbs/"
+  # fondo del estilo «Quantum» del primer inicio
+  install -m644 "$_files/wallpapers/beako.jpg" "$share/backgrounds/quantum/beako.jpg"
+  install -m644 "$_files/wallpapers/beako-thumb.jpg" "$share/backgrounds/quantum/thumbs/beako.jpg"
 
   # Pantalla de inicio (SDDM)
   local sddm="$share/sddm/themes/quantum"

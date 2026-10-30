@@ -272,6 +272,7 @@ Singleton {
                 property real volume: 0.6
             }
             property JsonObject ui: JsonObject {
+                property bool welcomed: false            // ya pasó por la bienvenida del primer inicio
                 property bool advanced: false
                 property string style: "quantum"
                 property string page: "styles"
