@@ -74,10 +74,12 @@ Singleton {
             "  lat=$(printf '%s' \"$loc\" | grep -o '\"latitude\": *[-0-9.]*' | head -1 | grep -o '[-0-9.]*$'); " +
             "  lon=$(printf '%s' \"$loc\" | grep -o '\"longitude\": *[-0-9.]*' | head -1 | grep -o '[-0-9.]*$'); " +
             "fi; [ -n \"$lat\" ] && [ -n \"$lon\" ] || exit 1; " +
+            // la luz nocturna «al atardecer» (quantum-display) usa esta ubicación
+            "mkdir -p \"$2\" && printf '%s %s\\n' \"$lat\" \"$lon\" > \"$2/location\"; " +
             "curl -sf -m 10 \"https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon" +
             "&current=temperature_2m,apparent_temperature,weather_code,is_day" +
             "&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1\"",
-            "sh", Settings.lock.city]
+            "sh", Settings.lock.city, Theme.stateDir]
         stdout: StdioCollector {
             onStreamFinished: {
                 try {

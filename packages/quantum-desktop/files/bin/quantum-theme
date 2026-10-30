@@ -14,6 +14,7 @@ Uso:
   quantum-theme gamemode on|off    modo juego (sin animaciones ni desenfoque)
 """
 import json
+import re
 import os
 import shutil
 import subprocess
@@ -46,6 +47,11 @@ FALLBACK_SETTINGS = {
                 "minimizeAnimation": "zoom", "buttonsLeft": False, "wobbly": False, "titleHeight": 34, "borderSize": 1},
     "keyboard": {"layout": "", "variant": "", "options": "grp:alt_shift_toggle"},
     "notifications": {"dnd": False},
+    # Personalizar → Mouse y touchpad / Pantalla
+    "mouse": {"speed": 0, "accel": True, "natural": False, "scrollSpeed": 1.0, "leftHanded": False, "cursorSize": 24},
+    "touchpad": {"speed": 0, "tapToClick": True, "natural": True, "disableWhileTyping": True,
+                 "scrollSpeed": 1.0, "clickMethod": "clickfinger"},
+    "display": {"saturation": 1.0},
 }
 
 
@@ -310,6 +316,35 @@ def personalize_ini(s, decor):
     return "\n".join(out) + "\n" + glass_ini(s)
 
 
+def input_ini(s):
+    """[input] de Wayfire desde Personalizar → Mouse y touchpad (antes de wayfire-user.ini)."""
+    m, t = s["mouse"], s["touchpad"]
+    num = lambda v, lo, hi, d: max(lo, min(hi, float(v if isinstance(v, (int, float)) else d)))
+    b = lambda v: "true" if v else "false"
+    click = t.get("clickMethod") if t.get("clickMethod") in ("clickfinger", "button-areas") else "clickfinger"
+    size = int(num(m.get("cursorSize"), 16, 64, 24))
+    return "\n".join([
+        "[input]",
+        f"mouse_cursor_speed = {num(m.get('speed'), -1, 1, 0):.2f}",
+        f"mouse_accel_profile = {'adaptive' if m.get('accel', True) else 'flat'}",
+        f"mouse_natural_scroll = {b(m.get('natural'))}",
+        f"mouse_scroll_speed = {num(m.get('scrollSpeed'), 0.1, 5, 1):.2f}",
+        f"left_handed_mode = {b(m.get('leftHanded'))}",
+        f"cursor_size = {size}",
+        f"touchpad_cursor_speed = {num(t.get('speed'), -1, 1, 0):.2f}",
+        f"tap_to_click = {b(t.get('tapToClick', True))}",
+        f"natural_scroll = {b(t.get('natural', True))}",
+        f"disable_touchpad_while_typing = {b(t.get('disableWhileTyping', True))}",
+        f"touchpad_scroll_speed = {num(t.get('scrollSpeed'), 0.1, 5, 1):.2f}",
+        f"click_method = {click}",
+    ]) + "\n"
+
+
+def has_wayfire_plugin(name):
+    paths = os.environ.get("WAYFIRE_PLUGIN_PATH", "").split(":") + ["/usr/lib/wayfire"]
+    return any(p and (Path(p) / f"lib{name}.so").exists() for p in paths)
+
+
 def write_wayfire(c, s):
     layout, variant = s["keyboard"].get("layout"), s["keyboard"].get("variant")
     if not layout:
@@ -325,6 +360,12 @@ def write_wayfire(c, s):
         plugins = [p for p in plugins if p != "animate"]
     if not s["appearance"].get("blur", True):
         plugins = [p for p in plugins if p != "blur"]
+    # filtro de saturación (Personalizar → Pantalla): solo si hace falta y sin Modo juego
+    saturation = max(0.0, min(2.0, float(s["display"].get("saturation", 1) or 0)))
+    use_color = (abs(saturation - 1) > 0.001 and not (STATE / "gamemode").exists()
+                 and has_wayfire_plugin("quantum-color"))
+    if use_color:
+        plugins.append("quantum-color")
     if (STATE / "gamemode").exists():
         plugins = [p for p in plugins if p not in GAME_MODE_OFF]
     elif in_vm():
@@ -355,7 +396,14 @@ def write_wayfire(c, s):
                          if not l.startswith(("button_icon_color", "button_hover_color", "close_hover_color")))
     text = text.replace("[quantum-decor]", f"[{decor}]")
     user = CONFIG / "quantum" / "wayfire-user.ini"
-    extra = personalize_ini(s, decor) + (user.read_text() if user.exists() else "")
+    extra = personalize_ini(s, decor) + "\n" + input_ini(s)
+    if use_color:
+        extra += f"[quantum-color]\nsaturation = {saturation:.2f}\n"
+    user_text = user.read_text() if user.exists() else ""
+    if use_color:
+        # si la persona escribió su propia lista de plugins, el filtro se suma igual
+        user_text = re.sub(r"^(\s*plugins\s*=(?!.*quantum-color).*)$", r"\1 quantum-color", user_text, flags=re.M)
+    extra += user_text
     # Wayfire vuelve a leer el archivo solo cuando cambia
     target = STATE / "wayfire.ini"
     new = merge_ini(text, extra) + "\n"

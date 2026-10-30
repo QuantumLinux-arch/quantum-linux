@@ -31,6 +31,8 @@ Scope {
                 { id: "windows", t: "Ventanas", h: "Esquinas, botones y animaciones de las ventanas.", i: "web_asset", c: windowsPage },
                 { id: "lock", t: "Bloqueo", h: "Qué tarjetas se ven en la pantalla de bloqueo y en qué orden.", i: "lock", c: lockPage },
                 { id: "sounds", t: "Sonidos", h: "Los sonidos del sistema y su volumen.", i: "music_note", c: soundsPage },
+                { id: "display", t: "Pantalla", h: "Luz nocturna, brillo, contraste, gamma y saturación.", i: "desktop_windows", c: displayPage },
+                { id: "input", t: "Mouse y touchpad", h: "Velocidad, aceleración, desplazamiento y clics.", i: "mouse", c: inputPage },
             ]
             property string current: pages.some(p => p.id === Settings.ui.page) ? Settings.ui.page : "styles"
             readonly property var page: pages.find(p => p.id === current)
@@ -44,6 +46,8 @@ Scope {
             Component { id: windowsPage; WindowsPage {} }
             Component { id: lockPage; LockPage {} }
             Component { id: soundsPage; SoundsPage {} }
+            Component { id: displayPage; DisplayPage {} }
+            Component { id: inputPage; InputPage {} }
 
             Shortcut { sequence: "Escape"; onActivated: Shell.personalizeOpen = false }
 

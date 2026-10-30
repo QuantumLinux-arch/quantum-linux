@@ -397,8 +397,10 @@ PanelWindow {
 
             Row {
                 width: parent.width; spacing: 8
-                Btn { width: (parent.width - 8) / 2; icon: Net.icon; label: "Wi-Fi"; on: Net.wifiEnabled; onClicked: Net.toggleWifi(); onPressAndHold: Shell.openWifi() }
-                Btn { width: (parent.width - 8) / 2; icon: Bt.icon; label: "Bluetooth"; on: Bt.enabled; opacity: Bt.available ? 1 : 0.4; onClicked: Bt.toggle() }
+                Btn { width: (parent.width - 16) / 3; icon: Net.icon; label: "Wi-Fi"; on: Net.wifiEnabled; onClicked: Net.toggleWifi(); onPressAndHold: Shell.openWifi() }
+                Btn { width: (parent.width - 16) / 3; icon: Bt.icon; label: "Bluetooth"; on: Bt.enabled; opacity: Bt.available ? 1 : 0.4; onClicked: Bt.toggle() }
+                Btn { width: (parent.width - 16) / 3; icon: "nightlight"; label: "Nocturna"; on: Settings.display.nightLight
+                      onClicked: Shell.toggleNightLight(); onPressAndHold: { Serp.panel = ""; Shell.personalizePage("display"); } }
             }
             Row {
                 width: parent.width; spacing: 8
@@ -418,7 +420,7 @@ PanelWindow {
             }
             T {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: "Mantén presionado Wi-Fi para ver las redes"; font.pixelSize: 9; color: Serp.muted
+                text: "Mantén presionado para más opciones"; font.pixelSize: 9; color: Serp.muted
             }
         }
     }

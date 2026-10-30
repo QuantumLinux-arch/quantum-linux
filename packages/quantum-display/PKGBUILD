@@ -1,0 +1,43 @@
+# Maintainer: Quantum Linux <https://github.com/quantum-linux>
+# Pantalla de Quantum (Personalizar → Pantalla):
+#  - quantum-display: decide la luz nocturna (manual, al atardecer o en un horario) y los
+#    ajustes de imagen, y se los pasa a quantum-gamma.
+#  - quantum-gamma: aplica la curva de color con wlr-gamma-control (lo hace la tarjeta de
+#    video: no cuesta rendimiento).
+#  - libquantum-color: filtro de saturación para Wayfire, basado en el plugin «invert»
+#    de Wayfire 0.11 (MIT). Se compila contra la ABI del Wayfire instalado.
+
+pkgname=quantum-display
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Luz nocturna, brillo, contraste, gamma y saturación de la pantalla para Quantum Linux"
+arch=('x86_64')
+url="https://github.com/quantum-linux"
+license=('MIT')
+depends=('wayfire' 'wayland' 'python')
+makedepends=('glm' 'pkgconf')
+options=('!debug')
+
+_src="$startdir/src"
+
+build() {
+  cd "$_src"
+  wayland-scanner client-header wlr-gamma-control-unstable-v1.xml "$srcdir/wlr-gamma-control-unstable-v1-client-protocol.h"
+  wayland-scanner private-code wlr-gamma-control-unstable-v1.xml "$srcdir/gamma-protocol.c"
+  gcc -O2 -Wall $CFLAGS -I"$srcdir" quantum-gamma.c "$srcdir/gamma-protocol.c" \
+      $(pkg-config --cflags --libs wayland-client) -lm $LDFLAGS -o "$srcdir/quantum-gamma"
+
+  local flags
+  flags="$(pkg-config --cflags wayfire pixman-1 wayland-server libdrm wlroots-0.20)"
+  g++ -std=c++20 -O2 -fPIC -shared -DWLR_USE_UNSTABLE -DWAYFIRE_PLUGIN -Wno-deprecated \
+      -I/usr/include/wayfire $flags $CXXFLAGS $LDFLAGS \
+      quantum-color.cpp -lGLESv2 -o "$srcdir/libquantum-color.so"
+}
+
+package() {
+  install -Dm755 "$_src/quantum-display" "$pkgdir/usr/bin/quantum-display"
+  install -Dm755 "$srcdir/quantum-gamma" "$pkgdir/usr/lib/quantum/quantum-gamma"
+  install -Dm755 "$srcdir/libquantum-color.so" "$pkgdir/usr/lib/wayfire/libquantum-color.so"
+  install -Dm644 "$_src/quantum-color.xml" "$pkgdir/usr/share/wayfire/metadata/quantum-color.xml"
+  install -Dm644 "$_src/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

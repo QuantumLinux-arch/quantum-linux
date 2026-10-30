@@ -180,6 +180,19 @@ PanelWindow {
                     }
                     ToggleTile {
                         Layout.fillWidth: true
+                        icon: "nightlight"
+                        title: "Luz nocturna"
+                        subtitle: !Settings.display.nightLight ? "Desactivada"
+                            : Settings.display.nightMode === "sunset" ? "Al atardecer"
+                            : Settings.display.nightMode === "schedule" ? Settings.display.nightFrom + " a " + Settings.display.nightTo
+                            : "Activada"
+                        on: Settings.display.nightLight
+                        onToggled: Shell.toggleNightLight()
+                        moreVisible: true
+                        onMore: Shell.personalizePage("display")
+                    }
+                    ToggleTile {
+                        Layout.fillWidth: true
                         icon: "sports_esports"
                         title: "Modo juego"
                         subtitle: Shell.gameMode ? "Máximo rendimiento" : "Desactivado"
@@ -204,6 +217,7 @@ PanelWindow {
                     }
                     ToggleTile {
                         Layout.fillWidth: true
+                        Layout.columnSpan: 2          // queda sola en su fila: que ocupe todo el ancho
                         readonly property var profiles: [PowerProfile.PowerSaver, PowerProfile.Balanced, PowerProfile.Performance]
                         readonly property var names: ["Ahorro", "Equilibrado", "Rendimiento"]
                         readonly property int current: profiles.indexOf(PowerProfiles.profile)

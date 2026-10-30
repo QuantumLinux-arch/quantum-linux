@@ -22,6 +22,9 @@ Singleton {
     property alias lock: adapter.lock
     property alias ai: adapter.ai
     property alias sounds: adapter.sounds
+    property alias display: adapter.display
+    property alias mouse: adapter.mouse
+    property alias touchpad: adapter.touchpad
 
     // Valores de fábrica de todo lo visual (= estilo «Quantum»). Los estilos se
     // aplican encima de esto, así un estilo siempre se ve igual.
@@ -103,7 +106,7 @@ Singleton {
         if (adapter[section] === undefined)
             return;
         adapter[section][key] = value;
-        if (key !== "wallpaper")       // el fondo no forma parte de los estilos
+        if (key !== "wallpaper" && !["display", "mouse", "touchpad"].includes(section))   // no son parte de los estilos
             adapter.ui.style = "custom";
         changed = true;
         file.writeAdapter();
@@ -130,7 +133,7 @@ Singleton {
         for (const sec of Object.keys(obj))
             if (adapter[sec] !== undefined && typeof obj[sec] === "object")
                 _merge(adapter[sec], obj[sec]);
-        if (!obj.ui)
+        if (!obj.ui && Object.keys(obj).some(k => !["display", "mouse", "touchpad"].includes(k)))
             adapter.ui.style = "custom";
         changed = true;
         file.writeAdapter();
@@ -172,6 +175,14 @@ Singleton {
     Process {
         id: themeProc
         command: ["quantum-theme", "apply"]
+    }
+
+    // Quien prefiere editar archivos: ~/.config/quantum/wayfire-user.ini se aplica al guardarlo
+    FileView {
+        path: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/quantum/wayfire-user.ini"
+        watchChanges: true
+        printErrors: false
+        onFileChanged: root.applyTheme()
     }
 
     FileView {
@@ -226,6 +237,35 @@ Singleton {
                 property string layout: ""
                 property string variant: ""
                 property string options: "grp:alt_shift_toggle"
+            }
+            // Pantalla: luz nocturna y ajustes de imagen (los aplica quantum-display)
+            property JsonObject display: JsonObject {
+                property bool nightLight: false
+                property string nightMode: "manual"      // manual | sunset | schedule
+                property string nightFrom: "21:00"
+                property string nightTo: "07:00"
+                property int temperature: 4000           // kelvin (6500 = neutro)
+                property real brightness: 1.0            // brillo por software (0.3..1)
+                property real contrast: 1.0              // 0.5..1.5
+                property real gamma: 1.0                 // 0.5..2
+                property real saturation: 1.0            // 0..2 (filtro de Wayfire si no es 1)
+            }
+            // Mouse y touchpad (van a la sección [input] de wayfire.ini)
+            property JsonObject mouse: JsonObject {
+                property real speed: 0                   // -1..1
+                property bool accel: true                // false = perfil plano (sin aceleración)
+                property bool natural: false
+                property real scrollSpeed: 1.0
+                property bool leftHanded: false
+                property int cursorSize: 24
+            }
+            property JsonObject touchpad: JsonObject {
+                property real speed: 0
+                property bool tapToClick: true
+                property bool natural: true
+                property bool disableWhileTyping: true
+                property real scrollSpeed: 1.0
+                property string clickMethod: "clickfinger"   // clickfinger (dos dedos) | button-areas (esquina)
             }
             property JsonObject notifications: JsonObject {
                 property bool dnd: false

@@ -101,6 +101,17 @@ Singleton {
         personalizeOpen = !personalizeOpen;
     }
 
+    // Abre Personalizar directo en una página (ej. «display» desde la luz nocturna)
+    function personalizePage(page: string): void {
+        closeAll();
+        Settings.setUi("page", page);
+        personalizeOpen = true;
+    }
+
+    function toggleNightLight(): void {
+        Settings.set("display", "nightLight", !Settings.display.nightLight);
+    }
+
     // Modo juego: quita animaciones y desenfoque de Wayfire para ganar FPS.
     function setGameMode(on: bool): void {
         gameMode = on;
@@ -118,6 +129,7 @@ Singleton {
         function dashboard(): void { root.toggleDashboard(); }
         function wallpapers(): void { root.toggleWallpapers(); }
         function personalize(): void { root.personalize(); }
+        function nightLight(): void { root.toggleNightLight(); }
         function ai(): void { root.toggleAi(); }
         function sound(name: string): void { Sounds.play(name); }
         function lock(): void { root.lock(); }

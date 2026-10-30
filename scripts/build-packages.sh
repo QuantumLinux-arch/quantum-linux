@@ -22,6 +22,7 @@ PACKAGES=(
     quantum-settings
     quantum-shell
     quantum-wayfire-decor
+    quantum-display
     quantum-desktop
     quantum-center
     quantum-store
@@ -58,7 +59,7 @@ for p in "${PACKAGES[@]}"; do
     flags=(-f -s --needed --noconfirm --cleanbuild)
     [[ "$p" == quantum-* ]] && flags=(-f -d --noconfirm --cleanbuild)
     # el plugin de ventanas se compila contra Wayfire: necesita sus cabeceras
-    [[ "$p" == quantum-wayfire-decor ]] && flags=(-f -s --needed --noconfirm --cleanbuild)
+    [[ "$p" == quantum-wayfire-decor || "$p" == quantum-display ]] && flags=(-f -s --needed --noconfirm --cleanbuild)
     BUILDDIR="$BUILD" PKGDEST="$REPO" SRCDEST="$BUILD/sources" makepkg "${flags[@]}"
     install_ckbcomp
 done

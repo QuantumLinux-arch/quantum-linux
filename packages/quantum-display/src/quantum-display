@@ -1,0 +1,198 @@
+#!/usr/bin/env python3
+"""quantum-display: luz nocturna y ajustes de imagen de Quantum Linux.
+
+Lee la sección «display» de ~/.config/quantum/settings.json (la escribe Personalizar →
+Pantalla), decide si la luz nocturna va encendida (manual, al atardecer o en un horario)
+y le pasa a quantum-gamma los valores de la curva de color. La luz nocturna entra y sale
+con un fundido suave. Si todo está en sus valores normales, quantum-gamma se cierra y
+la pantalla queda exactamente como viene.
+
+Se inicia con la sesión (wayfire.ini → [autostart]); solo corre una copia por sesión.
+"""
+import fcntl
+import json
+import math
+import os
+import subprocess
+import sys
+import time
+from datetime import datetime, timedelta
+
+HOME = os.path.expanduser("~")
+CONFIG = os.environ.get("XDG_CONFIG_HOME") or os.path.join(HOME, ".config")
+STATE = os.path.join(os.environ.get("XDG_STATE_HOME") or os.path.join(HOME, ".local/state"), "quantum")
+SETTINGS = os.path.join(CONFIG, "quantum/settings.json")
+GAMMA = os.environ.get("QUANTUM_GAMMA") or "/usr/lib/quantum/quantum-gamma"
+NEUTRAL = (6500.0, 1.0, 1.0, 1.0)
+FADE = 2.5            # segundos que tarda la luz nocturna en entrar o salir
+
+
+def log(*a):
+    print("quantum-display:", *a, file=sys.stderr, flush=True)
+
+
+def read_settings():
+    try:
+        with open(SETTINGS) as f:
+            return json.load(f).get("display", {})
+    except (OSError, ValueError):
+        return {}
+
+
+def hm(text, default):
+    try:
+        h, m = (int(x) for x in str(text).split(":"))
+        return h * 60 + m
+    except ValueError:
+        return default
+
+
+def sun_times(lat, lon, day):
+    """Amanecer y atardecer (minutos desde medianoche, hora local) con la fórmula de NOAA."""
+    n = day.timetuple().tm_yday
+    g = 2 * math.pi / 365 * (n - 1)
+    eqt = 229.18 * (0.000075 + 0.001868 * math.cos(g) - 0.032077 * math.sin(g)
+                    - 0.014615 * math.cos(2 * g) - 0.040849 * math.sin(2 * g))
+    decl = (0.006918 - 0.399912 * math.cos(g) + 0.070257 * math.sin(g) - 0.006758 * math.cos(2 * g)
+            + 0.000907 * math.sin(2 * g) - 0.002697 * math.cos(3 * g) + 0.00148 * math.sin(3 * g))
+    la = math.radians(lat)
+    c = (math.cos(math.radians(90.833)) / (math.cos(la) * math.cos(decl))) - math.tan(la) * math.tan(decl)
+    if c > 1:
+        return None                 # noche polar: el sol no sale
+    if c < -1:
+        return (0, 24 * 60)         # día polar: no se pone
+    ha = math.degrees(math.acos(c))
+    offset = datetime.now().astimezone().utcoffset().total_seconds() / 60
+    rise = 720 - 4 * (lon + ha) - eqt + offset
+    sset = 720 - 4 * (lon - ha) - eqt + offset
+    return (rise % 1440, sset % 1440)
+
+
+def location():
+    try:
+        with open(os.path.join(STATE, "location")) as f:
+            lat, lon = (float(x) for x in f.read().split()[:2])
+            return lat, lon
+    except (OSError, ValueError):
+        return None
+
+
+def in_range(now, start, end):
+    """¿`now` está entre `start` y `end`? (minutos; el rango puede cruzar la medianoche)"""
+    return start <= now < end if start <= end else now >= start or now < end
+
+
+def night_on(d, now):
+    if not d.get("nightLight"):
+        return False
+    mode = d.get("nightMode", "manual")
+    minutes = now.hour * 60 + now.minute
+    if mode == "schedule":
+        return in_range(minutes, hm(d.get("nightFrom"), 21 * 60), hm(d.get("nightTo"), 7 * 60))
+    if mode == "sunset":
+        loc = location()
+        times = sun_times(*loc, now) if loc else None
+        # sin ubicación todavía (el clima no se ha cargado): de 20:00 a 07:00
+        rise, sset = times if times else (7 * 60, 20 * 60)
+        return in_range(minutes, int(sset), int(rise))
+    return True
+
+
+def target(d, night):
+    clamp = lambda v, lo, hi, dflt: max(lo, min(hi, float(d.get(v, dflt))))
+    temp = clamp("temperature", 1500, 6500, 4000) if night else 6500.0
+    return (temp, clamp("brightness", 0.3, 1, 1), clamp("contrast", 0.5, 1.5, 1), clamp("gamma", 0.5, 2, 1))
+
+
+class Gamma:
+    """quantum-gamma corriendo solo mientras hace falta."""
+    def __init__(self):
+        self.proc = None
+        self.failed_at = 0
+
+    def send(self, v):
+        if all(abs(a - b) < 1e-3 for a, b in zip(v, NEUTRAL)):
+            self.stop()
+            return
+        if self.proc and self.proc.poll() is not None:
+            self.proc = None
+        if not self.proc:
+            if time.time() - self.failed_at < 30:
+                return
+            try:
+                self.proc = subprocess.Popen([GAMMA], stdin=subprocess.PIPE, text=True)
+            except OSError as e:
+                log("no se pudo iniciar quantum-gamma:", e)
+                self.failed_at = time.time()
+                return
+        try:
+            self.proc.stdin.write("%.0f %.3f %.3f %.3f\n" % v)
+            self.proc.stdin.flush()
+        except (BrokenPipeError, OSError):
+            # la pantalla no acepta curva de color (o se cayó): reintentar más tarde
+            self.proc = None
+            self.failed_at = time.time()
+
+    def stop(self):
+        if self.proc:
+            try:
+                self.proc.stdin.close()
+                self.proc.wait(timeout=3)
+            except (OSError, subprocess.TimeoutExpired):
+                self.proc.kill()
+            self.proc = None
+
+
+def main():
+    os.makedirs(STATE, exist_ok=True)
+    lock = open(os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "quantum-display.lock"), "w")
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        return 0                     # ya hay uno corriendo en esta sesión
+    gamma = Gamma()
+    cur = None                       # lo que está aplicado ahora
+    night = None
+    fade_from, fade_start = None, 0.0
+    mtime, d = None, {}
+    last_check = 0.0
+    try:
+        while True:
+            try:
+                m = os.stat(SETTINGS).st_mtime
+            except OSError:
+                m = None
+            changed = m != mtime
+            if changed:
+                mtime, d = m, read_settings()
+            now = time.time()
+            # el horario se revisa cada 20 s, o al instante si cambiaron los ajustes
+            if changed or night is None or now - last_check >= 20:
+                n = night_on(d, datetime.now())
+                if n != night:
+                    if night is not None and cur is not None:
+                        fade_from, fade_start = cur[0], now      # fundido de la temperatura
+                    night = n
+                last_check = now
+            want = target(d, night)
+            if fade_from is not None:
+                p = min(1.0, (now - fade_start) / FADE)
+                p = p * p * (3 - 2 * p)
+                want = (fade_from + (want[0] - fade_from) * p,) + want[1:]
+                if p >= 1:
+                    fade_from = None
+            if gamma.proc is None and gamma.failed_at and now - gamma.failed_at >= 30:
+                cur = None                                  # reintentar (p. ej. pantalla recién conectada)
+            if cur is None or any(abs(a - b) > 1e-3 for a, b in zip(want, cur)):
+                gamma.send(want)
+                cur = want
+            time.sleep(0.05 if fade_from is not None else 0.25)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        gamma.stop()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

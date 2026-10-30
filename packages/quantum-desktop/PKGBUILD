@@ -5,12 +5,12 @@
 
 pkgname=quantum-desktop
 pkgver=1.0.0
-pkgrel=21
+pkgrel=22
 pkgdesc="Escritorio de Quantum Linux sobre Wayfire"
 arch=('any')
 url="https://github.com/quantum-linux"
 license=('GPL-3.0-or-later')
-depends=('wayfire' 'quantum-wayfire-decor' 'quantum-shell' 'quantum-branding' 'python' 'matugen'
+depends=('wayfire' 'quantum-wayfire-decor' 'quantum-display' 'quantum-shell' 'quantum-branding' 'python' 'matugen'
          'hypridle' 'polkit-gnome' 'xdg-desktop-portal' 'xdg-desktop-portal-wlr' 'xdg-desktop-portal-gtk'
          'kitty' 'qt6ct' 'qt5ct' 'adw-gtk-theme' 'adwaita-cursors' 'default-cursors' 'papirus-icon-theme'
          'grim' 'slurp' 'swappy' 'wl-clipboard' 'cliphist' 'brightnessctl' 'playerctl'

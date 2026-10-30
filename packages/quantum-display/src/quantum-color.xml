@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<wayfire>
+	<plugin name="quantum-color">
+		<_short>Quantum: saturación</_short>
+		<_long>Filtro de saturación de la pantalla (Personalizar → Pantalla).</_long>
+		<category>Effects</category>
+		<option name="saturation" type="double">
+			<_short>Saturación</_short>
+			<default>1.0</default>
+			<min>0.0</min>
+			<max>2.0</max>
+		</option>
+	</plugin>
+</wayfire>
