@@ -18,7 +18,7 @@ Item {
     anchors.fill: parent
 
     readonly property real km: Theme.animMult > 0 ? Theme.animMult : 0.001
-    property bool asking: preview                 // ya se ve la contraseña
+    property bool asking: false                   // ya se ve la contraseña (al tocar una tecla)
     readonly property var battery: UPower.displayDevice
     readonly property string home: Quickshell.env("HOME") ?? ""
 
@@ -194,7 +194,7 @@ Item {
             Icon { anchors.verticalCenter: parent.verticalCenter; text: parent.icon; size: 16; fill: 1; color: "white" }
             Text { anchors.verticalCenter: parent.verticalCenter; text: parent.text; font.family: Serp.font; font.pixelSize: 12; color: "white" }
         }
-        St { icon: Net.icon; text: Net.online ? (Net.wired ? "Cable" : Net.connectedName) : "Sin red" }
+        St { icon: Net.icon; text: Net.online ? Net.label : "Sin red" }
         St { visible: root.battery?.isLaptopBattery ?? false; icon: "battery_full"; text: Math.round((root.battery?.percentage ?? 0) * 100) + "%" }
         St { visible: Weather.ready; icon: Weather.icon; text: Math.round(Weather.temp) + "°C" }
     }

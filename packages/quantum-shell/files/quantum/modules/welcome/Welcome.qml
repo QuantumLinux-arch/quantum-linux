@@ -229,7 +229,7 @@ PanelWindow {
                 border.width: on ? 3 : 1
                 border.color: on ? "#C5C0FF" : Qt.rgba(1, 1, 1, 0.08)
                 opacity: k
-                scale: (on ? 1.03 : area.containsMouse ? 1.015 : 1)
+                scale: area.pressed ? 0.97 : (on ? 1.03 : area.containsMouse ? 1.015 : 1)
                 transform: Translate { y: (1 - c.k) * 50 }
                 Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
                 Behavior on color { ColorAnimation { duration: 150 } }
@@ -308,7 +308,7 @@ PanelWindow {
                     width: 260; height: 146; radius: 18
                     color: "#1C1A24"
                     border.width: on ? 3 : 1; border.color: on ? "#C5C0FF" : Qt.rgba(1, 1, 1, 0.1)
-                    scale: on ? 1.04 : 1
+                    scale: wa.pressed ? 0.95 : on ? 1.04 : 1
                     Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
                     clip: true
                     Image {
@@ -324,7 +324,7 @@ PanelWindow {
                         Image { anchors.centerIn: parent; width: 70; height: 70; source: Quickshell.shellDir + "/assets/quantum-mark.svg"; sourceSize: Qt.size(140, 140) }
                         Txt { anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: 10; text: "Fondo vivo"; color: "white"; font.pixelSize: 14; font.weight: Font.DemiBold }
                     }
-                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Settings.set("appearance", "wallpaper", w.modelData) }
+                    MouseArea { id: wa; anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Settings.set("appearance", "wallpaper", w.modelData) }
                 }
             }
         }
@@ -399,7 +399,7 @@ PanelWindow {
                 color: on ? Qt.rgba(0.2, 0.18, 0.28, 0.92) : sa.containsMouse ? Qt.rgba(0.17, 0.15, 0.22, 0.9) : Qt.rgba(0.13, 0.12, 0.17, 0.86)
                 border.width: on ? 3 : 1
                 border.color: on ? (serp ? "#F4A7C9" : "#C5C0FF") : Qt.rgba(1, 1, 1, 0.08)
-                scale: on ? 1.02 : 1
+                scale: sa.pressed ? 0.97 : on ? 1.02 : 1
                 Behavior on scale { NumberAnimation { duration: 220; easing.type: Easing.OutBack } }
 
                 // vista previa dibujada
@@ -504,11 +504,15 @@ PanelWindow {
         opacity: win.stage(5)
         Rectangle {
             width: 170; height: 60; radius: 30; color: "transparent"; border.width: 1; border.color: Qt.rgba(1, 1, 1, 0.2)
+            scale: backMa.pressed ? 0.93 : 1
+            Behavior on scale { NumberAnimation { duration: 160; easing.type: Easing.OutBack } }
             Txt { anchors.centerIn: parent; text: win.step === 0 ? "Saltar" : "Atrás"; color: "#EDE9F7"; font.pixelSize: 19; font.weight: Font.DemiBold }
-            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: win.step === 0 ? win.finish() : win.step-- }
+            MouseArea { id: backMa; anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: win.step === 0 ? win.finish() : win.step-- }
         }
         Rectangle {
-            width: goRow.implicitWidth + 64; height: 60; radius: 30; color: "#C5C0FF"
+            width: goRow.implicitWidth + 64; height: 60; radius: 30; color: goMa.containsMouse ? "#D6D2FF" : "#C5C0FF"
+            scale: goMa.pressed ? 0.93 : 1
+            Behavior on scale { NumberAnimation { duration: 160; easing.type: Easing.OutBack } }
             Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
             Row {
                 id: goRow
@@ -516,7 +520,7 @@ PanelWindow {
                 Txt { text: win.step < 2 ? "Continuar" : "Empezar a usar Quantum"; color: "#2A1A9A"; font.pixelSize: 19; font.weight: Font.Bold }
                 Icon { anchors.verticalCenter: parent.verticalCenter; text: win.step < 2 ? "arrow_forward" : "check"; size: 20; color: "#2A1A9A" }
             }
-            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: win.step < 2 ? win.step++ : win.finish() }
+            MouseArea { id: goMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: win.step < 2 ? win.step++ : win.finish() }
         }
     }
 

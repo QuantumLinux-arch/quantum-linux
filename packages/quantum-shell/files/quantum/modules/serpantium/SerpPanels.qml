@@ -79,6 +79,8 @@ PanelWindow {
         implicitHeight: size
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
+        scale: pressed ? 0.88 : 1
+        Behavior on scale { NumberAnimation { duration: b.pressed ? 70 : 280; easing.type: b.pressed ? Easing.OutQuad : Easing.OutBack } }
         Rectangle {
             anchors.fill: parent; radius: b.label !== "" ? 10 : b.height / 2
             color: b.on ? Serp.pink : b.containsMouse ? Serp.cardHi : Serp.card

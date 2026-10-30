@@ -44,15 +44,17 @@ Singleton {
     function choose(id: string): void {
         if (id === Settings.ui.shell) return;
         const a = Settings.appearance;
+        // todo en una sola escritura: dos seguidas se pisaban al recargar el archivo
         if (id === "serpantium") {
-            Settings.setUi("before", { wallpaper: a.wallpaper, accent: a.accent, dynamicColors: a.dynamicColors, mode: a.mode });
-            Settings.setMany({ appearance: { mode: "dark", dynamicColors: false, accent: "#F4A7C9", wallpaper: root.wallpaper } });
+            Settings.ui.before = { wallpaper: a.wallpaper, accent: a.accent, dynamicColors: a.dynamicColors, mode: a.mode };
+            Settings.setMany({ appearance: { mode: "dark", dynamicColors: false, accent: "#F4A7C9", wallpaper: root.wallpaper },
+                               ui: { shell: id } });
         } else {
             const b = Settings.ui.before ?? {};
             Settings.setMany({ appearance: { wallpaper: b.wallpaper ?? "quantum:live", accent: b.accent ?? Settings.defaults.appearance.accent,
-                                             dynamicColors: b.dynamicColors ?? false, mode: b.mode ?? "dark" } });
+                                             dynamicColors: b.dynamicColors ?? false, mode: b.mode ?? "dark" },
+                               ui: { shell: id } });
         }
-        Settings.setUi("shell", id);
         panel = "";
     }
 }

@@ -108,6 +108,8 @@ PanelWindow {
                 cursorShape: Qt.PointingHandCursor
                 onEntered: win.sel = index
                 onClicked: win.launch(index)
+                scale: pressed ? 0.97 : 1
+                Behavior on scale { NumberAnimation { duration: 90 } }
                 Rectangle {
                     anchors.fill: parent; radius: 9
                     color: row.on ? Serp.pink : "transparent"

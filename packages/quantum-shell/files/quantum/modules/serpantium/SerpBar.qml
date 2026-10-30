@@ -33,6 +33,9 @@ Scope {
         border.width: 1
         border.color: active ? Serp.pink : Serp.line
         Behavior on color { ColorAnimation { duration: 140 } }
+        // al apretar se hunde un poco y vuelve con rebote
+        scale: ma.pressed ? 0.9 : 1
+        Behavior on scale { NumberAnimation { duration: ma.pressed ? 70 : 260; easing.type: ma.pressed ? Easing.OutQuad : Easing.OutBack } }
         Row { id: row; anchors.centerIn: parent; spacing: 7 }
         MouseArea {
             id: ma
@@ -170,7 +173,7 @@ Scope {
             Pill {
                 panel: "control"
                 SIcon { text: Net.icon; fill: 1; color: Net.online ? Serp.pink : Serp.muted }
-                SText { width: Math.min(110, implicitWidth); text: Net.online ? (Net.wired ? "Cable" : Net.connectedName) : "Sin red" }
+                SText { width: Math.min(110, implicitWidth); text: Net.online ? Net.label : "Sin red" }
             }
             Pill {
                 panel: "control"
