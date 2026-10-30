@@ -39,16 +39,17 @@ Singleton {
         }
     }
 
-    // Elegir la forma del shell. Serpantium trae su fondo y sus colores; al volver a
-    // Caelestial se recupera lo que tenías antes (el estilo del paso 1 se mantiene).
-    function choose(id: string): void {
+    // Elegir la forma del shell. Serpantium trae su fondo rosado y sus colores, salvo que
+    // keepLook diga que la persona ya eligió los suyos (paso 2 de la bienvenida): entonces
+    // se respetan. Al volver a Caelestial se recupera lo que tenías antes.
+    function choose(id: string, keepLook: bool): void {
         if (id === Settings.ui.shell) return;
         const a = Settings.appearance;
         // todo en una sola escritura: dos seguidas se pisaban al recargar el archivo
         if (id === "serpantium") {
             Settings.ui.before = { wallpaper: a.wallpaper, accent: a.accent, dynamicColors: a.dynamicColors, mode: a.mode };
-            Settings.setMany({ appearance: { mode: "dark", dynamicColors: false, accent: "#F4A7C9", wallpaper: root.wallpaper },
-                               ui: { shell: id } });
+            Settings.setMany(keepLook ? { ui: { shell: id } }
+                : { appearance: { mode: "dark", dynamicColors: false, accent: "#F4A7C9", wallpaper: root.wallpaper }, ui: { shell: id } });
         } else {
             const b = Settings.ui.before ?? {};
             Settings.setMany({ appearance: { wallpaper: b.wallpaper ?? "quantum:live", accent: b.accent ?? Settings.defaults.appearance.accent,

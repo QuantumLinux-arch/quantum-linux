@@ -53,7 +53,9 @@ PanelWindow {
     }
     Timer { id: openTimer; interval: 1800; onTriggered: win.show() }
 
-    function show(): void { step = 0; chosen = Settings.ui.style === "custom" ? "quantum" : chosen; open = true; }
+    // si en el paso 2 eligió fondo o colores, Serpantium los respeta (no pone su fondo rosado)
+    property bool lookTouched: false
+    function show(): void { lookTouched = false; step = 0; chosen = Settings.ui.style === "custom" ? "quantum" : chosen; open = true; }
     function finish(): void { Settings.setUi("welcomed", true); open = false; }
 
     IpcHandler {
@@ -61,7 +63,7 @@ PanelWindow {
         function open(): void { win.show(); }
         function close(): void { win.open = false; }
         function next(): void { win.step = Math.min(2, win.step + 1); }
-        function shell(id: string): void { Serp.choose(id); }
+        function shell(id: string): void { Serp.choose(id, win.lookTouched); }
         function pick(id: string): void { win.pick(id); }
     }
 
@@ -290,7 +292,7 @@ PanelWindow {
                         Icon { text: m.modelData.i; size: 24; fill: 1; color: m.on ? "#2A1A9A" : "#EDE9F7" }
                         Txt { anchors.verticalCenter: parent.verticalCenter; text: m.modelData.n; font.pixelSize: 20; font.weight: Font.Bold; color: m.on ? "#2A1A9A" : "#EDE9F7" }
                     }
-                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Settings.set("appearance", "mode", m.modelData.v) }
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { win.lookTouched = true; Settings.set("appearance", "mode", m.modelData.v); } }
                 }
             }
         }
@@ -324,7 +326,7 @@ PanelWindow {
                         Image { anchors.centerIn: parent; width: 70; height: 70; source: Quickshell.shellDir + "/assets/quantum-mark.svg"; sourceSize: Qt.size(140, 140) }
                         Txt { anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: 10; text: "Fondo vivo"; color: "white"; font.pixelSize: 14; font.weight: Font.DemiBold }
                     }
-                    MouseArea { id: wa; anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Settings.set("appearance", "wallpaper", w.modelData) }
+                    MouseArea { id: wa; anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { win.lookTouched = true; Settings.set("appearance", "wallpaper", w.modelData); } }
                 }
             }
         }
@@ -349,7 +351,7 @@ PanelWindow {
                         Rectangle { width: 18; height: 18; radius: 9; y: 3; x: dyn.on ? 21 : 3; color: dyn.on ? "#2A1A9A" : "white"; Behavior on x { NumberAnimation { duration: 150 } } }
                     }
                 }
-                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Settings.set("appearance", "dynamicColors", !dyn.on) }
+                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { win.lookTouched = true; Settings.set("appearance", "dynamicColors", !dyn.on); } }
             }
             Row {
                 anchors.verticalCenter: parent.verticalCenter
@@ -367,7 +369,7 @@ PanelWindow {
                         Behavior on scale { NumberAnimation { duration: 180; easing.type: Easing.OutBack } }
                         MouseArea {
                             anchors.fill: parent; cursorShape: Qt.PointingHandCursor
-                            onClicked: Settings.setMany({ appearance: { dynamicColors: false, accent: sw.modelData } })
+                            onClicked: { win.lookTouched = true; Settings.setMany({ appearance: { dynamicColors: false, accent: sw.modelData } }); }
                         }
                     }
                 }
@@ -476,7 +478,7 @@ PanelWindow {
                     Behavior on scale { NumberAnimation { duration: 260; easing.type: Easing.OutBack } }
                     Icon { anchors.centerIn: parent; text: "check"; size: 24; color: sc.serp ? "#3A1028" : "#2A1A9A" }
                 }
-                MouseArea { id: sa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Serp.choose(sc.modelData.id) }
+                MouseArea { id: sa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Serp.choose(sc.modelData.id, win.lookTouched) }
             }
         }
     }
@@ -527,8 +529,8 @@ PanelWindow {
     // teclado: flechas para elegir, Enter para seguir, Esc para saltar
     Item {
         focus: win.open
-        Keys.onLeftPressed: if (win.step === 2) Serp.choose("caelestial"); else if (win.step === 0) { const i = win.options.findIndex(o => o.id === win.chosen); win.pick(win.options[Math.max(0, i - 1)].id); }
-        Keys.onRightPressed: if (win.step === 2) Serp.choose("serpantium"); else if (win.step === 0) { const i = win.options.findIndex(o => o.id === win.chosen); win.pick(win.options[Math.min(win.options.length - 1, i + 1)].id); }
+        Keys.onLeftPressed: if (win.step === 2) Serp.choose("caelestial", win.lookTouched); else if (win.step === 0) { const i = win.options.findIndex(o => o.id === win.chosen); win.pick(win.options[Math.max(0, i - 1)].id); }
+        Keys.onRightPressed: if (win.step === 2) Serp.choose("serpantium", win.lookTouched); else if (win.step === 0) { const i = win.options.findIndex(o => o.id === win.chosen); win.pick(win.options[Math.min(win.options.length - 1, i + 1)].id); }
         Keys.onReturnPressed: win.step < 2 ? win.step++ : win.finish()
         Keys.onEscapePressed: win.finish()
     }
