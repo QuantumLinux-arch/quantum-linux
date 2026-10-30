@@ -401,8 +401,40 @@ PanelWindow {
                 color: on ? Qt.rgba(0.2, 0.18, 0.28, 0.92) : sa.containsMouse ? Qt.rgba(0.17, 0.15, 0.22, 0.9) : Qt.rgba(0.13, 0.12, 0.17, 0.86)
                 border.width: on ? 3 : 1
                 border.color: on ? (serp ? "#F4A7C9" : "#C5C0FF") : Qt.rgba(1, 1, 1, 0.08)
-                scale: sa.pressed ? 0.97 : on ? 1.02 : 1
+                scale: sa.pressed ? 0.97 + 0.04 * fill : on ? 1.02 : 1
                 Behavior on scale { NumberAnimation { duration: 220; easing.type: Easing.OutBack } }
+
+                // Serpantium se elige manteniendo presionado (como en Serpantinum): la tarjeta
+                // se llena de rosado y, al llenarse, una franja rosada barre la pantalla
+                readonly property bool needsHold: serp && !on
+                property real fill: 0
+                onOnChanged: fill = 0
+                onFillChanged: if (fill >= 1 && needsHold && !wipeAnim.running) wipeAnim.start()
+                NumberAnimation { id: fillAnim; target: sc; property: "fill" }
+                function startHold() {
+                    fillAnim.stop(); fillAnim.to = 1; fillAnim.duration = 1300 * (1 - fill);
+                    fillAnim.easing.type = Easing.InQuad; fillAnim.start();
+                }
+                function cancelHold() {
+                    if (fill >= 1) return;
+                    fillAnim.stop(); fillAnim.to = 0; fillAnim.duration = 380 * fill;
+                    fillAnim.easing.type = Easing.OutCubic; fillAnim.start();
+                }
+                // el relleno: una copia rosada de la tarjeta, recortada de izquierda a derecha
+                Item {
+                    width: sc.width * sc.fill; height: sc.height
+                    clip: true
+                    z: 1
+                    Rectangle {
+                        width: sc.width; height: sc.height; radius: sc.radius
+                        color: Qt.rgba(0.96, 0.65, 0.79, 0.30)
+                    }
+                    Rectangle {    // el borde que avanza, más brillante
+                        anchors.right: parent.right; width: 3; height: parent.height
+                        visible: sc.fill > 0.02 && sc.fill < 0.99
+                        color: "#F4A7C9"
+                    }
+                }
 
                 // vista previa dibujada
                 Item {
@@ -478,7 +510,36 @@ PanelWindow {
                     Behavior on scale { NumberAnimation { duration: 260; easing.type: Easing.OutBack } }
                     Icon { anchors.centerIn: parent; text: "check"; size: 24; color: sc.serp ? "#3A1028" : "#2A1A9A" }
                 }
-                MouseArea { id: sa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Serp.choose(sc.modelData.id, win.lookTouched) }
+                // aviso sobre la vista previa: «Mantén presionado»
+                Rectangle {
+                    z: 2
+                    visible: sc.needsHold
+                    anchors.horizontalCenter: pv.horizontalCenter; y: pv.y + pv.height - height - 14
+                    width: holdRow.implicitWidth + 28; height: 38; radius: 19
+                    color: sc.fill > 0 ? "#F4A7C9" : Qt.rgba(0.09, 0.07, 0.09, 0.85)
+                    border.width: 1; border.color: Qt.rgba(0.96, 0.65, 0.79, 0.6)
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                    Row {
+                        id: holdRow
+                        anchors.centerIn: parent; spacing: 8
+                        Icon { anchors.verticalCenter: parent.verticalCenter; text: "touch_app"; size: 18; fill: 1; color: sc.fill > 0 ? "#3A1028" : "#F4A7C9" }
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: sc.fill > 0 ? "Sigue presionando…" : "Mantén presionado para elegir"
+                            font.family: "JetBrains Mono"; font.pixelSize: 14; font.bold: true
+                            color: sc.fill > 0 ? "#3A1028" : "#F3E7ED"
+                        }
+                    }
+                }
+                MouseArea {
+                    id: sa
+                    z: 3
+                    anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                    onPressed: if (sc.needsHold) sc.startHold()
+                    onReleased: sc.cancelHold()
+                    onCanceled: sc.cancelHold()
+                    onClicked: if (!sc.serp) Serp.choose(sc.modelData.id, win.lookTouched)
+                }
             }
         }
     }
@@ -524,6 +585,31 @@ PanelWindow {
             }
             MouseArea { id: goMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: win.step < 2 ? win.step++ : win.finish() }
         }
+    }
+
+    // Al elegir Serpantium: una franja rosada (y una gris detrás) barre la pantalla; justo
+    // cuando la cubre entera se cambia el shell, así el cambio no se ve a medias
+    property real wipe: 0
+    SequentialAnimation {
+        id: wipeAnim
+        NumberAnimation { target: win; property: "wipe"; from: 0; to: 0.5; duration: 480; easing.type: Easing.InCubic }
+        ScriptAction { script: Serp.choose("serpantium", win.lookTouched) }
+        PauseAnimation { duration: 160 }
+        NumberAnimation { target: win; property: "wipe"; from: 0.5; to: 1; duration: 620; easing.type: Easing.OutCubic }
+        ScriptAction { script: win.wipe = 0 }
+    }
+    Item {
+        anchors.fill: parent
+        visible: win.wipe > 0
+        z: 100
+        // franja rosada de 1,6 pantallas y una gris de 0,4 detrás: en wipe = 0,5 la rosada
+        // tapa todo (de -0,1 a 1,5 del ancho) y en wipe = 1 las dos ya salieron por la derecha
+        readonly property real band: win.width * 1.6
+        readonly property real trail: win.width * 0.4
+        readonly property real x0: -band + win.wipe * (win.width + band + trail)
+        Rectangle { x: parent.x0 - parent.trail; width: parent.trail; height: parent.height; color: "#2E2A2C" }
+        Rectangle { x: parent.x0; width: parent.band; height: parent.height; color: "#F4A7C9" }
+        MouseArea { anchors.fill: parent }       // mientras pasa, no se toca nada
     }
 
     // teclado: flechas para elegir, Enter para seguir, Esc para saltar
