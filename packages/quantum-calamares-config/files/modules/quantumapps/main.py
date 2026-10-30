@@ -83,7 +83,8 @@ def install_ai(root, model, when):
     global status
     try:
         status = "Instalando el asistente con IA"
-        r = libcalamares.utils.target_env_call(["pacman", "-Sy", "--needed", "--noconfirm", "ollama"])
+        # con tiempo máximo: con internet lento pacman podía quedarse aquí sin fin
+        r = libcalamares.utils.target_env_call(["pacman", "-Sy", "--needed", "--noconfirm", "ollama"], "", 600)
         if r != 0:
             libcalamares.utils.warning("quantumapps: no se pudo instalar ollama (sin internet?)")
         libcalamares.utils.target_env_call(["systemctl", "enable", "ollama.service"])

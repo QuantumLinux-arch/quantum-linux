@@ -4,7 +4,7 @@
 _pkgname="calamares"
 pkgname="$_pkgname"
 pkgver=3.4.2
-pkgrel=4
+pkgrel=5
 pkgdesc="Distribution-independent installer framework"
 url="https://codeberg.org/Calamares/calamares"
 license=("GPL-3.0-or-later")
@@ -43,6 +43,21 @@ prepare() {
   # Quantum: la traducción al español trae «%Regresar» en vez de «&Regresar»
   sed -i 's|<translation>%Regresar</translation>|<translation>\&amp;Regresar</translation>|' \
     "$srcdir/$_pkgname-$pkgver"/lang/calamares_es*.ts
+
+  # Quantum: que el instalador nunca se quede esperando la red ni los discos.
+  # Sin estos límites, con un internet lento o a medias se congelaba al abrirlo.
+  local s="$srcdir/$_pkgname-$pkgver/src"
+  # revisión de internet: máximo 5 s (antes, sin límite)
+  sed -i 's|m_hasInternetUrls.at( m_lastCheckedUrlIndex ), RequestOptions() );|m_hasInternetUrls.at( m_lastCheckedUrlIndex ), RequestOptions( RequestOptions::Flags(), std::chrono::milliseconds( 5000 ) ) );|' \
+    "$s/libcalamares/network/Manager.cpp"
+  grep -q 'milliseconds( 5000 )' "$s/libcalamares/network/Manager.cpp" || { echo "parche internet no aplicó"; return 1; }
+  # ubicación por internet (idioma y zona horaria): máximo 5 s
+  sed -i 's|synchronousGet( url, { RequestOptions::FakeUserAgent } )|synchronousGet( url, { RequestOptions::FakeUserAgent, std::chrono::milliseconds( 5000 ) } )|' \
+    "$s/libcalamares/geoip/Handler.cpp"
+  [ "$(grep -c 'milliseconds( 5000 )' "$s/libcalamares/geoip/Handler.cpp")" = 2 ] || { echo "parche geoip no aplicó"; return 1; }
+  # búsqueda de otros sistemas (os-prober): máximo 20 s (antes 60)
+  sed -i 's|osprober.waitForFinished( 60000 )|osprober.waitForFinished( 20000 )|' "$s/modules/partition/core/PartUtils.cpp"
+  grep -q 'waitForFinished( 20000 )' "$s/modules/partition/core/PartUtils.cpp" || { echo "parche os-prober no aplicó"; return 1; }
 }
 
 build() {

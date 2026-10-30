@@ -9,6 +9,16 @@ if [ ! -d /run/archiso ]; then
     exit 1
 fi
 
+# Ya abierto (o abriéndose): avisar en vez de abrir otro, que fallaría con un error
+if pgrep -x calamares >/dev/null; then
+    notify-send -a "Instalador" -i quantum-linux "El instalador ya está abierto" \
+        "Si todavía no aparece, espera unos segundos: desde un USB puede tardar." 2>/dev/null
+    exit 0
+fi
+# Desde un USB lento la ventana tarda en aparecer: avisar que ya va
+notify-send -a "Instalador" -i quantum-linux -t 6000 "Abriendo el instalador…" \
+    "Puede tardar unos segundos." 2>/dev/null
+
 # Solo las variables que Calamares necesita para mostrarse en Wayland/XWayland.
 keep=WAYLAND_DISPLAY,XDG_RUNTIME_DIR,XDG_SESSION_TYPE,XDG_CURRENT_DESKTOP,DISPLAY,XAUTHORITY,QT_QPA_PLATFORM,LANG,LC_ALL
 

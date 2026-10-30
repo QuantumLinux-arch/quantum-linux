@@ -35,6 +35,9 @@ rm -f /etc/systemd/system/multi-user.target.wants/pacman-init.service \
 rm -rf /etc/pacman.d/gnupg
 pacman-key --init
 pacman-key --populate archlinux quantum
+# pacman-key deja gpg-agent corriendo dentro del disco nuevo: eso impedía desmontarlo
+# al final de la instalación
+gpgconf --homedir /etc/pacman.d/gnupg --kill all 2>/dev/null || true
 
 # El instalador no hace falta en el sistema instalado
 pkgs=$(pacman -Qq calamares quantum-calamares-config quantum-installer 2>/dev/null)

@@ -4,7 +4,7 @@
 
 pkgname=quantum-settings
 pkgver=1.0.0
-pkgrel=9
+pkgrel=10
 pkgdesc="Configuración del sistema de Quantum Linux"
 arch=('any')
 url="https://github.com/quantum-linux"

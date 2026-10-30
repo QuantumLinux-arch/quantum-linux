@@ -90,13 +90,40 @@ Rectangle {
     }
 
     property var chosen: ({})          // id -> true
-    // internet: se vuelve a comprobar cada pocos segundos por si se conectan ahora
+    // internet: se vuelve a comprobar cada pocos segundos por si se conectan ahora.
+    // La prueba es asíncrona y con tiempo máximo: Network.checkHasInternet() bloqueaba
+    // la ventana entera mientras esperaba la red (con internet lento parecía colgado).
     property bool online: Network.hasInternet
     property string when: online ? "now" : "later"
     onOnlineChanged: if (!online && when === "now") when = "later"
+    property var probeXhr: null
+    function probe() {
+        if (probeXhr) return;                       // ya hay una prueba en curso
+        const x = new XMLHttpRequest();
+        probeXhr = x;
+        x.onreadystatechange = function () {
+            if (x.readyState !== XMLHttpRequest.DONE || page.probeXhr !== x) return;
+            page.probeXhr = null;
+            probeLimit.stop();
+            page.online = x.status > 0 && x.status < 500;
+        };
+        x.open("HEAD", "https://archlinux.org/");
+        x.send();
+        probeLimit.restart();
+    }
     Timer {
-        interval: 6000; repeat: true; running: page.visible
-        onTriggered: page.online = Network.checkHasInternet()
+        id: probeLimit
+        interval: 5000
+        onTriggered: {
+            const x = page.probeXhr;
+            page.probeXhr = null;
+            page.online = false;
+            if (x) x.abort();
+        }
+    }
+    Timer {
+        interval: 6000; repeat: true; triggeredOnStart: true; running: page.visible
+        onTriggered: page.probe()
     }
     readonly property var picked: {
         const out = [];
