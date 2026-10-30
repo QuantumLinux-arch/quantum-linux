@@ -15,6 +15,12 @@ RowLayout {
     spacing: 2
     function buttonAt(i: int): Item { return rep.itemAt(i); }
 
+    // Arrastre para reordenar: índice que se arrastra, cuánto se movió y a qué posición caería
+    property int dragFrom: -1
+    property real dragDx: 0
+    readonly property real slot: (rep.itemAt(0)?.width ?? 46) + spacing
+    readonly property int dragTo: dragFrom < 0 ? -1 : Math.max(0, Math.min(rep.count - 1, dragFrom + Math.round(dragDx / slot)))
+
     Repeater {
         id: rep
         model: Wm.groups
@@ -22,6 +28,7 @@ RowLayout {
         DockButton {
             id: btn
             required property var modelData
+            required property int index
             readonly property var g: modelData
             readonly property bool running: g.wins.length > 0
             readonly property bool focused: g.wins.some(w => w.activated && !w.minimized)
@@ -29,6 +36,27 @@ RowLayout {
 
             active: focused
             onRunningChanged: if (running) launching = false
+
+            // reordenar arrastrando: el que se arrastra sigue al mouse y los demás se corren
+            draggable: true
+            z: dragging ? 10 : 0
+            onDragMoved: dx => { root.dragFrom = index; root.dragDx = dx; root.dock.closeMenu(); root.dock.hoverGroup = null; }
+            onDropped: {
+                const to = root.dragTo;
+                root.dragFrom = -1; root.dragDx = 0;
+                if (to !== index) Wm.moveGroup(g.id, to);
+            }
+            transform: Translate {
+                x: {
+                    if (root.dragFrom < 0) return 0;
+                    if (btn.index === root.dragFrom) return root.dragDx;
+                    const f = root.dragFrom, t = root.dragTo;
+                    if (f < t && btn.index > f && btn.index <= t) return -root.slot;
+                    if (f > t && btn.index < f && btn.index >= t) return root.slot;
+                    return 0;
+                }
+                Behavior on x { enabled: !btn.dragging; NumberAnimation { duration: Theme.anim; easing.type: Easing.OutCubic } }
+            }
 
             onClicked: {
                 root.dock.closeMenu();

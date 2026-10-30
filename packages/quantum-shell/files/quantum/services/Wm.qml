@@ -79,6 +79,22 @@ Singleton {
         Settings.setPinned(list);
     }
 
+    // Mueve una app de la barra a la posición «to» (índice entre todos los íconos).
+    // Las fijadas van primero: si se suelta una app no fijada entre las fijadas, queda fijada ahí.
+    function moveGroup(id: string, to: int): void {
+        const list = (Settings.dock.pinned ?? []).slice();
+        const from = list.indexOf(id);
+        if (from >= 0) {
+            list.splice(from, 1);
+            list.splice(Math.max(0, Math.min(list.length, to)), 0, id);
+        } else if (to <= list.length) {
+            list.splice(Math.max(0, to), 0, id);
+        } else {
+            return;
+        }
+        Settings.setPinned(list);
+    }
+
     function nameFor(appId: string): string {
         if (appId === "org.quickshell") return "Personalizar";
         return DesktopEntries.heuristicLookup(appId)?.name ?? appId;
