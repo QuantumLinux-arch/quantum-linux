@@ -18,6 +18,7 @@ import "modules/osd"
 import "modules/session"
 import "modules/welcome"
 import "modules/lock"
+import "modules/serpantium"
 
 // Quantum Shell: el escritorio de Quantum Linux.
 // Primero aparece la pantalla de carga (liviana) y el resto se carga de fondo, sin
@@ -37,15 +38,21 @@ ShellRoot {
         activeAsync: true
         Scope {
             Background {}
-            Bar {}
-            Dock {}
+            // La forma del shell: Caelestial (barra + dock) o Serpantium (píldoras arriba)
+            LazyLoader {
+                active: !Serp.on
+                Scope { Bar {} Dock {} DashboardZone {} }
+            }
+            LazyLoader {
+                active: Serp.on
+                Scope { SerpBar {} SerpPanels {} SerpLauncher {} }
+            }
             Lock {}
             Popups {}
             Osd {}
             Launcher {}
             ControlCenter {}
             Dashboard {}
-            DashboardZone {}
             WallpaperPicker {}
             Personalize {}
             Assistant {}

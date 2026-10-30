@@ -273,6 +273,8 @@ Singleton {
             }
             property JsonObject ui: JsonObject {
                 property bool welcomed: false            // ya pasó por la bienvenida del primer inicio
+                property string shell: "caelestial"      // caelestial | serpantium (paso 3 de la bienvenida)
+                property var before: ({})                // fondo y colores de antes de Serpantium (para volver)
                 property bool advanced: false
                 property string style: "quantum"
                 property string page: "styles"

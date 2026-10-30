@@ -33,6 +33,7 @@ Singleton {
         wallpapersOpen = false;
         aiOpen = false;
         wifiPage = false;
+        Serp.panel = "";
     }
 
     function toggleLauncher(clipboard: bool): void {
@@ -43,6 +44,7 @@ Singleton {
     }
 
     function toggleControlCenter(): void {
+        if (Serp.on) { const p = Serp.panel; closeAll(); Serp.panel = p; Serp.toggle("control"); return; }
         const opening = !controlCenterOpen;
         closeAll();
         controlCenterOpen = opening;
@@ -56,6 +58,7 @@ Singleton {
     }
 
     function toggleDashboard(): void {
+        if (Serp.on) { const p = Serp.panel; closeAll(); Serp.panel = p; Serp.toggle("clock"); return; }
         const opening = !dashboardOpen;
         closeAll();
         dashboardHover = false;

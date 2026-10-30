@@ -4,7 +4,7 @@
 
 pkgname=quantum-branding
 pkgver=1.0.0
-pkgrel=5
+pkgrel=6
 pkgdesc="Identidad visual de Quantum Linux"
 arch=('any')
 url="https://github.com/quantum-linux"
@@ -42,6 +42,9 @@ package() {
   # fondo del estilo «Quantum» del primer inicio
   install -m644 "$_files/wallpapers/beako.jpg" "$share/backgrounds/quantum/beako.jpg"
   install -m644 "$_files/wallpapers/beako-thumb.jpg" "$share/backgrounds/quantum/thumbs/beako.jpg"
+  # fondo del shell Serpantium (generado por branding/serpantium/fondo.py)
+  install -m644 "$_files/wallpapers/serpantium.jpg" "$share/backgrounds/quantum/serpantium.jpg"
+  install -m644 "$_files/wallpapers/serpantium-thumb.jpg" "$share/backgrounds/quantum/thumbs/serpantium.jpg"
 
   # Pantalla de inicio (SDDM)
   local sddm="$share/sddm/themes/quantum"

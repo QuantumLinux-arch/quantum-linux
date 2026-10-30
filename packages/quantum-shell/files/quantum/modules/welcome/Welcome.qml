@@ -60,7 +60,8 @@ PanelWindow {
         target: "welcome"
         function open(): void { win.show(); }
         function close(): void { win.open = false; }
-        function next(): void { win.step = 1; }
+        function next(): void { win.step = Math.min(2, win.step + 1); }
+        function shell(id: string): void { Serp.choose(id); }
         function pick(id: string): void { win.pick(id); }
     }
 
@@ -123,7 +124,7 @@ PanelWindow {
         }
         Txt {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: win.step === 0 ? "Elige cómo se ve tu escritorio" : "Elige tus colores y tu fondo"
+            text: ["Elige cómo se ve tu escritorio", "Elige tus colores y tu fondo", "Elige tu Quantum Shell"][win.step]
             color: "#EDE9F7"; font.pixelSize: 58; font.weight: Font.Black
         }
         Txt {
@@ -374,6 +375,112 @@ PanelWindow {
         }
     }
 
+
+    // ---------------------------------------------------------------- paso 3: la forma del shell
+    readonly property var shells: [
+        { id: "caelestial", name: "Caelestial", tag: "El de siempre",
+          desc: "Inspirado en Caelestia Shell, pero más liviano: barra arriba, dock flotante y paneles de vidrio con tus colores." },
+        { id: "serpantium", name: "Serpantium", tag: "Nuevo",
+          desc: "Inspirado en Serpantinum de ilyamiro: barra de píldoras, paneles oscuros que bajan, letra monoespaciada y tonos rosados." },
+    ]
+    Row {
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: Math.round(parent.height * 0.33)
+        spacing: 36
+        visible: win.step === 2
+        Repeater {
+            model: win.shells
+            Rectangle {
+                id: sc
+                required property var modelData
+                readonly property bool on: Settings.ui.shell === modelData.id
+                readonly property bool serp: modelData.id === "serpantium"
+                width: Math.min(620, (win.width - 300) / 2); height: width * 0.8; radius: 30
+                color: on ? Qt.rgba(0.2, 0.18, 0.28, 0.92) : sa.containsMouse ? Qt.rgba(0.17, 0.15, 0.22, 0.9) : Qt.rgba(0.13, 0.12, 0.17, 0.86)
+                border.width: on ? 3 : 1
+                border.color: on ? (serp ? "#F4A7C9" : "#C5C0FF") : Qt.rgba(1, 1, 1, 0.08)
+                scale: on ? 1.02 : 1
+                Behavior on scale { NumberAnimation { duration: 220; easing.type: Easing.OutBack } }
+
+                // vista previa dibujada
+                Item {
+                    id: pv
+                    x: 20; y: 20; width: parent.width - 40; height: width * 0.56
+                    clip: true
+                    Image {
+                        anchors.fill: parent; fillMode: Image.PreserveAspectCrop; asynchronous: true; sourceSize: Qt.size(480, 270)
+                        source: "file://" + win.wallDir + "/thumbs/" + (sc.serp ? "serpantium" : "orbita") + ".jpg"
+                    }
+                    // Caelestial: barra arriba, dock flotante, panel de vidrio
+                    Item {
+                        anchors.fill: parent; visible: !sc.serp
+                        Rectangle { x: 8; y: 6; width: parent.width - 16; height: 16; radius: 8; color: Qt.rgba(0.08, 0.07, 0.12, 0.75) }
+                        Rectangle {
+                            anchors.right: parent.right; anchors.rightMargin: 14; y: 30; width: parent.width * 0.3; height: parent.height * 0.55; radius: 12
+                            color: Qt.rgba(0.12, 0.1, 0.2, 0.75); border.width: 1; border.color: Qt.rgba(1, 1, 1, 0.12)
+                            Grid { x: 10; y: 10; columns: 2; spacing: 6; Repeater { model: 4; Rectangle { width: (pv.width * 0.3 - 26) / 2; height: 20; radius: 8; color: index === 0 ? "#6A5CFF" : Qt.rgba(1, 1, 1, 0.12) } } }
+                        }
+                        Rectangle {
+                            anchors.bottom: parent.bottom; anchors.bottomMargin: 10; anchors.horizontalCenter: parent.horizontalCenter
+                            width: 170; height: 30; radius: 12; color: Qt.rgba(0.1, 0.09, 0.15, 0.85); border.width: 1; border.color: Qt.rgba(1, 1, 1, 0.14)
+                            Row { anchors.centerIn: parent; spacing: 6; Repeater { model: 6; Rectangle { width: 18; height: 18; radius: 5; color: ["#4FD8FF", "#6A5CFF", "#B14DFF", "#7BD88F", "#FF9F43", "#F7D046"][index] } } }
+                        }
+                    }
+                    // Serpantium: píldoras arriba y un panel oscuro que baja
+                    Item {
+                        anchors.fill: parent; visible: sc.serp
+                        Row {
+                            x: 6; y: 6; spacing: 4
+                            Repeater { model: [14, 14, 44, 70]; Rectangle { required property var modelData; width: modelData; height: 14; radius: 4; color: "#1F171D" } }
+                        }
+                        Row {
+                            anchors.horizontalCenter: parent.horizontalCenter; y: 6; spacing: 4
+                            Rectangle { width: 48; height: 14; radius: 4; color: "#1F171D"; Text { anchors.centerIn: parent; text: "23:40"; font.family: "JetBrains Mono"; font.pixelSize: 8; color: "#F3E7ED" } }
+                            Rectangle { width: 30; height: 14; radius: 4; color: "#1F171D" }
+                        }
+                        Row {
+                            anchors.right: parent.right; anchors.rightMargin: 6; y: 6; spacing: 4
+                            Repeater { model: [40, 30, 26, 26, 14]; Rectangle { required property var modelData; required property int index; width: modelData; height: 14; radius: 4; color: index === 4 ? "#F4A7C9" : "#1F171D" } }
+                        }
+                        Rectangle {
+                            anchors.horizontalCenter: parent.horizontalCenter; y: 26; width: parent.width * 0.55; height: parent.height * 0.5; radius: 10
+                            color: "#17111A"; border.width: 1; border.color: Qt.rgba(1, 1, 1, 0.08)
+                            Text { x: parent.width * 0.38; anchors.verticalCenter: parent.verticalCenter; text: "23:40"; font.family: "JetBrains Mono"; font.pixelSize: 26; font.bold: true; color: "#F3E7ED" }
+                            Grid {
+                                x: 10; y: 12; columns: 7; spacing: 3
+                                Repeater { model: 28; Rectangle { width: 7; height: 7; radius: 2; color: index === 17 ? "#F4A7C9" : Qt.rgba(1, 1, 1, 0.14) } }
+                            }
+                            Text { anchors.right: parent.right; anchors.rightMargin: 10; y: 10; text: "12°"; font.family: "JetBrains Mono"; font.pixelSize: 18; font.bold: true; color: "#F3E7ED" }
+                        }
+                    }
+                }
+
+                Column {
+                    x: 30; y: pv.y + pv.height + 22; width: parent.width - 60; spacing: 10
+                    Row {
+                        spacing: 12
+                        Txt { text: sc.modelData.name; color: "#EDE9F7"; font.pixelSize: 30; font.weight: Font.Bold; font.family: sc.serp ? "JetBrains Mono" : "Inter" }
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: st.implicitWidth + 22; height: 28; radius: 14
+                            color: sc.serp ? Qt.rgba(0.96, 0.65, 0.79, 0.18) : Qt.rgba(1, 1, 1, 0.08)
+                            Txt { id: st; anchors.centerIn: parent; text: sc.modelData.tag; color: sc.serp ? "#F4A7C9" : "#A39DB8"; font.pixelSize: 14; font.weight: Font.DemiBold }
+                        }
+                    }
+                    Txt { width: parent.width; wrapMode: Text.WordWrap; text: sc.modelData.desc; color: "#A39DB8"; font.pixelSize: 18; elide: Text.ElideNone }
+                }
+                Rectangle {
+                    anchors.right: parent.right; anchors.top: parent.top; anchors.margins: 34
+                    width: 40; height: 40; radius: 20; color: sc.serp ? "#F4A7C9" : "#C5C0FF"
+                    scale: sc.on ? 1 : 0
+                    Behavior on scale { NumberAnimation { duration: 260; easing.type: Easing.OutBack } }
+                    Icon { anchors.centerIn: parent; text: "check"; size: 24; color: sc.serp ? "#3A1028" : "#2A1A9A" }
+                }
+                MouseArea { id: sa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Serp.choose(sc.modelData.id) }
+            }
+        }
+    }
+
     // ---------------------------------------------------------------- pie
     Row {
         anchors.horizontalCenter: parent.horizontalCenter
@@ -381,7 +488,7 @@ PanelWindow {
         spacing: 10
         opacity: win.stage(5)
         Repeater {
-            model: 2
+            model: 3
             Rectangle {
                 required property int index
                 width: index === win.step ? 30 : 10; height: 10; radius: 5
@@ -398,7 +505,7 @@ PanelWindow {
         Rectangle {
             width: 170; height: 60; radius: 30; color: "transparent"; border.width: 1; border.color: Qt.rgba(1, 1, 1, 0.2)
             Txt { anchors.centerIn: parent; text: win.step === 0 ? "Saltar" : "Atrás"; color: "#EDE9F7"; font.pixelSize: 19; font.weight: Font.DemiBold }
-            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: win.step === 0 ? win.finish() : win.step = 0 }
+            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: win.step === 0 ? win.finish() : win.step-- }
         }
         Rectangle {
             width: goRow.implicitWidth + 64; height: 60; radius: 30; color: "#C5C0FF"
@@ -406,19 +513,19 @@ PanelWindow {
             Row {
                 id: goRow
                 anchors.centerIn: parent; spacing: 8
-                Txt { text: win.step === 0 ? "Continuar" : "Empezar a usar Quantum"; color: "#2A1A9A"; font.pixelSize: 19; font.weight: Font.Bold }
-                Icon { anchors.verticalCenter: parent.verticalCenter; text: win.step === 0 ? "arrow_forward" : "check"; size: 20; color: "#2A1A9A" }
+                Txt { text: win.step < 2 ? "Continuar" : "Empezar a usar Quantum"; color: "#2A1A9A"; font.pixelSize: 19; font.weight: Font.Bold }
+                Icon { anchors.verticalCenter: parent.verticalCenter; text: win.step < 2 ? "arrow_forward" : "check"; size: 20; color: "#2A1A9A" }
             }
-            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: win.step === 0 ? win.step = 1 : win.finish() }
+            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: win.step < 2 ? win.step++ : win.finish() }
         }
     }
 
     // teclado: flechas para elegir, Enter para seguir, Esc para saltar
     Item {
         focus: win.open
-        Keys.onLeftPressed: if (win.step === 0) { const i = win.options.findIndex(o => o.id === win.chosen); win.pick(win.options[Math.max(0, i - 1)].id); }
-        Keys.onRightPressed: if (win.step === 0) { const i = win.options.findIndex(o => o.id === win.chosen); win.pick(win.options[Math.min(win.options.length - 1, i + 1)].id); }
-        Keys.onReturnPressed: win.step === 0 ? win.step = 1 : win.finish()
+        Keys.onLeftPressed: if (win.step === 2) Serp.choose("caelestial"); else if (win.step === 0) { const i = win.options.findIndex(o => o.id === win.chosen); win.pick(win.options[Math.max(0, i - 1)].id); }
+        Keys.onRightPressed: if (win.step === 2) Serp.choose("serpantium"); else if (win.step === 0) { const i = win.options.findIndex(o => o.id === win.chosen); win.pick(win.options[Math.min(win.options.length - 1, i + 1)].id); }
+        Keys.onReturnPressed: win.step < 2 ? win.step++ : win.finish()
         Keys.onEscapePressed: win.finish()
     }
 }

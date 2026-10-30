@@ -12,7 +12,8 @@ PanelWindow {
 
     readonly property bool clipMode: Shell.clipboardMode
 
-    readonly property bool open: Shell.launcherOpen
+    // con Serpantium, el menú de apps es SerpLauncher (aquí queda el portapapeles)
+    readonly property bool open: Shell.launcherOpen && (!Serp.on || Shell.clipboardMode)
     visible: open || card.enter > 0.001
     screen: Wm.screen
     WlrLayershell.layer: WlrLayer.Overlay

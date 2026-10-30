@@ -96,6 +96,20 @@ ColumnLayout {
         return v;
     }
 
+    // ------------------------------------------------------------ forma del shell
+    Group {
+        title: "Quantum Shell"
+        help: Settings.ui.shell === "serpantium"
+            ? "Serpantium: barra de píldoras, paneles oscuros y tonos rosados. Inspirado en Serpantinum de ilyamiro."
+            : "Caelestial: barra arriba, dock y paneles de vidrio. Inspirado en Caelestia Shell, pero más liviano."
+        icon: "dashboard"
+        Segmented {
+            options: [{ v: "caelestial", t: "Caelestial", i: "blur_on" }, { v: "serpantium", t: "Serpantium", i: "terminal" }]
+            value: Settings.ui.shell
+            onPicked: v => Serp.choose(v)
+        }
+    }
+
     // ------------------------------------------------------------ estilos
     Group {
         title: "Elige un estilo"
