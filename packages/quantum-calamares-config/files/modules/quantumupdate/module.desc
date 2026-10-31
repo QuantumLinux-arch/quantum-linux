@@ -1,0 +1,7 @@
+# Quantum Linux: actualiza el sistema recién copiado (si hay internet), para que quede en
+# la última versión aunque el ISO sea antiguo
+---
+type:       "job"
+name:       "quantumupdate"
+interface:  "python"
+script:     "main.py"

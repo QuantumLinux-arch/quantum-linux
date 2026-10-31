@@ -4,7 +4,7 @@
 
 pkgname=quantum-calamares-config
 pkgver=1.0.0
-pkgrel=11
+pkgrel=12
 pkgdesc="Configuración del instalador de Quantum Linux"
 arch=('any')
 url="https://github.com/quantum-linux"
@@ -39,6 +39,8 @@ package() {
 
   install -Dm644 modules/quantumapps/module.desc "$pkgdir/usr/lib/calamares/modules/quantumapps/module.desc"
   install -Dm644 modules/quantumapps/main.py "$pkgdir/usr/lib/calamares/modules/quantumapps/main.py"
+  install -Dm644 modules/quantumupdate/module.desc "$pkgdir/usr/lib/calamares/modules/quantumupdate/module.desc"
+  install -Dm644 modules/quantumupdate/main.py "$pkgdir/usr/lib/calamares/modules/quantumupdate/main.py"
 
   install -Dm755 bin/quantum-install "$pkgdir/usr/bin/quantum-install"
   install -Dm644 quantum-install.desktop "$pkgdir/usr/share/applications/quantum-install.desktop"
