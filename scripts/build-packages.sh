@@ -26,6 +26,7 @@ PACKAGES=(
     quantum-desktop
     quantum-center
     quantum-store
+    quantum-files
     quantum-foton
     quantum-calamares-config
 )

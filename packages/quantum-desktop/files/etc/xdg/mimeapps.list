@@ -1,5 +1,5 @@
 [Default Applications]
-inode/directory=org.gnome.Nautilus.desktop
+inode/directory=quantum-files.desktop;org.gnome.Nautilus.desktop
 text/plain=org.gnome.TextEditor.desktop
 application/pdf=org.gnome.Papers.desktop
 image/png=org.gnome.Loupe.desktop

@@ -94,7 +94,7 @@ PACKS = [
 ]
 
 WINDOWS_EQUIV = [
-    ("system-file-manager", "Explorador de archivos", "Archivos (Nautilus)", "Win + E"),
+    ("system-file-manager", "Explorador de archivos", "Archivos", "Win + E"),
     ("preferences-system", "Configuración", "Centro Quantum → Ajustes", "Win + I"),
     ("quantum-store", "Microsoft Store", "Quantum Store", ""),
     ("utilities-system-monitor", "Administrador de tareas", "Mission Center", "Ctrl + Shift + Esc"),

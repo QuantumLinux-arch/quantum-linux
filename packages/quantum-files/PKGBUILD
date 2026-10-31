@@ -1,0 +1,27 @@
+# Maintainer: Quantum Linux <https://github.com/quantum-linux>
+
+pkgname=quantum-files
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Archivos: el explorador de archivos de Quantum Linux, fácil como el de Windows"
+arch=('any')
+url="https://github.com/quantum-linux"
+license=('GPL-3.0-or-later')
+depends=('python' 'python-pyqt6' 'python-gobject' 'qt6-declarative' 'qt6-svg' 'glib2' 'udisks2'
+         'libarchive' 'papirus-icon-theme' 'quantum-shell')
+optdepends=('kitty: «Abrir terminal aquí»'
+            'gvfs: papelera y discos en más tipos de unidades')
+provides=('file-manager')
+
+_src="$startdir/src"
+
+package() {
+  install -d "$pkgdir/usr/lib/quantum-files"
+  cp -r "$_src/quantum_files" "$pkgdir/usr/lib/quantum-files/"
+  rm -rf "$pkgdir/usr/lib/quantum-files/quantum_files/__pycache__"
+  # precompilado: abre más rápido
+  python -m compileall -q -j 0 -o 0 -o 1 -s "$pkgdir" -p / "$pkgdir/usr/lib/quantum-files"
+  install -Dm755 "$startdir/files/quantum-files" "$pkgdir/usr/bin/quantum-files"
+  install -Dm644 "$startdir/files/quantum-files.desktop" "$pkgdir/usr/share/applications/quantum-files.desktop"
+  install -Dm644 "$startdir/files/quantum-files.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/quantum-files.svg"
+}

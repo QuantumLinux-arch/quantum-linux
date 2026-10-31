@@ -198,8 +198,15 @@ Singleton {
         // Barra de tareas de fábrica de la 1.0 (con Fotón y la Store): si nadie la
         // cambió, pasa a la nueva, más limpia. Si la personalizaste, no se toca.
         onLoaded: {
-            if ((adapter.dock.pinned ?? []).join(",") === "org.gnome.Nautilus,firefox,foton,quantum-store,kitty,quantum-center")
-                root.setPinned(["org.gnome.Nautilus", "firefox", "kitty", "quantum-center"]);
+            let pins = adapter.dock.pinned ?? [];
+            if (pins.join(",") === "org.gnome.Nautilus,firefox,foton,quantum-store,kitty,quantum-center")
+                pins = ["org.gnome.Nautilus", "firefox", "kitty", "quantum-center"];
+            // Archivos (quantum-files) reemplaza a Nautilus en la barra, una sola vez
+            if (!adapter.ui.filesPinned && pins.includes("org.gnome.Nautilus") && !pins.includes("quantum-files"))
+                pins = pins.map(p => p === "org.gnome.Nautilus" ? "quantum-files" : p);
+            if (pins.join(",") !== (adapter.dock.pinned ?? []).join(","))
+                root.setPinned(pins);
+            if (!adapter.ui.filesPinned) root.setUi("filesPinned", true);
         }
 
         JsonAdapter {
@@ -272,7 +279,7 @@ Singleton {
             }
             property JsonObject dock: JsonObject {
                 // apps fijadas en la barra de tareas (ids de .desktop)
-                property var pinned: ["org.gnome.Nautilus", "firefox", "kitty", "quantum-center"]
+                property var pinned: ["quantum-files", "firefox", "kitty", "quantum-center"]
                 property bool floating: true
                 property string align: "center"          // center | left
                 property string size: "medium"           // small | medium | large
@@ -314,6 +321,7 @@ Singleton {
             property JsonObject ui: JsonObject {
                 property bool welcomed: false            // ya pasó por la bienvenida del primer inicio
                 property string shell: "caelestial"      // caelestial | serpantium (paso 3 de la bienvenida)
+                property bool filesPinned: false         // ya se cambió Nautilus por Archivos en la barra
                 property var before: ({})                // fondo y colores de antes de Serpantium (para volver)
                 property bool advanced: false
                 property string style: "quantum"

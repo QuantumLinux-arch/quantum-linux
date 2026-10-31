@@ -15,7 +15,7 @@
     "topBar": { "floating": true, "showApp": true }
   },
   "dock": {
-    "pinned": ["org.gnome.Nautilus", "firefox", "kitty", "quantum-center"],
+    "pinned": ["quantum-files", "firefox", "kitty", "quantum-center"],
     "floating": true,
     "align": "center",
     "size": "medium",

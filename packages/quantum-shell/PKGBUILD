@@ -4,7 +4,7 @@
 
 pkgname=quantum-shell
 pkgver=1.0.0
-pkgrel=31
+pkgrel=32
 pkgdesc="El shell de escritorio de Quantum Linux (Quickshell)"
 arch=('any')
 url="https://github.com/quantum-linux"

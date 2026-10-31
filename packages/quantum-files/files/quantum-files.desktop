@@ -1,0 +1,20 @@
+[Desktop Entry]
+Type=Application
+Name=Archivos
+Name[en]=Files
+GenericName=Explorador de archivos
+Comment=Tus carpetas, discos y USB, como en Windows
+Comment[en]=Browse your folders, drives and USB sticks
+Exec=quantum-files %U
+Icon=quantum-files
+Terminal=false
+StartupWMClass=quantum-files
+Categories=System;FileTools;FileManager;Utility;Core;
+Keywords=archivos;carpetas;explorador;files;folder;explorer;nautilus;dolphin;
+MimeType=inode/directory;
+Actions=new-window;
+
+[Desktop Action new-window]
+Name=Ventana nueva
+Name[en]=New window
+Exec=quantum-files
