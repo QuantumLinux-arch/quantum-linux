@@ -1,0 +1,12 @@
+# Quantum Linux: después de actualizar paquetes, anota que hace falta reiniciar.
+# Sirve para cualquier forma de actualizar (quantum-update, Quantum Store, yay, pacman).
+[Trigger]
+Operation = Upgrade
+Type = Package
+Target = *
+
+[Action]
+Description = Anotando que hace falta reiniciar...
+When = PostTransaction
+Exec = /usr/lib/quantum/reboot-required
+NeedsTargets

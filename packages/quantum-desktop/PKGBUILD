@@ -5,7 +5,7 @@
 
 pkgname=quantum-desktop
 pkgver=1.0.0
-pkgrel=22
+pkgrel=23
 pkgdesc="Escritorio de Quantum Linux sobre Wayfire"
 arch=('any')
 url="https://github.com/quantum-linux"

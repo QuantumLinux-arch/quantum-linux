@@ -39,9 +39,9 @@ fi
 if sudo pacman -Syu --noconfirm; then
     command -v flatpak >/dev/null && flatpak update -y --noninteractive
     printf '\n  %s%sListo: Quantum Linux está al día.%s\n' "$b" "$g" "$n"
-    # si ya no están los módulos del kernel en uso, es que se instaló uno nuevo
-    if [ ! -d "/usr/lib/modules/$(uname -r)" ]; then
-        printf '  Se actualizó el kernel: reinicia cuando puedas.\n'
+    # el hook de pacman anotó qué se actualizó: el escritorio pide reiniciar
+    if [ -s /run/quantum/reboot-required ]; then
+        printf '  %sReinicia para que se apliquen los cambios%s (Quantum te lo va a pedir).\n' "$b" "$n"
     fi
 else
     printf '\n  %sLa actualización no terminó.%s Tu sistema no cambió de forma parcial:\n' "$r" "$n"

@@ -194,6 +194,12 @@ Scope {
                 SText { text: Math.round((root.battery?.percentage ?? 0) * 100) + "%" }
             }
             Pill {
+                visible: Updates.rebootNeeded && !Updates.rebootAsk
+                onClicked: Updates.rebootAsk = true
+                SIcon { text: "restart_alt"; color: Serp.pink }
+                SText { text: "Reiniciar"; color: Serp.pink }
+            }
+            Pill {
                 implicitWidth: 30
                 onClicked: Shell.toggleSession()
                 SIcon { text: "power_settings_new"; color: Serp.pink }

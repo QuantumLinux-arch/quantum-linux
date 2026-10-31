@@ -1,0 +1,12 @@
+#!/bin/bash
+# Lo llama el hook de pacman quantum-reboot.hook con los paquetes actualizados (uno por
+# línea en la entrada). Los anota en /run/quantum/reboot-required: /run se borra solo al
+# reiniciar, así el aviso desaparece cuando ya se reinició. Quantum Shell lo vigila y
+# muestra el aviso «Reinicia para terminar de actualizar».
+[ -d /run/archiso ] && exit 0          # en el USB en vivo no tiene sentido
+file=/run/quantum/reboot-required
+mkdir -p /run/quantum
+{ cat "$file" 2>/dev/null; cat; } | sed '/^$/d' | sort -u > "$file.new"
+mv -f "$file.new" "$file"
+chmod 644 "$file"
+exit 0

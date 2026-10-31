@@ -19,6 +19,7 @@ import "modules/session"
 import "modules/welcome"
 import "modules/lock"
 import "modules/serpantium"
+import "modules/updates"
 
 // Quantum Shell: el escritorio de Quantum Linux.
 // Primero aparece la pantalla de carga (liviana) y el resto se carga de fondo, sin
@@ -58,6 +59,7 @@ ShellRoot {
             Assistant {}
             SessionMenu {}
             Welcome {}
+            RebootPrompt {}
         }
     }
 }

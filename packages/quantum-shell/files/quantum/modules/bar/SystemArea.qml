@@ -36,6 +36,29 @@ RowLayout {
             onClicked: Updates.update()
         }
     }
+    // «Más tarde» en el aviso de reinicio: queda este botón para reiniciar cuando quieras
+    Rectangle {
+        visible: Updates.rebootNeeded && !Updates.rebootAsk
+        implicitWidth: rbRow.implicitWidth + 22
+        implicitHeight: 34
+        radius: 17
+        color: rbArea.containsMouse ? Theme.alpha(Theme.primary, 0.28) : Theme.alpha(Theme.primary, 0.16)
+        Behavior on color { ColorAnimation { duration: Theme.animFast } }
+        RowLayout {
+            id: rbRow
+            anchors.centerIn: parent
+            spacing: 6
+            Icon { text: "restart_alt"; size: 18; fill: 1; color: Theme.primary }
+            Txt { text: "Reiniciar"; font.weight: Font.Bold; color: Theme.primary }
+        }
+        MouseArea {
+            id: rbArea
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: Updates.rebootAsk = true
+        }
+    }
     Status {}
     Clock { compact: root.compact }
     IconButton {

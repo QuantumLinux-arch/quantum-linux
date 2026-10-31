@@ -4,7 +4,7 @@
 
 pkgname=quantum-settings
 pkgver=1.0.0
-pkgrel=10
+pkgrel=11
 pkgdesc="Configuración del sistema de Quantum Linux"
 arch=('any')
 url="https://github.com/quantum-linux"
@@ -24,6 +24,9 @@ package() {
   install -Dm644 etc/os-release "$pkgdir/usr/share/quantum/os-release"
   install -Dm755 lib/apply-os-release "$pkgdir/usr/lib/quantum/apply-os-release"
   install -Dm644 hooks/quantum-os-release.hook "$pkgdir/usr/share/libalpm/hooks/quantum-os-release.hook"
+  # Aviso de reinicio después de actualizar (lo muestra Quantum Shell)
+  install -Dm644 hooks/quantum-reboot.hook "$pkgdir/usr/share/libalpm/hooks/zz-quantum-reboot.hook"
+  install -Dm755 lib/reboot-required "$pkgdir/usr/lib/quantum/reboot-required"
 
   # Rendimiento
   install -Dm644 etc/zram-generator.conf "$pkgdir/etc/systemd/zram-generator.conf"
