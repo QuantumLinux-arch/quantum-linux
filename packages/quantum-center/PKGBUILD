@@ -2,7 +2,7 @@
 
 pkgname=quantum-center
 pkgver=1.0.0
-pkgrel=15
+pkgrel=16
 pkgdesc="Centro Quantum: bienvenida, ajustes y mantenimiento de Quantum Linux"
 arch=('any')
 url="https://github.com/quantum-linux"
@@ -25,4 +25,5 @@ package() {
   install -d "$pkgdir/usr/share/quantum/app-icons"
   install -m644 "$startdir"/files/app-icons/*.png "$pkgdir/usr/share/quantum/app-icons/"
   install -Dm644 "$startdir/files/interactive-proyects.png" "$pkgdir/usr/share/quantum/credits/interactive-proyects.png"
+  install -Dm644 "$startdir/files/ilyamiro.png" "$pkgdir/usr/share/quantum/credits/ilyamiro.png"
 }

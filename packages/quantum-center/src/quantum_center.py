@@ -634,6 +634,8 @@ CREDITS = [
      "Primer colaborador oficial. Creó el Discord de Quantum (discord.gg/qWmEb9xHkZ) y ayuda en todo lo que haga falta."),
     ("/usr/share/quantum/credits/interactive-proyects.png", "Interactive proyects", "Diseño web",
      "Mejoró la página web de Quantum: modo oscuro, animaciones y una versión más cómoda para celular."),
+    ("/usr/share/quantum/credits/ilyamiro.png", "ilyamiro", "Inspiró Serpantium",
+     "Creador de Serpantinum, el escritorio que inspiró a Serpantium. Gracias por compartir tu trabajo (@ilyamiro.dev)."),
 ]
 OPEN_SOURCE = ["Arch Linux", "Wayfire", "Quickshell", "Calamares", "matugen", "Papirus",
                "Material Symbols", "Inter", "Waydroid", "CachyOS"]
