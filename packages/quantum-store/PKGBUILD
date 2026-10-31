@@ -2,7 +2,7 @@
 
 pkgname=quantum-store
 pkgver=1.0.0
-pkgrel=5
+pkgrel=6
 pkgdesc="Quantum Store: apps de Arch, Flathub, AUR y Android (Waydroid) en una sola tienda"
 arch=('any')
 url="https://github.com/quantum-linux"

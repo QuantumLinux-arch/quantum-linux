@@ -186,8 +186,21 @@ Variants {
                     onClicked: Shell.toggleLauncher(false)
                     Icon { anchors.centerIn: parent; text: "search"; size: Math.round(24 * Theme.dockScale); color: Theme.fg }
                 }
+                // Quarki, el asistente: duerme aquí hasta que lo llamas
+                DockButton {
+                    id: quarkiBtn
+                    visible: Settings.dock.showQuarki && !Serp.on
+                    tip: "Quarki"
+                    active: Shell.aiOpen
+                    onClicked: Shell.toggleAi()
+                    Mascot {
+                        anchors.centerIn: parent
+                        width: Math.round(42 * Theme.dockScale); height: width
+                        mood: Quarki.mood === "sleep" && quarkiBtn.hovered ? "peek" : Quarki.mood
+                    }
+                }
                 Rectangle {
-                    visible: (Settings.dock.showStart || Settings.dock.showSearch) && !Serp.on
+                    visible: (Settings.dock.showStart || Settings.dock.showSearch || Settings.dock.showQuarki) && !Serp.on
                     Layout.leftMargin: 4
                     Layout.rightMargin: 4
                     implicitWidth: 1

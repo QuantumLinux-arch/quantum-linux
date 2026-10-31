@@ -73,7 +73,7 @@ Singleton {
         appearance: { mode: "dark", dynamicColors: false, accent: "#6A5CFF", panelOpacity: 0.86, blur: true, textScale: 1.0,
                       glass: { bar: true, dock: true, panels: true, windows: false }, windowOpacity: 0.9 },
         layout: { style: "split", topBar: { floating: true, showApp: true } },
-        dock: { floating: true, align: "center", size: "medium", autohide: false, showSearch: true, showStart: true, showTray: true, showUpdates: true },
+        dock: { floating: true, align: "center", size: "medium", autohide: false, showSearch: true, showStart: true, showTray: true, showUpdates: true, showQuarki: true },
         clock: { format24h: true, showDate: true, showSeconds: false },
         lock: { left: ["weather", "fetch", "media"], right: ["stats", "notifs"], showNotifContent: false, city: "" },
         windows: { tiling: false, corners: "soft", animations: "normal", openAnimation: "zoom", minimizeAnimation: "zoom", buttonsLeft: false,
@@ -330,6 +330,7 @@ Singleton {
                 property bool showStart: true
                 property bool showTray: true
                 property bool showUpdates: true
+                property bool showQuarki: true           // Quarki (el asistente) en la barra de tareas
             }
             property JsonObject layout: JsonObject {
                 property string style: "split"           // split (barra arriba + dock) | single (una barra abajo)

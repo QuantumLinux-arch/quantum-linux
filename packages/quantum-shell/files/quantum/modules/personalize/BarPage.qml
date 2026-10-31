@@ -61,6 +61,17 @@ ColumnLayout {
 
     // Serpantium: dónde van las apps abiertas y fijadas
     Group {
+        title: "Quarki"
+        help: "Tu asistente: abre e instala apps, cambia ajustes y responde tus dudas. También lo llamas con Super + H."
+        icon: "auto_awesome"
+        OptionRow {
+            title: Serp.on ? "Mostrar a Quarki en la barra de arriba" : "Mostrar a Quarki en la barra de tareas"
+            help: "Si lo quitas, sigue disponible con Super + H."
+            Toggle { checked: Settings.dock.showQuarki; onToggled: c => Settings.set("dock", "showQuarki", c) }
+        }
+    }
+
+    Group {
         visible: Serp.on
         title: "Tus apps"
         help: "Dónde aparecen las apps fijadas y las que tienes abiertas."

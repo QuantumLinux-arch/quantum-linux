@@ -73,6 +73,17 @@ Scope {
 
             Pill { onClicked: Shell.toggleLauncher(false); SIcon { text: "search" } }
             Pill { onClicked: Shell.personalize(); SIcon { text: "tune" } }
+            Pill {
+                id: quarkiPill
+                visible: Settings.dock.showQuarki
+                onClicked: Shell.toggleAi()
+                Mascot {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 32; height: 32
+                    showZ: false
+                    mood: Quarki.mood === "sleep" && quarkiPill.hovered ? "peek" : Quarki.mood
+                }
+            }
 
             // apps abiertas y fijadas, como cuadritos (clic: enfocar / minimizar)
             Pill {
