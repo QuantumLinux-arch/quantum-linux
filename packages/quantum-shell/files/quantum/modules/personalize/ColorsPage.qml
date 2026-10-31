@@ -19,9 +19,10 @@ ColumnLayout {
     Component.onCompleted: lister.running = true
     Process {
         id: lister
-        command: ["sh", "-c", "for d in /usr/share/backgrounds/quantum \"$HOME/Imágenes/Fondos\" \"$HOME/Pictures/Wallpapers\" \"$(dirname \"$1\")\"; do " +
-                  "[ -d \"$d\" ] && find \"$d\" -maxdepth 1 -type f \\( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \\); done | sort -u",
-                  "sh", Settings.appearance.wallpaper]
+        command: ["bash", "-c", Settings.wallListScript, "bash", Quickshell.env("QUANTUM_WALLPAPERS") || "/usr/share/backgrounds/quantum",
+                  (Quickshell.env("QUANTUM_WALLPAPERS") || "/usr/share/backgrounds/quantum") + "/animados",
+                  Quickshell.env("HOME") + "/Imágenes/Fondos", Quickshell.env("HOME") + "/Pictures/Wallpapers",
+                  Settings.appearance.wallpaper.substring(0, Settings.appearance.wallpaper.lastIndexOf("/"))]
         stdout: StdioCollector { onStreamFinished: page.walls = text.trim().split("\n").filter(s => s.length) }
     }
 
@@ -236,7 +237,19 @@ ColumnLayout {
                         sourceSize: Qt.size(400, 225)
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
-                        onStatusChanged: if (status === Image.Error) source = "file://" + tile.modelData
+                        onStatusChanged: if (status === Image.Error) source = Settings.wallThumbFallback(tile.modelData)
+                    }
+                    // los fondos animados (video o GIF) llevan su etiqueta
+                    Rectangle {
+                        visible: Settings.isAnimated(tile.modelData)
+                        anchors.left: parent.left; anchors.bottom: parent.bottom; anchors.margins: 8
+                        width: animRow.implicitWidth + 16; height: 24; radius: 12
+                        color: Qt.rgba(0, 0, 0, 0.55)
+                        Row {
+                            id: animRow; anchors.centerIn: parent; spacing: 4
+                            Icon { anchors.verticalCenter: parent.verticalCenter; text: "play_circle"; size: 15; fill: 1; color: "white" }
+                            Txt { anchors.verticalCenter: parent.verticalCenter; text: "Animado"; font.pixelSize: Theme.textSmall; font.weight: Font.Bold; color: "white" }
+                        }
                     }
                     Rectangle {
                         visible: tile.on
@@ -256,14 +269,14 @@ ColumnLayout {
         }
         RowLayout {
             spacing: 10
-            PillButton { text: "Elegir imagen…"; icon: "add_photo_alternate"; onClicked: wallDialog.open() }
+            PillButton { text: "Elegir imagen o video…"; icon: "add_photo_alternate"; onClicked: wallDialog.open() }
             Txt { text: "También puedes usar Super + W"; color: Theme.fgMuted; font.pixelSize: Theme.textSmall }
         }
     }
     FileDialog {
         id: wallDialog
         title: "Elegir fondo de pantalla"
-        nameFilters: ["Imágenes (*.png *.jpg *.jpeg *.webp)"]
+        nameFilters: ["Imágenes y fondos animados (*.png *.jpg *.jpeg *.webp *.gif *.mp4 *.webm *.mkv *.mov *.m4v)"]
         onAccepted: {
             page.setWallpaper(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//, "")));
             lister.running = true;
@@ -338,7 +351,7 @@ ColumnLayout {
             Image {
                 anchors.fill: parent
                 visible: !parent.live && Settings.appearance.wallpaper !== ""
-                source: visible ? "file://" + Settings.appearance.wallpaper : ""
+                source: visible ? Settings.stillUrl(Settings.appearance.wallpaper) : ""
                 sourceSize: Qt.size(800, 300)
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true

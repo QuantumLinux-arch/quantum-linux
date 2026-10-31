@@ -39,22 +39,27 @@ Singleton {
         }
     }
 
-    // Elegir la forma del shell. Serpantium trae su fondo rosado y sus colores, salvo que
-    // keepLook diga que la persona ya eligió los suyos (paso 2 de la bienvenida): entonces
-    // se respetan. Al volver a Caelestial se recupera lo que tenías antes.
-    function choose(id: string, keepLook: bool): void {
+    // Elegir la forma del shell.
+    //  - keepLook: la persona ya eligió colores (paso 2 de la bienvenida): se respetan.
+    //  - keepWallpaper: el fondo no se toca (en la bienvenida siempre: el fondo que eligió,
+    //    en el paso 1 o en el 2, se queda). Desde Personalizar, Serpantium trae su fondo rosado.
+    // Al volver a Caelestial se recupera lo que tenías antes.
+    function choose(id: string, keepLook: bool, keepWallpaper: bool): void {
         if (id === Settings.ui.shell) return;
         const a = Settings.appearance;
         // todo en una sola escritura: dos seguidas se pisaban al recargar el archivo
         if (id === "serpantium") {
             Settings.ui.before = { wallpaper: a.wallpaper, accent: a.accent, dynamicColors: a.dynamicColors, mode: a.mode };
-            Settings.setMany(keepLook ? { ui: { shell: id } }
-                : { appearance: { mode: "dark", dynamicColors: false, accent: "#F4A7C9", wallpaper: root.wallpaper }, ui: { shell: id } });
+            const look = {};
+            if (!keepLook) Object.assign(look, { mode: "dark", dynamicColors: false, accent: "#F4A7C9" });
+            if (!keepWallpaper) look.wallpaper = root.wallpaper;
+            Settings.setMany(Object.keys(look).length ? { appearance: look, ui: { shell: id } } : { ui: { shell: id } });
         } else {
             const b = Settings.ui.before ?? {};
-            Settings.setMany({ appearance: { wallpaper: b.wallpaper ?? "quantum:live", accent: b.accent ?? Settings.defaults.appearance.accent,
-                                             dynamicColors: b.dynamicColors ?? false, mode: b.mode ?? "dark" },
-                               ui: { shell: id } });
+            const back = { accent: b.accent ?? Settings.defaults.appearance.accent, dynamicColors: b.dynamicColors ?? false, mode: b.mode ?? "dark" };
+            // si el fondo de ahora no es el rosado de Serpantium, lo eligió la persona: se queda
+            if (a.wallpaper === root.wallpaper) back.wallpaper = b.wallpaper ?? "quantum:live";
+            Settings.setMany({ appearance: back, ui: { shell: id } });
         }
         panel = "";
     }

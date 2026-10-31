@@ -26,6 +26,47 @@ Singleton {
     property alias mouse: adapter.mouse
     property alias touchpad: adapter.touchpad
 
+    // ---------------------------------------------------- fondos animados (video o GIF)
+    // Para lo que no reproduce video (bloqueo, bienvenida, vistas previas, colores del
+    // fondo) se usa un cuadro fijo del video, guardado en ~/.local/state/quantum/stills.
+    readonly property string stillsDir: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/quantum/stills"
+    function isAnimated(p: string): bool { return /\.(mp4|webm|mkv|mov|m4v|gif)$/i.test(p || ""); }
+    function isVideo(p: string): bool { return /\.(mp4|webm|mkv|mov|m4v)$/i.test(p || ""); }
+    function stillFor(p: string): string { return isAnimated(p) ? stillsDir + "/" + Qt.md5(p) + ".jpg" : p; }
+    readonly property bool wallAnimated: isAnimated(appearance.wallpaper)
+    property int stillRev: 0
+    // ruta (o URL lista para Image) del fondo como imagen fija
+    readonly property string wallStill: stillFor(appearance.wallpaper)
+    function stillUrl(p: string): string {
+        if (!p || p === "quantum:live") return "";
+        return "file://" + stillFor(p) + (isAnimated(p) ? "?r=" + stillRev : "");
+    }
+    function makeStill(p: string): void {
+        if (!isAnimated(p)) return;
+        stillProc.command = ["sh", "-c", "mkdir -p \"$(dirname \"$2\")\" && { [ -s \"$2\" ] || ffmpeg -v error -y -ss 0.3 -i \"$1\" -frames:v 1 -vf scale=1920:-2 \"$2\"; }",
+                             "sh", p, stillFor(p)];
+        stillProc.running = true;
+    }
+    Process { id: stillProc; onExited: root.stillRev++ }
+
+    // Script que lista los fondos (imágenes, videos y GIF) de las carpetas dadas y, de paso,
+    // prepara el cuadro fijo de cada fondo animado (para las miniaturas). Uso:
+    //   ["bash", "-c", Settings.wallListScript, "bash", carpeta1, carpeta2, …]
+    readonly property string wallListScript:
+        "stills=\"" + stillsDir + "\"; mkdir -p \"$stills\"; " +
+        "for d in \"$@\"; do [ -d \"$d\" ] && find \"$d\" -maxdepth 1 -type f \\( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' " +
+        "-o -iname '*.gif' -o -iname '*.mp4' -o -iname '*.webm' -o -iname '*.mkv' -o -iname '*.mov' -o -iname '*.m4v' \\); done | sort -u | " +
+        "while IFS= read -r f; do case \"${f,,}\" in *.gif|*.mp4|*.webm|*.mkv|*.mov|*.m4v) " +
+        "h=$(printf %s \"$f\" | md5sum | cut -c1-32); [ -s \"$stills/$h.jpg\" ] || ffmpeg -v error -y -ss 0.3 -i \"$f\" -frames:v 1 -vf scale=480:-2 \"$stills/$h.jpg\" </dev/null;; esac; " +
+        "printf '%s\\n' \"$f\"; done"
+    // miniatura: thumbs/<nombre>.jpg si la hay; si no, el cuadro fijo (animados) o la imagen
+    function wallThumbFallback(p: string): string { return "file://" + stillFor(p); }
+    Connections {
+        target: root.appearance
+        function onWallpaperChanged() { root.makeStill(root.appearance.wallpaper); }
+    }
+    Component.onCompleted: makeStill(appearance.wallpaper)
+
     // Valores de fábrica de todo lo visual (= estilo «Quantum»). Los estilos se
     // aplican encima de esto, así un estilo siempre se ve igual.
     readonly property var defaults: ({

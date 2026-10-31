@@ -421,7 +421,7 @@ PanelWindow {
             Row {
                 width: parent.width; spacing: 8
                 Btn { width: (parent.width - 8) / 2; icon: "tune"; label: "Personalizar"; onClicked: { Serp.panel = ""; Shell.personalizePage("bar"); } }
-                Btn { width: (parent.width - 8) / 2; icon: "blur_on"; label: "Usar Caelestial"; onClicked: Serp.choose("caelestial", false) }
+                Btn { width: (parent.width - 8) / 2; icon: "blur_on"; label: "Usar Caelestial"; onClicked: Serp.choose("caelestial", false, false) }
             }
             T {
                 anchors.horizontalCenter: parent.horizontalCenter

@@ -41,8 +41,9 @@ PanelWindow {
     // fondos del sistema + ~/Imágenes/Fondos (si existe)
     Process {
         id: lister
-        command: ["sh", "-c", "for d in \"$1\" /usr/share/backgrounds/quantum \"$HOME/Imágenes/Fondos\" \"$HOME/Pictures/Wallpapers\"; do " +
-                  "[ -d \"$d\" ] && find \"$d\" -maxdepth 1 -type f \\( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \\); done | sort -u", "sh", win.sysDir]
+        command: ["bash", "-c", Settings.wallListScript, "bash", win.sysDir, Quickshell.env("QUANTUM_WALLPAPERS") || "/usr/share/backgrounds/quantum",
+                  (Quickshell.env("QUANTUM_WALLPAPERS") || "/usr/share/backgrounds/quantum") + "/animados",
+                  Quickshell.env("HOME") + "/Imágenes/Fondos", Quickshell.env("HOME") + "/Pictures/Wallpapers"]
         stdout: StdioCollector {
             onStreamFinished: win.walls = text.trim().split("\n").filter(s => s.length)
         }
@@ -196,7 +197,13 @@ PanelWindow {
                                 sourceSize: Qt.size(480, 280)
                                 fillMode: Image.PreserveAspectCrop
                                 asynchronous: true
-                                onStatusChanged: if (status === Image.Error) source = "file://" + tile.modelData
+                                onStatusChanged: if (status === Image.Error) source = Settings.wallThumbFallback(tile.modelData)
+                            }
+                            Rectangle {
+                                visible: Settings.isAnimated(tile.modelData)
+                                anchors.left: parent.left; anchors.bottom: parent.bottom; anchors.margins: 10
+                                width: 30; height: 30; radius: 15; color: Qt.rgba(0, 0, 0, 0.55)
+                                Icon { anchors.centerIn: parent; text: "play_circle"; size: 20; fill: 1; color: "white" }
                             }
                             Rectangle {
                                 visible: tile.on

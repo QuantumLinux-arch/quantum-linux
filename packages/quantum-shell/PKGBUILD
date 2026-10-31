@@ -4,12 +4,12 @@
 
 pkgname=quantum-shell
 pkgver=1.0.0
-pkgrel=35
+pkgrel=36
 pkgdesc="El shell de escritorio de Quantum Linux (Quickshell)"
 arch=('any')
 url="https://github.com/quantum-linux"
 license=('GPL-3.0-or-later' 'Apache-2.0')
-depends=('quickshell' 'pacman-contrib' 'libnotify' 'qt6-declarative' 'qt6-svg' 'inter-font' 'ttf-jetbrains-mono'
+depends=('quickshell' 'pacman-contrib' 'libnotify' 'qt6-declarative' 'qt6-svg' 'qt6-multimedia' 'qt6-multimedia-ffmpeg' 'inter-font' 'ttf-jetbrains-mono'
          'networkmanager' 'bluez' 'upower' 'power-profiles-daemon' 'pipewire' 'pipewire-audio'
          'brightnessctl' 'cliphist' 'wl-clipboard' 'pam')
 

@@ -106,7 +106,7 @@ ColumnLayout {
         Segmented {
             options: [{ v: "caelestial", t: "Caelestial", i: "blur_on" }, { v: "serpantium", t: "Serpantium", i: "terminal" }]
             value: Settings.ui.shell
-            onPicked: v => Serp.choose(v, false)
+            onPicked: v => Serp.choose(v, false, false)
         }
     }
 

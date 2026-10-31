@@ -34,7 +34,7 @@ Scope {
         interval: 650
         onTriggered: {
             if (root.previewOpen) root.previewOpen = false;
-            else lock.locked = false;
+            else { lock.locked = false; Shell.locked = false; }
             root.leaving = false;
             root.success = false;
         }
@@ -61,6 +61,7 @@ Scope {
             root.error = "";
             root.leaving = false;
             lock.locked = true;
+            Shell.locked = true;
             Sounds.play("lock");
         }
     }

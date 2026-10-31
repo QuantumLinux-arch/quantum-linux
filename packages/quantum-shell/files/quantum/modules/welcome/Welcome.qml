@@ -69,7 +69,7 @@ PanelWindow {
         function close(): void { win.open = false; }
         function next(): void { win.step = Math.min(4, win.step + 1); }
         function step(n: int): void { win.step = n; }
-        function shell(id: string): void { Serp.choose(id, win.lookTouched); }
+        function shell(id: string): void { Serp.choose(id, win.lookTouched, true); }
         function pick(id: string): void { win.pick(id); }
     }
 
@@ -108,7 +108,7 @@ PanelWindow {
         anchors.fill: parent
         opacity: 0.55 * Math.min(1, win.progress * 1.4)
         fillMode: Image.PreserveAspectCrop
-        source: Settings.appearance.wallpaper && Settings.appearance.wallpaper !== "quantum:live" ? "file://" + Settings.appearance.wallpaper : ""
+        source: Settings.stillUrl(Settings.appearance.wallpaper)
         sourceSize: Qt.size(960, 540)
         asynchronous: true
         layer.enabled: true
@@ -271,7 +271,8 @@ PanelWindow {
     }
 
     // ---------------------------------------------------------------- paso 2: colores y fondo
-    readonly property var walls: ["quantum:live", wallDir + "/beako.jpg", wallDir + "/orbita.png", wallDir + "/nucleo.png", wallDir + "/aurora.png"]
+    readonly property var walls: ["quantum:live", wallDir + "/animados/montanas.mp4", wallDir + "/beako.jpg", wallDir + "/orbita.png",
+                                  wallDir + "/nucleo.png", wallDir + "/animados/aurora.mp4"]
     readonly property var accents: ["#6A5CFF", "#2F7BFF", "#14B8A6", "#22C55E", "#F59E0B", "#FF6B8B", "#E5484D"]
     Column {
         anchors.horizontalCenter: parent.horizontalCenter
@@ -324,7 +325,19 @@ PanelWindow {
                         anchors.fill: parent; anchors.margins: 3
                         visible: w.modelData !== "quantum:live"
                         fillMode: Image.PreserveAspectCrop; asynchronous: true; sourceSize: Qt.size(520, 292)
-                        source: w.modelData === "quantum:live" ? "" : "file://" + win.wallDir + "/thumbs/" + w.modelData.split("/").pop().replace(/\.(png|jpg)$/, ".jpg")
+                        // miniatura en la carpeta thumbs/ que está junto al fondo
+                        source: w.modelData === "quantum:live" ? "" : "file://" + w.modelData.substring(0, w.modelData.lastIndexOf("/")) + "/thumbs/"
+                                + w.modelData.split("/").pop().replace(/\.[^.]+$/, ".jpg")
+                    }
+                    Rectangle {
+                        visible: Settings.isAnimated(w.modelData)
+                        anchors.left: parent.left; anchors.bottom: parent.bottom; anchors.margins: 10
+                        width: anT.implicitWidth + 36; height: 26; radius: 13; color: Qt.rgba(0, 0, 0, 0.55)
+                        Row {
+                            anchors.centerIn: parent; spacing: 4
+                            Icon { anchors.verticalCenter: parent.verticalCenter; text: "play_circle"; size: 16; fill: 1; color: "white" }
+                            Txt { id: anT; anchors.verticalCenter: parent.verticalCenter; text: "Animado"; font.pixelSize: 13; font.weight: Font.Bold; color: "white" }
+                        }
                     }
                     Item {
                         anchors.fill: parent
@@ -545,7 +558,7 @@ PanelWindow {
                     onPressed: if (sc.needsHold) sc.startHold()
                     onReleased: sc.cancelHold()
                     onCanceled: sc.cancelHold()
-                    onClicked: if (!sc.serp) Serp.choose(sc.modelData.id, win.lookTouched)
+                    onClicked: if (!sc.serp) Serp.choose(sc.modelData.id, win.lookTouched, true)
                 }
             }
         }
@@ -761,7 +774,7 @@ PanelWindow {
     SequentialAnimation {
         id: wipeAnim
         NumberAnimation { target: win; property: "wipe"; from: 0; to: 0.5; duration: 480; easing.type: Easing.InCubic }
-        ScriptAction { script: Serp.choose("serpantium", win.lookTouched) }
+        ScriptAction { script: Serp.choose("serpantium", win.lookTouched, true) }
         PauseAnimation { duration: 160 }
         NumberAnimation { target: win; property: "wipe"; from: 0.5; to: 1; duration: 620; easing.type: Easing.OutCubic }
         ScriptAction { script: win.wipe = 0 }
@@ -783,8 +796,8 @@ PanelWindow {
     // teclado: flechas para elegir, Enter para seguir, Esc para saltar
     Item {
         focus: win.open
-        Keys.onLeftPressed: if (win.step === 2) Serp.choose("caelestial", win.lookTouched); else if (win.step === 0) { const i = win.options.findIndex(o => o.id === win.chosen); win.pick(win.options[Math.max(0, i - 1)].id); }
-        Keys.onRightPressed: if (win.step === 2) Serp.choose("serpantium", win.lookTouched); else if (win.step === 0) { const i = win.options.findIndex(o => o.id === win.chosen); win.pick(win.options[Math.min(win.options.length - 1, i + 1)].id); }
+        Keys.onLeftPressed: if (win.step === 2) Serp.choose("caelestial", win.lookTouched, true); else if (win.step === 0) { const i = win.options.findIndex(o => o.id === win.chosen); win.pick(win.options[Math.max(0, i - 1)].id); }
+        Keys.onRightPressed: if (win.step === 2) Serp.choose("serpantium", win.lookTouched, true); else if (win.step === 0) { const i = win.options.findIndex(o => o.id === win.chosen); win.pick(win.options[Math.min(win.options.length - 1, i + 1)].id); }
         Keys.onReturnPressed: win.step < 4 ? win.step++ : win.finish()
         Keys.onEscapePressed: win.finish()
     }

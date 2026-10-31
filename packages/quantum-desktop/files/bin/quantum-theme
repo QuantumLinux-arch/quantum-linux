@@ -13,6 +13,7 @@ Uso:
   quantum-theme get CLAVE          muestra un ajuste
   quantum-theme gamemode on|off    modo juego (sin animaciones ni desenfoque)
 """
+import hashlib
 import json
 import re
 import os
@@ -158,9 +159,29 @@ def accent_palette(mode, accent):
     return {k: v if k in keep or not str(v).startswith("#") else hue_rotate(v, delta) for k, v in base.items()}
 
 
+ANIMATED = (".mp4", ".webm", ".mkv", ".mov", ".m4v", ".gif")
+
+
+def wall_still(wall):
+    """Fondos animados (video o GIF): un cuadro fijo del video, para los colores y el inicio
+    de sesión. Es el mismo archivo que usa Quantum Shell (stills/<md5 de la ruta>.jpg)."""
+    wall = str(wall)
+    if not wall.lower().endswith(ANIMATED) or not Path(wall).is_file():
+        return wall
+    out = STATE / "stills" / (hashlib.md5(wall.encode()).hexdigest() + ".jpg")
+    if not out.is_file() or out.stat().st_size == 0:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", "0.3", "-i", wall, "-frames:v", "1",
+                            "-vf", "scale=1920:-2", str(out)], timeout=30, capture_output=True)
+        except (OSError, subprocess.SubprocessError):
+            return wall
+    return str(out) if out.is_file() else wall
+
+
 def palette(s):
     mode = "light" if s["appearance"]["mode"] == "light" else "dark"
-    wall = s["appearance"].get("wallpaper", "")
+    wall = wall_still(s["appearance"].get("wallpaper", ""))
     if s["appearance"].get("dynamicColors") and shutil.which("matugen") and Path(wall).is_file():
         try:
             out = subprocess.run(
@@ -585,7 +606,7 @@ def write_login(s):
     if not d.is_dir() or not os.access(d, os.W_OK | os.X_OK):
         return
     dst = d / f"{os.environ.get('USER') or HOME.name}.jpg"
-    wall = Path(str(s["appearance"].get("wallpaper", "")))
+    wall = Path(wall_still(s["appearance"].get("wallpaper", "")))
     try:
         if not wall.is_file():
             dst.unlink(missing_ok=True)

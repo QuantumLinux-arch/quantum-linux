@@ -24,6 +24,7 @@ Singleton {
     // El centro de control mostrando la lista de redes Wi-Fi
     property bool wifiPage: false
     signal lockRequested
+    property bool locked: false             // lo marca Lock.qml (pausa el fondo animado)
 
     function closeAll(): void {
         launcherOpen = false;
