@@ -148,6 +148,7 @@ Item {
     Repeater {
         model: [[0.12, 0.2, 0], [0.86, 0.26, 120], [0.8, 0.84, 240]]
         Text {
+            id: sparkle
             required property var modelData
             x: modelData[0] * root.width - width / 2
             y: modelData[1] * root.height - height / 2
@@ -158,11 +159,11 @@ Item {
             scale: 0.4
             states: State {
                 when: root.mood === "done"
-                PropertyChanges { opacity: 1; scale: 1 }
+                PropertyChanges { target: sparkle; opacity: 1; scale: 1 }
             }
             transitions: Transition {
                 SequentialAnimation {
-                    PauseAnimation { duration: modelData[2] }
+                    PauseAnimation { duration: sparkle.modelData[2] }
                     NumberAnimation { properties: "opacity,scale"; duration: 280; easing.type: Easing.OutBack }
                 }
             }

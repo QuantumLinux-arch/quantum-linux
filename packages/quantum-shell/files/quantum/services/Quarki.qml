@@ -303,6 +303,7 @@ Singleton {
             Apps.launch(app);
             say(pick(["Listo, abrí **" + app.name + "**.", "Abriendo **" + app.name + "**.", "Ahí va **" + app.name + "**."]));
             celebrate();
+            later(() => { Shell.aiOpen = false; });     // como el menú de Inicio: se aparta
             return;
         }
         say("No tienes **" + q + "** instalado. Lo busco en la Store…");
@@ -414,7 +415,9 @@ Singleton {
         jobItem = c.item;
         jobName = c.item.name;
         patchCard(msgId, { status: "working" });
-        jobProc.command = c.type === "install" ? c.item.install : c.item.remove;
+        // QUANTUM_QUARKI_DEMO=<segundos>: para grabar videos, la descarga se reemplaza por una espera
+        const demo = Quickshell.env("QUANTUM_QUARKI_DEMO");
+        jobProc.command = demo ? ["sleep", demo] : c.type === "install" ? c.item.install : c.item.remove;
         jobProc.running = true;
     }
     function cancel(msgId: int): void {
@@ -453,6 +456,7 @@ Singleton {
         Quickshell.execDetached(helper.concat(["launch", item.source, item.id]));
         say("Abriendo **" + item.name + "**.");
         celebrate();
+        later(() => { Shell.aiOpen = false; });
     }
 
     // ------------------------------------------------------------ conversar (IA)
@@ -483,8 +487,14 @@ Singleton {
                 }
             });
     }
+    // quita las etiquetas de acciones y deja la voz de Quarki: sin «¡…!» ni muletillas al empezar
     function stripTags(s: string): string {
-        return (s ?? "").replace(/\[\[[^\]]*(\]\]|$)/g, "").replace(/\s+$/, "");
+        return (s ?? "").replace(/\[\[[^\]]*(\]\]|$)/g, "")
+            .replace(/¡/g, "").replace(/!+/g, ".").replace(/\.\.(?!\.)/g, ".")
+            .replace(/^\s*(qu[eé] buena pregunta|buena pregunta|excelente pregunta|claro que s[ií]|por supuesto( que s[ií])?|claro|hola)[.,:]?\s*/i, "")
+            .replace(/^\s*(qu[eé] buena pregunta|buena pregunta|claro que s[ií]|por supuesto( que s[ií])?)[.,:]?\s*/i, "")
+            .replace(/^./, c => c.toUpperCase())
+            .replace(/\s+$/, "");
     }
 
     // --------------------------------------------------------------- inicio

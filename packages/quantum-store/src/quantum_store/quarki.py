@@ -54,13 +54,22 @@ def search(q):
             found.append((min(score(it, qn), 3), 1, i, it))
     except Exception:
         pass   # sin internet: solo lo de Arch (pacman tiene su lista local)
-    good = [f for f in found if f[0] <= 3]
+    # las parecidas solo si comparten alguna palabra con lo pedido (Flathub a veces devuelve cualquier cosa)
+    words = [w for w in qn.split() if len(w) >= 3]
+    def related(it):
+        text = norm(it["name"] + " " + it["id"].replace(".", " ") + " " + it.get("summary", ""))
+        return any(w in text for w in words)
+    good = [f for f in found if f[0] <= 2 or (f[0] == 3 and related(f[3]))]
     if not good:
         try:
+            # del AUR solo lo que se llama igual (con o sin -bin/-git); lo demás, como «¿es alguno de estos?»
+            qs = qn.replace(" ", "-")
             for i, it in enumerate(Aur().search(q, limit=8)):
-                s = score(it, qn)
-                if s <= 2:
-                    good.append((s + 1, 2, i, it))
+                same = it["id"].lower() in (qs, qs + "-bin", qs + "-git", qs + "-appimage", qn.replace(" ", ""))
+                if same:
+                    good.append((1, 2, i, it))
+                elif score(it, qn) <= 2:
+                    good.append((3, 2, i, it))
         except Exception:
             pass
     good.sort(key=lambda f: (f[0], f[1], f[2]))
