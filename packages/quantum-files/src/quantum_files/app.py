@@ -231,7 +231,17 @@ class Files(QObject):
 
     @pyqtProperty(str, constant=True)
     def userName(self):
-        return HOME.name
+        """Nombre para el saludo: el nombre completo de la cuenta (si lo tiene) o el usuario."""
+        if os.environ.get("QUANTUM_FILES_NAME"):
+            return os.environ["QUANTUM_FILES_NAME"]
+        try:
+            import pwd
+            full = pwd.getpwuid(os.getuid()).pw_gecos.split(",")[0].strip()
+            if full and os.environ.get("HOME", "") == pwd.getpwuid(os.getuid()).pw_dir:
+                return full.split()[0]
+        except (KeyError, ImportError):
+            pass
+        return os.environ.get("USER") or HOME.name
 
     @pyqtProperty("QVariant", constant=True)
     def places(self):
@@ -439,7 +449,7 @@ class Files(QObject):
         p = Path(path)
         try:
             rel = p.relative_to(HOME)
-            parts = [{"name": HOME.name, "path": str(HOME)}]
+            parts = [{"name": os.environ.get("QUANTUM_FILES_NAME", HOME.name), "path": str(HOME)}]
             cur = HOME
         except ValueError:
             rel = p.relative_to("/") if p.is_absolute() else p

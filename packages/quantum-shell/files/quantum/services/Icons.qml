@@ -43,7 +43,9 @@ Singleton {
     Component.onCompleted: refresh()
     Process {
         id: check
-        command: ["sh", "-c", "for p in tela-icon-theme fluent-icon-theme whitesur-icon-theme colloid-icon-theme candy-icons-git; do pacman -Q $p >/dev/null 2>&1 && echo $p; done"]
+        // instalado con pacman, o puesto a mano en ~/.local/share/icons o /usr/share/icons
+        command: ["sh", "-c", "for x in tela-icon-theme:Tela fluent-icon-theme:Fluent whitesur-icon-theme:WhiteSur colloid-icon-theme:Colloid candy-icons-git:candy-icons; do " +
+                  "p=${x%%:*}; d=${x#*:}; if pacman -Q $p >/dev/null 2>&1 || [ -e \"${XDG_DATA_HOME:-$HOME/.local/share}/icons/$d/index.theme\" ] || [ -e /usr/share/icons/$d/index.theme ]; then echo $p; fi; done"]
         stdout: StdioCollector {
             onStreamFinished: {
                 const lines = text.split("\n");

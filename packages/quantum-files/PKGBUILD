@@ -2,7 +2,7 @@
 
 pkgname=quantum-files
 pkgver=1.0.0
-pkgrel=1
+pkgrel=2
 pkgdesc="Archivos: el explorador de archivos de Quantum Linux, fácil como el de Windows"
 arch=('any')
 url="https://github.com/quantum-linux"
