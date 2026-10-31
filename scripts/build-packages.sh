@@ -17,6 +17,11 @@ PACKAGES=(
     aur/ckbcomp
     aur/calamares
     aur/yay-bin
+    aur/whitesur-icon-theme
+    aur/fluent-icon-theme
+    aur/tela-icon-theme
+    aur/colloid-icon-theme
+    aur/candy-icons-git
     quantum-keyring
     quantum-branding
     quantum-settings

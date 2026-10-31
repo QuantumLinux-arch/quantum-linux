@@ -1,5 +1,5 @@
 //@ pragma UseQApplication
-//@ pragma IconTheme Papirus-Dark
+// Los íconos los elige quantum-shell-start (QS_ICON_THEME) según Personalizar; sin eso, qt6ct.
 //@ pragma DefaultEnv QSG_RENDER_LOOP=threaded
 
 import QtQuick

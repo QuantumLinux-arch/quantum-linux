@@ -5,7 +5,7 @@
 
 pkgname=quantum-desktop
 pkgver=1.0.0
-pkgrel=24
+pkgrel=25
 pkgdesc="Escritorio de Quantum Linux sobre Wayfire"
 arch=('any')
 url="https://github.com/quantum-linux"
@@ -25,6 +25,8 @@ package() {
   install -Dm755 bin/quantum-screenshot "$pkgdir/usr/bin/quantum-screenshot"
   install -Dm755 bin/quantum-session "$pkgdir/usr/bin/quantum-session"
   install -Dm755 bin/quantum-update "$pkgdir/usr/bin/quantum-update"
+  install -Dm755 bin/quantum-shell-start "$pkgdir/usr/bin/quantum-shell-start"
+  install -Dm755 bin/quantum-shell-restart "$pkgdir/usr/bin/quantum-shell-restart"
   install -Dm644 share/palette.json "$pkgdir/usr/share/quantum/palette.json"
   install -Dm644 wayfire/wayfire.ini "$pkgdir/usr/share/quantum/wayfire/wayfire.ini"
   install -Dm644 session/hypridle.conf "$pkgdir/usr/share/quantum/hypridle.conf"

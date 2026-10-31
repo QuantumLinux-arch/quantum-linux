@@ -1,0 +1,27 @@
+# Quantum: basado en el PKGBUILD de AUR (colloid-icon-theme, de Trumpetrespas y Mark Wagie),
+# reducido a un solo paquete con los colores que ofrece la bienvenida: estándar, violeta
+# (Caelestial) y rosado (Serpantium).
+pkgname=colloid-icon-theme
+_pkgbase=Colloid-icon-theme
+pkgver=2026.08.10
+_pkgver="${pkgver//./-}"
+pkgrel=1
+pkgdesc="Icon theme for Linux desktops"
+arch=('any')
+url="https://github.com/vinceliuice/${_pkgbase}"
+license=('GPL-3.0-or-later')
+depends=('gtk-update-icon-cache' 'hicolor-icon-theme')
+options=('!strip')
+source=("$pkgname-$pkgver.tar.gz::https://github.com/vinceliuice/${_pkgbase}/archive/refs/tags/${_pkgver}.tar.gz")
+sha256sums=('367c3ce3ab85721e41ca9aa4fccd1761ec236d1b8cd7daf65f5e9ec88c1a8a15')
+
+prepare() {
+  cd ${_pkgbase}-${_pkgver}
+  sed -i '/gtk-update-icon-cache/d' install.sh
+}
+
+package() {
+  cd ${_pkgbase}-${_pkgver}
+  install -d "$pkgdir/usr/share/icons"
+  ./install.sh -s default -t default purple pink -d "$pkgdir/usr/share/icons"
+}

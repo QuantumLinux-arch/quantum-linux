@@ -106,7 +106,7 @@ Singleton {
         if (adapter[section] === undefined)
             return;
         adapter[section][key] = value;
-        if (key !== "wallpaper" && !["display", "mouse", "touchpad"].includes(section))   // no son parte de los estilos
+        if (key !== "wallpaper" && key !== "iconTheme" && !["display", "mouse", "touchpad", "sounds"].includes(section))   // no son parte de los estilos
             adapter.ui.style = "custom";
         changed = true;
         file.writeAdapter();
@@ -133,7 +133,7 @@ Singleton {
         for (const sec of Object.keys(obj))
             if (adapter[sec] !== undefined && typeof obj[sec] === "object")
                 _merge(adapter[sec], obj[sec]);
-        if (!obj.ui && Object.keys(obj).some(k => !["display", "mouse", "touchpad"].includes(k)))
+        if (!obj.ui && Object.keys(obj).some(k => !["display", "mouse", "touchpad", "sounds"].includes(k)))
             adapter.ui.style = "custom";
         changed = true;
         file.writeAdapter();
@@ -217,6 +217,7 @@ Singleton {
                 property bool dynamicColors: false
                 property string accent: "#6A5CFF"
                 property string wallpaper: "quantum:live"
+                property string iconTheme: "papirus"     // papirus | tela | fluent | whitesur | colloid | candy
                 property real panelOpacity: 0.86
                 property bool blur: true
                 property real textScale: 1.0
@@ -314,6 +315,7 @@ Singleton {
             }
             // Sonidos del sistema
             property JsonObject sounds: JsonObject {
+                property string pack: "quantum"          // quantum | cristal | zen | espacial | minimo | burbujas | piano | synthwave
                 property bool enabled: true
                 property bool startup: true
                 property real volume: 0.6

@@ -22,6 +22,7 @@ import sys
 from pathlib import Path
 
 HOME = Path.home()
+DATA_HOME = Path(os.environ.get("XDG_DATA_HOME", HOME / ".local" / "share"))
 CONFIG = Path(os.environ.get("XDG_CONFIG_HOME", HOME / ".config"))
 STATE = Path(os.environ.get("XDG_STATE_HOME", HOME / ".local" / "state")) / "quantum"
 SETTINGS = CONFIG / "quantum" / "settings.json"
@@ -381,7 +382,7 @@ def write_wayfire(c, s):
         "@TITLE_COLOR@": wf_color(c["on_surface"]),
         "@BUTTON_COLOR@": wf_color(c["on_surface"]),
         "@BUTTON_HOVER@": wf_color(c["on_surface"], "26"),
-        "@SHELL_CMD@": os.environ.get("QUANTUM_SHELL_CMD", "qs -c quantum"),
+        "@SHELL_CMD@": os.environ.get("QUANTUM_SHELL_CMD", "quantum-shell-start"),
     }
     try:
         text = (SHARE / "wayfire" / "wayfire.ini").read_text()
@@ -443,6 +444,53 @@ def gtk_buttons(s, sep):
     return "appmenu:" + sep.join(["minimize", "maximize", "close"])
 
 
+# Paquetes de íconos (bienvenida y Personalizar). Las carpetas toman el color del estilo:
+# violeta en Caelestial y rosado en Serpantium. Si el tema no está instalado, Papirus.
+ICON_PACKAGES = {"papirus": "papirus-icon-theme", "tela": "tela-icon-theme", "fluent": "fluent-icon-theme",
+                 "whitesur": "whitesur-icon-theme", "colloid": "colloid-icon-theme", "candy": "candy-icons-git"}
+
+
+def icon_theme(s, mode):
+    fam = s["appearance"].get("iconTheme", "papirus")
+    dark = mode == "dark"
+    color = "pink" if s.get("ui", {}).get("shell") == "serpantium" else "purple"
+    names = {
+        "papirus": ["Papirus-Dark" if dark else "Papirus"],
+        "tela": [f"Tela-{color}-dark" if dark else f"Tela-{color}-light", "Tela-dark" if dark else "Tela-light"],
+        "fluent": [f"Fluent-{color}-dark" if dark else f"Fluent-{color}-light", "Fluent-dark" if dark else "Fluent-light"],
+        "whitesur": ["WhiteSur-dark" if dark else "WhiteSur-light", "WhiteSur"],
+        "colloid": [f"Colloid-{color.capitalize()}-Dark" if dark else f"Colloid-{color.capitalize()}-Light",
+                    f"Colloid-{color}-dark" if dark else f"Colloid-{color}-light", "Colloid-Dark" if dark else "Colloid-Light", "Colloid"],
+        "candy": ["candy-icons"],
+    }.get(fam, [])
+    dirs = [Path("/usr/share/icons"), DATA_HOME / "icons", HOME / ".icons"]
+    dirs += [Path(p) / "icons" for p in os.environ.get("XDG_DATA_DIRS", "").split(":") if p]
+    for n in names:
+        if any((d / n / "index.theme").exists() for d in dirs):
+            return n
+    return "Papirus-Dark" if dark else "Papirus"
+
+
+def write_icon_theme(s, mode):
+    """Anota el tema para Quantum Shell (quantum-shell-start lo lee al arrancar). Si cambió
+    el PAQUETE de íconos con el escritorio abierto, lo recarga (el shell toma sus íconos solo
+    al arrancar). Cambiar solo la variante (modo claro/oscuro, color de carpetas del estilo)
+    no recarga nada: se ve en la próxima recarga o al iniciar sesión."""
+    name = icon_theme(s, mode)
+    fam = s["appearance"].get("iconTheme", "papirus")
+    f, ff = STATE / "icon-theme", STATE / "icon-family"
+    old_name = f.read_text().strip() if f.exists() else ""
+    old_fam = ff.read_text().strip() if ff.exists() else ""
+    if old_name != name:
+        f.write_text(name + "\n")
+    if old_fam != fam:
+        ff.write_text(fam + "\n")
+        if old_fam and shutil.which("quantum-shell-restart") and not DEV:
+            subprocess.Popen(["quantum-shell-restart"], start_new_session=True,
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return name
+
+
 def write_gtk(mode, c, s):
     css = f"""/* {MARKER} */
 @define-color accent_color {c['primary']};
@@ -474,7 +522,7 @@ def write_gtk(mode, c, s):
     gsettings = [
         ("color-scheme", "prefer-dark" if dark else "default"),
         ("gtk-theme", "adw-gtk3-dark" if dark else "adw-gtk3"),
-        ("icon-theme", "Papirus-Dark" if dark else "Papirus"),
+        ("icon-theme", icon_theme(s, mode)),
         ("font-name", "Inter 10"),
         ("monospace-font-name", "JetBrainsMono Nerd Font 10"),
         ("cursor-theme", "Adwaita"),
@@ -492,7 +540,7 @@ gtk-application-prefer-dark-theme={1 if dark else 0}
 """)
 
 
-def write_qt(mode, c):
+def write_qt(mode, c, s):
     # Orden de qt6ct: WindowText, Button, Light, Midlight, Dark, Mid, Text, BrightText,
     # ButtonText, Base, Window, Shadow, Highlight, HighlightedText, Link, LinkVisited,
     # AlternateBase, NoRole, ToolTipBase, ToolTipText, PlaceholderText
@@ -513,7 +561,7 @@ inactive_colors={row()}
 """
     write_if_ours(CONFIG / "qt6ct" / "colors" / "Quantum.conf", scheme)
     write_if_ours(CONFIG / "qt5ct" / "colors" / "Quantum.conf", scheme)
-    icons = "Papirus-Dark" if mode == "dark" else "Papirus"
+    icons = icon_theme(s, mode)
     for ver in ("qt6ct", "qt5ct"):
         write_if_ours(CONFIG / ver / f"{ver}.conf", f"""# {MARKER}
 [Appearance]
@@ -554,7 +602,8 @@ def apply(s):
     write_login(s)
     write_kitty(c)
     write_gtk(mode, c, s)
-    write_qt(mode, c)
+    write_qt(mode, c, s)
+    write_icon_theme(s, mode)
 
 
 def main(argv):

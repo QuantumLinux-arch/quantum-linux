@@ -270,6 +270,35 @@ ColumnLayout {
         }
     }
 
+    // ------------------------------------------------------ íconos
+    Group {
+        title: "Íconos"
+        help: Icons.installing ? "Descargando los íconos… el escritorio se recarga un segundo al terminar."
+                               : "Las carpetas toman el color de tu escritorio. Al cambiarlos, el escritorio se recarga un segundo."
+        icon: "interests"
+        GridLayout {
+            Layout.fillWidth: true
+            columns: page.width > 760 ? 3 : 2
+            columnSpacing: 14; rowSpacing: 14
+            Repeater {
+                model: Icons.packs
+                ChoiceCard {
+                    id: icc
+                    required property var modelData
+                    title: modelData.name
+                    help: Icons.installing === modelData.id ? "Descargando…" : Icons.installed[modelData.id] ? modelData.desc : modelData.desc + " Se descarga (" + modelData.size + ")."
+                    selected: Icons.current === modelData.id
+                    previewHeight: 86
+                    onClicked: Icons.choose(modelData.id)
+                    Rectangle {
+                        anchors.fill: parent; color: Theme.alpha(Theme.fg, 0.04)
+                        Image { anchors.fill: parent; anchors.margins: 10; fillMode: Image.PreserveAspectFit; source: Icons.preview(icc.modelData.id); sourceSize: Qt.size(600, 150); asynchronous: true }
+                    }
+                }
+            }
+        }
+    }
+
     // ------------------------------------------------------ efecto vidrio
     Group {
         id: glassG

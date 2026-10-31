@@ -1,0 +1,6 @@
+#!/bin/sh
+# Inicia Quantum Shell con el tema de íconos elegido (lo anota quantum-theme).
+# Quickshell elige sus íconos solo al arrancar, por eso cambiarlos recarga el shell.
+theme=$(cat "${XDG_STATE_HOME:-$HOME/.local/state}/quantum/icon-theme" 2>/dev/null)
+export QS_ICON_THEME="${theme:-Papirus-Dark}"
+exec qs -c quantum "$@"

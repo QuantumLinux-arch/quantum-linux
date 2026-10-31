@@ -1,0 +1,6 @@
+#!/bin/sh
+# Recarga Quantum Shell (por ejemplo al cambiar el tema de íconos): cierra el que corre
+# y abre uno nuevo. Tarda un segundo; las ventanas abiertas no se tocan.
+qs kill -c quantum >/dev/null 2>&1
+sleep 0.4
+exec setsid -f quantum-shell-start >/dev/null 2>&1

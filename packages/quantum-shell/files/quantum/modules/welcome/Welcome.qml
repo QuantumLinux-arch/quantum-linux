@@ -56,13 +56,19 @@ PanelWindow {
     // si en el paso 2 eligió fondo o colores, Serpantium los respeta (no pone su fondo rosado)
     property bool lookTouched: false
     function show(): void { lookTouched = false; step = 0; chosen = Settings.ui.style === "custom" ? "quantum" : chosen; open = true; }
-    function finish(): void { Settings.setUi("welcomed", true); open = false; }
+    function finish(): void {
+        Sounds.stopPreview();
+        Settings.setUi("welcomed", true);
+        open = false;
+        applyIcons();
+    }
 
     IpcHandler {
         target: "welcome"
         function open(): void { win.show(); }
         function close(): void { win.open = false; }
-        function next(): void { win.step = Math.min(2, win.step + 1); }
+        function next(): void { win.step = Math.min(4, win.step + 1); }
+        function step(n: int): void { win.step = n; }
         function shell(id: string): void { Serp.choose(id, win.lookTouched); }
         function pick(id: string): void { win.pick(id); }
     }
@@ -126,7 +132,8 @@ PanelWindow {
         }
         Txt {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: ["Elige cómo se ve tu escritorio", "Elige tus colores y tu fondo", "Elige tu Quantum Shell"][win.step]
+            text: ["Elige cómo se ve tu escritorio", "Elige tus colores y tu fondo", "Elige tu Quantum Shell",
+                   "Elige cómo suena Quantum", "Elige tus íconos"][win.step]
             color: "#EDE9F7"; font.pixelSize: 58; font.weight: Font.Black
         }
         Txt {
@@ -544,6 +551,167 @@ PanelWindow {
         }
     }
 
+
+    // ---------------------------------------------------------------- paso 4: sonidos
+    onStepChanged: { if (step !== 3) Sounds.stopPreview(); if (step === 4) { Icons.refresh(); pickedIcons = Icons.current; } }
+    Column {
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: Math.round(parent.height * 0.32)
+        spacing: 22
+        visible: win.step === 3
+        Grid {
+            anchors.horizontalCenter: parent.horizontalCenter
+            columns: 4; columnSpacing: 20; rowSpacing: 20
+            Repeater {
+                model: Sounds.packs
+                Rectangle {
+                    id: sp
+                    required property var modelData
+                    readonly property bool on: Settings.sounds.enabled && Settings.sounds.pack === modelData.id
+                    readonly property bool playing: Sounds.previewing === modelData.id
+                    width: Math.min(330, (win.width - 380) / 4); height: 178; radius: 24
+                    color: on ? Qt.rgba(0.2, 0.18, 0.28, 0.92) : spa.containsMouse ? Qt.rgba(0.17, 0.15, 0.22, 0.9) : Qt.rgba(0.13, 0.12, 0.17, 0.86)
+                    border.width: on ? 3 : 1
+                    border.color: on ? (Serp.on ? "#F4A7C9" : "#C5C0FF") : Qt.rgba(1, 1, 1, 0.08)
+                    scale: spa.pressed ? 0.97 : 1
+                    Behavior on scale { NumberAnimation { duration: 160; easing.type: Easing.OutBack } }
+                    MouseArea {
+                        id: spa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            Settings.setMany({ sounds: { enabled: true, pack: sp.modelData.id } });
+                            if (!sp.playing) Sounds.preview(sp.modelData.id);
+                        }
+                    }
+                    Rectangle {
+                        x: 22; y: 22; width: 48; height: 48; radius: 24
+                        color: Qt.rgba(1, 1, 1, 0.08)
+                        Icon { anchors.centerIn: parent; text: sp.modelData.icon; size: 26; fill: 1; color: Serp.on ? "#F4A7C9" : "#C5C0FF" }
+                    }
+                    Txt { x: 22; y: 84; text: sp.modelData.name; color: "#EDE9F7"; font.pixelSize: 21; font.weight: Font.Bold }
+                    Txt { x: 22; y: 114; width: parent.width - 44; wrapMode: Text.WordWrap; elide: Text.ElideNone; maximumLineCount: 2
+                          text: sp.modelData.desc; color: "#A39DB8"; font.pixelSize: 14 }
+                    // botón grande para escuchar (con barritas que bailan mientras suena)
+                    Rectangle {
+                        anchors.right: parent.right; anchors.top: parent.top; anchors.margins: 18
+                        width: 56; height: 56; radius: 28
+                        color: sp.playing ? (Serp.on ? "#F4A7C9" : "#C5C0FF") : pa.containsMouse ? Qt.rgba(1, 1, 1, 0.16) : Qt.rgba(1, 1, 1, 0.09)
+                        scale: pa.pressed ? 0.9 : 1
+                        Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutBack } }
+                        Icon { visible: !sp.playing; anchors.centerIn: parent; anchors.horizontalCenterOffset: 2; text: "play_arrow"; size: 30; fill: 1; color: "#EDE9F7" }
+                        Row {
+                            visible: sp.playing
+                            anchors.centerIn: parent; spacing: 4
+                            Repeater {
+                                model: 4
+                                Rectangle {
+                                    id: eqb
+                                    required property int index
+                                    width: 5; radius: 2; anchors.bottom: parent.bottom
+                                    color: "#2A1A3A"
+                                    property real h: 8
+                                    height: h
+                                    Behavior on h { NumberAnimation { duration: 140 } }
+                                    Timer { running: sp.playing; interval: 150 + eqb.index * 37; repeat: true; triggeredOnStart: true; onTriggered: eqb.h = 6 + Math.random() * 18 }
+                                }
+                            }
+                        }
+                        MouseArea {
+                            id: pa; anchors.fill: parent; anchors.margins: -6; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                            onClicked: Sounds.preview(sp.modelData.id)
+                        }
+                    }
+                    Rectangle {
+                        anchors.right: parent.right; anchors.bottom: parent.bottom; anchors.margins: 18
+                        width: 30; height: 30; radius: 15; color: Serp.on ? "#F4A7C9" : "#C5C0FF"
+                        scale: sp.on ? 1 : 0
+                        Behavior on scale { NumberAnimation { duration: 240; easing.type: Easing.OutBack } }
+                        Icon { anchors.centerIn: parent; text: "check"; size: 19; color: Serp.on ? "#3A1028" : "#2A1A9A" }
+                    }
+                }
+            }
+        }
+        // sin sonidos
+        Rectangle {
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: offRow.implicitWidth + 40; height: 52; radius: 26
+            color: !Settings.sounds.enabled ? Qt.rgba(0.77, 0.75, 1, 0.2) : offMa.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(0.13, 0.12, 0.17, 0.86)
+            border.width: 1; border.color: !Settings.sounds.enabled ? "#C5C0FF" : Qt.rgba(1, 1, 1, 0.1)
+            Row {
+                id: offRow; anchors.centerIn: parent; spacing: 10
+                Icon { anchors.verticalCenter: parent.verticalCenter; text: "volume_off"; size: 22; color: "#EDE9F7" }
+                Txt { anchors.verticalCenter: parent.verticalCenter; text: Settings.sounds.enabled ? "Prefiero sin sonidos" : "Sin sonidos (puedes activarlos en Personalizar)"; color: "#EDE9F7"; font.pixelSize: 16; font.weight: Font.DemiBold }
+            }
+            MouseArea { id: offMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                        onClicked: { Sounds.stopPreview(); Settings.set("sounds", "enabled", !Settings.sounds.enabled); } }
+        }
+    }
+
+    // ---------------------------------------------------------------- paso 5: íconos
+    // Se aplican al terminar la bienvenida (cambiar los íconos recarga el escritorio un
+    // segundo). Los que no vienen instalados se descargan en ese momento.
+    property string pickedIcons: Icons.current
+    function applyIcons(): void { Icons.choose(pickedIcons); }
+    Grid {
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: Math.round(parent.height * 0.32)
+        columns: 3; columnSpacing: 22; rowSpacing: 22
+        visible: win.step === 4
+        Repeater {
+            model: Icons.packs
+            Rectangle {
+                id: ic
+                required property var modelData
+                readonly property bool on: win.pickedIcons === modelData.id
+                width: Math.min(440, (win.width - 400) / 3); height: 230; radius: 24
+                color: on ? Qt.rgba(0.2, 0.18, 0.28, 0.92) : ica.containsMouse ? Qt.rgba(0.17, 0.15, 0.22, 0.9) : Qt.rgba(0.13, 0.12, 0.17, 0.86)
+                border.width: on ? 3 : 1
+                border.color: on ? (Serp.on ? "#F4A7C9" : "#C5C0FF") : Qt.rgba(1, 1, 1, 0.08)
+                scale: ica.pressed ? 0.97 : on ? 1.02 : 1
+                Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
+                // muestra: los mismos íconos de cada paquete (imagen preparada al compilar)
+                Rectangle {
+                    x: 16; y: 16; width: parent.width - 32; height: 120; radius: 16
+                    color: Qt.rgba(1, 1, 1, 0.05)
+                    Image {
+                        anchors.fill: parent; anchors.margins: 12
+                        fillMode: Image.PreserveAspectFit
+                        source: Icons.preview(ic.modelData.id)
+                        sourceSize: Qt.size(820, 200)
+                        asynchronous: true
+                    }
+                }
+                Row {
+                    x: 22; y: 150; spacing: 10
+                    Txt { text: ic.modelData.name; color: "#EDE9F7"; font.pixelSize: 21; font.weight: Font.Bold }
+                    Rectangle {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: tagT.implicitWidth + 18; height: 24; radius: 12
+                        color: Icons.installed[ic.modelData.id] ? Qt.rgba(0.48, 0.85, 0.56, 0.16) : Qt.rgba(1, 1, 1, 0.08)
+                        Txt { id: tagT; anchors.centerIn: parent; font.pixelSize: 12; font.weight: Font.DemiBold
+                              text: Icons.installed[ic.modelData.id] ? "Instalado" : "Se descarga · " + ic.modelData.size
+                              color: Icons.installed[ic.modelData.id] ? "#7BE0A4" : "#A39DB8" }
+                    }
+                }
+                Txt { x: 22; y: 184; width: parent.width - 80; text: ic.modelData.desc; color: "#A39DB8"; font.pixelSize: 15 }
+                Rectangle {
+                    anchors.right: parent.right; anchors.bottom: parent.bottom; anchors.margins: 18
+                    width: 30; height: 30; radius: 15; color: Serp.on ? "#F4A7C9" : "#C5C0FF"
+                    scale: ic.on ? 1 : 0
+                    Behavior on scale { NumberAnimation { duration: 240; easing.type: Easing.OutBack } }
+                    Icon { anchors.centerIn: parent; text: "check"; size: 19; color: Serp.on ? "#3A1028" : "#2A1A9A" }
+                }
+                MouseArea { id: ica; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: win.pickedIcons = ic.modelData.id }
+            }
+        }
+    }
+    Txt {
+        visible: win.step === 4
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: Math.round(parent.height * 0.32) + 2 * 230 + 22 + 26
+        text: "Las carpetas toman el color de tu escritorio. Al terminar, el escritorio se recarga un segundo."
+        color: "#A39DB8"; font.pixelSize: 15
+    }
+
     // ---------------------------------------------------------------- pie
     Row {
         anchors.horizontalCenter: parent.horizontalCenter
@@ -551,7 +719,7 @@ PanelWindow {
         spacing: 10
         opacity: win.stage(5)
         Repeater {
-            model: 3
+            model: 5
             Rectangle {
                 required property int index
                 width: index === win.step ? 30 : 10; height: 10; radius: 5
@@ -570,7 +738,7 @@ PanelWindow {
             scale: backMa.pressed ? 0.93 : 1
             Behavior on scale { NumberAnimation { duration: 160; easing.type: Easing.OutBack } }
             Txt { anchors.centerIn: parent; text: win.step === 0 ? "Saltar" : "Atrás"; color: "#EDE9F7"; font.pixelSize: 19; font.weight: Font.DemiBold }
-            MouseArea { id: backMa; anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: win.step === 0 ? win.finish() : win.step-- }
+            MouseArea { id: backMa; anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { Sounds.stopPreview(); win.step === 0 ? win.finish() : win.step--; } }
         }
         Rectangle {
             width: goRow.implicitWidth + 64; height: 60; radius: 30; color: goMa.containsMouse ? "#D6D2FF" : "#C5C0FF"
@@ -580,10 +748,10 @@ PanelWindow {
             Row {
                 id: goRow
                 anchors.centerIn: parent; spacing: 8
-                Txt { text: win.step < 2 ? "Continuar" : "Empezar a usar Quantum"; color: "#2A1A9A"; font.pixelSize: 19; font.weight: Font.Bold }
-                Icon { anchors.verticalCenter: parent.verticalCenter; text: win.step < 2 ? "arrow_forward" : "check"; size: 20; color: "#2A1A9A" }
+                Txt { text: win.step < 4 ? "Continuar" : "Empezar a usar Quantum"; color: "#2A1A9A"; font.pixelSize: 19; font.weight: Font.Bold }
+                Icon { anchors.verticalCenter: parent.verticalCenter; text: win.step < 4 ? "arrow_forward" : "check"; size: 20; color: "#2A1A9A" }
             }
-            MouseArea { id: goMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: win.step < 2 ? win.step++ : win.finish() }
+            MouseArea { id: goMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: win.step < 4 ? win.step++ : win.finish() }
         }
     }
 
@@ -617,7 +785,7 @@ PanelWindow {
         focus: win.open
         Keys.onLeftPressed: if (win.step === 2) Serp.choose("caelestial", win.lookTouched); else if (win.step === 0) { const i = win.options.findIndex(o => o.id === win.chosen); win.pick(win.options[Math.max(0, i - 1)].id); }
         Keys.onRightPressed: if (win.step === 2) Serp.choose("serpantium", win.lookTouched); else if (win.step === 0) { const i = win.options.findIndex(o => o.id === win.chosen); win.pick(win.options[Math.min(win.options.length - 1, i + 1)].id); }
-        Keys.onReturnPressed: win.step < 2 ? win.step++ : win.finish()
+        Keys.onReturnPressed: win.step < 4 ? win.step++ : win.finish()
         Keys.onEscapePressed: win.finish()
     }
 }
