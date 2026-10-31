@@ -37,8 +37,11 @@ Scope {
         scale: ma.pressed ? 0.9 : 1
         Behavior on scale { NumberAnimation { duration: ma.pressed ? 70 : 260; easing.type: ma.pressed ? Easing.OutQuad : Easing.OutBack } }
         Row { id: row; anchors.centerIn: parent; spacing: 7 }
+        // DEBAJO del contenido (z: -1): si quedaba encima se tragaba los clics de los
+        // íconos de apps y de los botones de música
         MouseArea {
             id: ma
+            z: -1
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
@@ -73,7 +76,7 @@ Scope {
 
             // apps abiertas y fijadas, como cuadritos (clic: enfocar / minimizar)
             Pill {
-                visible: Wm.groups.length > 0
+                visible: Wm.groups.length > 0 && Settings.ui.serpApps !== "dock"
                 implicitWidth: Wm.groups.length * 24 + (Wm.groups.length - 1) * 7 + 14
                 Repeater {
                     id: apps

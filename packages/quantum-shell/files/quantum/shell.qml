@@ -46,7 +46,11 @@ ShellRoot {
             }
             LazyLoader {
                 active: Serp.on
-                Scope { SerpBar {} SerpPanels {} SerpLauncher {} }
+                Scope {
+                    SerpBar {} SerpPanels {} SerpLauncher {}
+                    // «Dock abajo»: el mismo dock de Caelestial, con los colores de Serpantium
+                    LazyLoader { active: Settings.ui.serpApps === "dock"; Dock {} }
+                }
             }
             Lock {}
             Popups {}

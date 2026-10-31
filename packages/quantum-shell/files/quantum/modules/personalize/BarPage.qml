@@ -46,7 +46,72 @@ ColumnLayout {
         }
     }
 
+    // Las dos formas de Quantum Shell: también aquí, que es donde se busca al querer cambiar la barra
     Group {
+        title: "Quantum Shell"
+        help: Serp.on ? "Serpantium: barra de píldoras arriba, paneles oscuros y tonos rosados."
+                      : "Caelestial: barra arriba, dock y paneles de vidrio."
+        icon: "dashboard"
+        Segmented {
+            options: [{ v: "caelestial", t: "Caelestial", i: "blur_on" }, { v: "serpantium", t: "Serpantium", i: "terminal" }]
+            value: Settings.ui.shell
+            onPicked: v => Serp.choose(v, false)
+        }
+    }
+
+    // Serpantium: dónde van las apps abiertas y fijadas
+    Group {
+        visible: Serp.on
+        title: "Tus apps"
+        help: "Dónde aparecen las apps fijadas y las que tienes abiertas."
+        icon: "apps"
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 14
+            ChoiceCard {
+                title: "En la barra de arriba"
+                help: "Íconos chicos junto al buscador. Más espacio para tus ventanas."
+                selected: Settings.ui.serpApps !== "dock"
+                previewHeight: 96
+                onClicked: Settings.setUi("serpApps", "bar")
+                SerpArt { anchors.fill: parent; dock: false }
+            }
+            ChoiceCard {
+                title: "Dock abajo"
+                help: "Una barra de apps abajo, como en Windows: fijar, ordenar arrastrando y ver ventanas."
+                selected: Settings.ui.serpApps === "dock"
+                previewHeight: 96
+                onClicked: Settings.setUi("serpApps", "dock")
+                SerpArt { anchors.fill: parent; dock: true }
+            }
+        }
+    }
+
+    component SerpArt: Rectangle {
+        id: sa
+        property bool dock: false
+        radius: Theme.radius
+        color: "#B86A97"
+        Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: parent.height * 0.45; radius: Theme.radius; color: "#5C2550" }
+        Row {
+            x: 8; y: 8; spacing: 4
+            Repeater { model: sa.dock ? [14, 14] : [14, 14, 46]; Rectangle { required property var modelData; width: modelData; height: 12; radius: 4; color: "#1F171D" } }
+        }
+        Rectangle { anchors.horizontalCenter: parent.horizontalCenter; y: 8; width: 40; height: 12; radius: 4; color: "#1F171D" }
+        Row {
+            anchors.right: parent.right; anchors.rightMargin: 8; y: 8; spacing: 4
+            Repeater { model: [24, 18, 12]; Rectangle { required property var modelData; width: modelData; height: 12; radius: 4; color: "#1F171D" } }
+        }
+        Rectangle {
+            visible: sa.dock
+            anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom; anchors.bottomMargin: 8
+            width: 110; height: 22; radius: 8; color: "#1F171D"; border.width: 1; border.color: Qt.rgba(1, 1, 1, 0.1)
+            Row { anchors.centerIn: parent; spacing: 5; Repeater { model: 5; Rectangle { width: 14; height: 14; radius: 4; color: index === 0 ? "#F4A7C9" : Qt.rgba(1, 1, 1, 0.35) } } }
+        }
+    }
+
+    Group {
+        visible: !Serp.on
         title: "Distribución"
         help: "Cómo se reparten las barras en la pantalla."
         icon: "view_quilt"
@@ -73,11 +138,13 @@ ColumnLayout {
     }
 
     Group {
-        title: "Barra de tareas"
-        help: "La barra de abajo, donde están Inicio y tus apps."
+        visible: !Serp.on || Settings.ui.serpApps === "dock"
+        title: Serp.on ? "Dock" : "Barra de tareas"
+        help: Serp.on ? "La barra de apps de abajo: fijadas y abiertas." : "La barra de abajo, donde están Inicio y tus apps."
         icon: "dock_to_bottom"
 
         OptionRow {
+            visible: !Serp.on
             title: "Estilo"
             help: "Flotante deja un espacio alrededor; pegada ocupa todo el borde."
             Segmented {
@@ -87,6 +154,7 @@ ColumnLayout {
             }
         }
         OptionRow {
+            visible: !Serp.on
             title: "Posición de las apps"
             help: page.single || !Settings.dock.floating ? "" : "Con la barra flotante sola, las apps siempre van al centro."
             Segmented {
@@ -111,6 +179,7 @@ ColumnLayout {
     }
 
     Group {
+        visible: !Serp.on
         title: "Botones de la barra"
         help: "Qué se muestra junto a tus apps."
         icon: "apps"
@@ -140,6 +209,7 @@ ColumnLayout {
     }
 
     Group {
+        visible: !Serp.on
         title: "Barra superior"
         help: page.single ? "No se usa con «Una sola barra abajo»." : "La barra de arriba, con la app activa, la hora y el estado."
         icon: "top_panel_open"
@@ -162,6 +232,7 @@ ColumnLayout {
     }
 
     Group {
+        visible: !Serp.on
         title: "Reloj"
         icon: "schedule"
         advanced: true

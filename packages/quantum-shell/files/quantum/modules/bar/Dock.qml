@@ -22,12 +22,12 @@ Variants {
         readonly property bool shown: !(Wm.active?.fullscreen ?? false)
 
         // Aspecto (Personalizar)
-        readonly property bool single: Settings.layout.style === "single"
-        readonly property bool floating: Settings.dock.floating
+        readonly property bool single: !Serp.on && Settings.layout.style === "single"
+        readonly property bool floating: Serp.on || Settings.dock.floating
         readonly property bool full: single || !floating          // ocupa todo el ancho
         readonly property int barH: Math.round(56 * Theme.dockScale)
         readonly property int gap: floating ? 10 : 0
-        readonly property bool alignLeft: Settings.dock.align === "left"
+        readonly property bool alignLeft: !Serp.on && Settings.dock.align === "left"
         // Ocultar automáticamente: se asoma al llevar el mouse al borde de abajo
         readonly property bool autohide: Settings.dock.autohide
         property bool hovering: false
@@ -167,7 +167,7 @@ Variants {
                 spacing: 2
 
                 DockButton {
-                    visible: Settings.dock.showStart
+                    visible: Settings.dock.showStart && !Serp.on
                     tip: "Inicio"
                     active: Shell.launcherOpen && !Shell.clipboardMode
                     onClicked: Shell.toggleLauncher(false)
@@ -181,13 +181,13 @@ Variants {
                     }
                 }
                 DockButton {
-                    visible: Settings.dock.showSearch
+                    visible: Settings.dock.showSearch && !Serp.on
                     tip: "Buscar"
                     onClicked: Shell.toggleLauncher(false)
                     Icon { anchors.centerIn: parent; text: "search"; size: Math.round(24 * Theme.dockScale); color: Theme.fg }
                 }
                 Rectangle {
-                    visible: Settings.dock.showStart || Settings.dock.showSearch
+                    visible: (Settings.dock.showStart || Settings.dock.showSearch) && !Serp.on
                     Layout.leftMargin: 4
                     Layout.rightMargin: 4
                     implicitWidth: 1
