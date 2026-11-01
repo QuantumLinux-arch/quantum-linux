@@ -221,6 +221,17 @@ ColumnLayout {
 
     Group {
         visible: !Serp.on
+        title: "Isla dinámica"
+        help: "Una píldora arriba al centro que se transforma: muestra el volumen, la música que suena, lo que se está instalando y el modo juego."
+        icon: "pill"
+        OptionRow {
+            title: "Mostrar la isla dinámica"
+            Toggle { checked: Settings.layout.topBar.island; onToggled: c => Settings.setPath("layout.topBar.island", c) }
+        }
+    }
+
+    Group {
+        visible: !Serp.on
         title: "Barra superior"
         help: page.single ? "No se usa con «Una sola barra abajo»." : "La barra de arriba, con la app activa, la hora y el estado."
         icon: "top_panel_open"

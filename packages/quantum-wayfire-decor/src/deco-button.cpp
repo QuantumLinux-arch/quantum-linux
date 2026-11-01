@@ -2,6 +2,8 @@
 #include "deco-theme.hpp"
 #include <wayfire/opengl.hpp>
 #include <wayfire/plugins/common/cairo-util.hpp>
+#include <wayfire/core.hpp>
+#include <wayfire/util.hpp>
 
 #define HOVERED  1.0
 #define NORMAL   0.0
@@ -30,6 +32,21 @@ button_type_t button_t::get_button_type() const
 
 void button_t::set_hover(bool is_hovered)
 {
+    // Quantum: diseños de ventanas como en Windows 11 (los muestra Quantum Shell junto al cursor)
+    if ((this->type == BUTTON_TOGGLE_MAXIMIZE) && (is_hovered != this->is_hovered))
+    {
+        if (is_hovered)
+        {
+            snap_timer.set_timeout(500, [] ()
+            {
+                wf::get_core().run("qs -c quantum ipc call shell snapLayouts");
+            });
+        } else
+        {
+            snap_timer.disconnect();
+        }
+    }
+
     this->is_hovered = is_hovered;
     if (!this->is_pressed)
     {

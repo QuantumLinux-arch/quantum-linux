@@ -72,7 +72,7 @@ Singleton {
     readonly property var defaults: ({
         appearance: { mode: "dark", dynamicColors: false, accent: "#6A5CFF", panelOpacity: 0.86, blur: true, textScale: 1.0,
                       glass: { bar: true, dock: true, panels: true, windows: false }, windowOpacity: 0.9 },
-        layout: { style: "split", topBar: { floating: true, showApp: true } },
+        layout: { style: "split", topBar: { floating: true, showApp: true, island: true } },
         dock: { floating: true, align: "center", size: "medium", autohide: false, showSearch: true, showStart: true, showTray: true, showUpdates: true, showQuarki: true },
         clock: { format24h: true, showDate: true, showSeconds: false },
         lock: { left: ["weather", "fetch", "media"], right: ["stats", "notifs"], showNotifContent: false, city: "" },
@@ -337,6 +337,7 @@ Singleton {
                 property JsonObject topBar: JsonObject {
                     property bool floating: true
                     property bool showApp: true
+                    property bool island: true             // isla dinámica arriba al centro (modules/island)
                 }
             }
             property JsonObject clock: JsonObject {

@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+"""Ayudante de Quantum Shell para mover ventanas con el IPC de Wayfire (diseños de ventanas).
+
+  quantum-wf target                    → JSON: la ventana bajo el mouse (o la enfocada), el
+                                          cursor y el área útil de su pantalla
+  quantum-wf place ID FX FY FW FH      → pone la ventana ID en esa zona (fracciones del área útil)
+  quantum-wf others ID                 → JSON: las otras ventanas de esa pantalla (para completar el diseño)
+  quantum-wf focus ID                  → enfoca la ventana ID
+"""
+import json
+import os
+import socket
+import struct
+import sys
+
+GAP = 8      # espacio entre ventanas y con los bordes
+
+
+def call(method, data=None):
+    s = socket.socket(socket.AF_UNIX)
+    s.connect(os.environ["WAYFIRE_SOCKET"])
+    body = json.dumps({"method": method, "data": data or {}}).encode()
+    s.sendall(struct.pack("<I", len(body)) + body)
+    n = struct.unpack("<I", s.recv(4))[0]
+    buf = b""
+    while len(buf) < n:
+        buf += s.recv(n - len(buf))
+    s.close()
+    return json.loads(buf)
+
+
+def toplevels():
+    return [v for v in call("window-rules/list-views")
+            if v.get("role") == "toplevel" and v.get("mapped") and not v.get("minimized") and v.get("layer") == "workspace"]
+
+
+def output(oid):
+    return next((o for o in call("window-rules/list-outputs") if o["id"] == oid), None)
+
+
+def inside(g, x, y):
+    return g["x"] <= x < g["x"] + g["width"] and g["y"] <= y < g["y"] + g["height"]
+
+
+def target():
+    cur = call("window-rules/get_cursor_position").get("pos", {"x": 0, "y": 0})
+    views = toplevels()
+    under = [v for v in views if inside(v["geometry"], cur["x"], cur["y"] + 40)]   # +40: la barra de título queda sobre la ventana
+    view = max(under, key=lambda v: v.get("last-focus-timestamp", 0)) if under else (call("window-rules/get-focused-view").get("info") or None)
+    if not view or view.get("role") != "toplevel":
+        return {"view": None, "cursor": cur}
+    o = output(view["output-id"])
+    return {"view": {k: view[k] for k in ("id", "title", "app-id", "geometry", "tiled-edges")},
+            "cursor": cur, "workarea": o["workarea"], "screen": o["geometry"]}
+
+
+def place(vid, fx, fy, fw, fh):
+    view = next((v for v in call("window-rules/list-views") if v["id"] == vid), None)
+    if not view:
+        return {"result": "error", "error": "no existe la ventana"}
+    wa = output(view["output-id"])["workarea"]
+    x0 = wa["x"] + GAP + fx * (wa["width"] - GAP)
+    y0 = wa["y"] + GAP + fy * (wa["height"] - GAP)
+    w = fw * (wa["width"] - GAP) - GAP
+    h = fh * (wa["height"] - GAP) - GAP
+    # algunas apps no se achican más que su tamaño mínimo: se respeta y se mantiene dentro de la pantalla
+    mn = view.get("min-size") or {}
+    w, h = max(w, mn.get("width") or 0), max(h, mn.get("height") or 0)
+    x0 = min(x0, wa["x"] + wa["width"] - GAP - w) if x0 + w > wa["x"] + wa["width"] else x0
+    y0 = min(y0, wa["y"] + wa["height"] - GAP - h) if y0 + h > wa["y"] + wa["height"] else y0
+    x0, y0 = max(x0, wa["x"]), max(y0, wa["y"])
+    geo = {"x": round(x0), "y": round(y0), "width": round(w), "height": round(h)}
+    r = call("window-rules/configure-view", {"id": vid, "geometry": geo})
+    call("window-rules/focus-view", {"id": vid})
+    return r
+
+
+def others(vid):
+    me = next((v for v in call("window-rules/list-views") if v["id"] == vid), None)
+    out = [{"id": v["id"], "title": v.get("title", ""), "app-id": v.get("app-id", "")}
+           for v in toplevels() if v["id"] != vid and (not me or v["output-id"] == me["output-id"])]
+    return sorted(out, key=lambda v: v["title"].lower())
+
+
+def main(a):
+    if a == ["target"]:
+        print(json.dumps(target()))
+    elif len(a) == 6 and a[0] == "place":
+        print(json.dumps(place(int(a[1]), *map(float, a[2:]))))
+    elif len(a) == 2 and a[0] == "others":
+        print(json.dumps(others(int(a[1]))))
+    elif len(a) == 2 and a[0] == "focus":
+        print(json.dumps(call("window-rules/focus-view", {"id": int(a[1])})))
+    else:
+        print(__doc__.strip(), file=sys.stderr)
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

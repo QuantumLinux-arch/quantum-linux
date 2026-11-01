@@ -124,6 +124,8 @@ Singleton {
         { words: ["juegos", "mis juegos", "foton", "biblioteca", "biblioteca de juegos"], ids: ["foton", "quantum-foton"], cats: [] },
         { words: ["editor de texto", "bloc de notas", "notepad", "notas", "editor", "block de notas"], ids: [], cats: ["TextEditor"] },
         { words: ["calculadora"], ids: [], cats: ["Calculator"] },
+        { words: ["cronos", "maquina del tiempo", "restaurar", "restaurar el sistema", "punto de restauracion",
+                  "puntos de restauracion", "volver atras", "copias de seguridad"], ids: ["quantum-cronos"], cats: [] },
         { words: ["administrador de tareas", "monitor del sistema", "task manager", "monitor", "procesos"], ids: [], cats: ["Monitor"] },
         { words: ["reproductor de musica", "musica", "spotify"], ids: [], cats: ["Music"] },
         { words: ["reproductor de video", "reproductor de videos", "reproductor", "peliculas", "vlc"], ids: [], cats: ["Video", "Player"] },

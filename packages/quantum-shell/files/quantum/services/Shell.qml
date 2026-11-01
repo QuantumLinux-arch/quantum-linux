@@ -24,6 +24,7 @@ Singleton {
     // El centro de control mostrando la lista de redes Wi-Fi
     property bool wifiPage: false
     signal lockRequested
+    signal snapRequested                    // diseños de ventanas (modules/snap)
     property bool locked: false             // lo marca Lock.qml (pausa el fondo animado)
 
     function closeAll(): void {
@@ -132,6 +133,7 @@ Singleton {
         function personalize(): void { root.personalize(); }
         function nightLight(): void { root.toggleNightLight(); }
         function ai(): void { root.toggleAi(); }
+        function snapLayouts(): void { root.snapRequested(); }
         function sound(name: string): void { Sounds.play(name); }
         function lock(): void { root.lock(); }
         function gameMode(): void { root.setGameMode(!root.gameMode); }

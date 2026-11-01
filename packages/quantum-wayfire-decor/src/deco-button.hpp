@@ -81,6 +81,8 @@ class button_t
 
     /* Whether the button is currently being hovered */
     bool is_hovered = false;
+    /* Quantum: con el mouse medio segundo sobre «maximizar» se abren los diseños de ventanas */
+    wf::wl_timer<false> snap_timer;
     /* Whether the button is currently being held */
     bool is_pressed = false;
     /* The shade of button background to use. */

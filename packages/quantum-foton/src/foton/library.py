@@ -446,24 +446,39 @@ def install_steam(appid):
 
 MANGO_ENV = CONFIG / "environment.d" / "90-quantum-mangohud.conf"
 MANGO_CONF = CONFIG / "MangoHud" / "MangoHud.conf"
-MANGO_DEFAULT = """# Quantum Linux: FPS y uso de CPU/GPU en una línea discreta
+MANGO_DEFAULT = """# Quantum Linux: FPS, CPU y GPU en una píldora con los colores de Quantum.
+# Los FPS cambian de color: rojo (< 30), amarillo (30-60) y cian (60 o más).
+# Mostrar u ocultar en el juego: Mayús derecha + F12
 horizontal
+hud_compact
 legacy_layout=0
 fps
+fps_color_change
+fps_value=30,60
+fps_color=FF6B7A,FFB547,4FD8FF
 gpu_stats
+gpu_temp
 cpu_stats
+cpu_temp
 ram
 frametime=0
-hud_compact
-round_corners=10
-background_alpha=0.4
+round_corners=14
+background_color=0B0A12
+background_alpha=0.78
 font_size=20
 text_color=E4E0EE
-gpu_color=4FD8FF
+gpu_color=6A5CFF
 cpu_color=B14DFF
+ram_color=4FD8FF
+gpu_text=GPU
+cpu_text=CPU
 position=top-left
+offset_x=12
+offset_y=12
 toggle_hud=Shift_R+F12
 """
+# la configuración anterior de Quantum (para actualizarla sin pisar una hecha a mano)
+MANGO_OLD = "# Quantum Linux: FPS y uso de CPU/GPU en una línea discreta"
 
 
 def gamemode_on():
@@ -482,7 +497,7 @@ def set_fps(on):
     if on:
         MANGO_ENV.parent.mkdir(parents=True, exist_ok=True)
         MANGO_ENV.write_text("MANGOHUD=1\n")
-        if not MANGO_CONF.exists():
+        if not MANGO_CONF.exists() or MANGO_CONF.read_text().startswith(MANGO_OLD):
             MANGO_CONF.parent.mkdir(parents=True, exist_ok=True)
             MANGO_CONF.write_text(MANGO_DEFAULT)
     else:

@@ -14,6 +14,9 @@ import "modules/wallpapers"
 import "modules/notifications"
 import "modules/personalize"
 import "modules/assistant"
+import "modules/snap"
+import "modules/island"
+import "modules/gamemode"
 import "modules/osd"
 import "modules/session"
 import "modules/welcome"
@@ -62,6 +65,9 @@ ShellRoot {
             Personalize {}
             Assistant {}
             SessionMenu {}
+            SnapLayouts {}
+            Island {}
+            GameModeFx {}
             Welcome {}
             RebootPrompt {}
         }

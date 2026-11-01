@@ -23,7 +23,8 @@ PanelWindow {
     readonly property string glyph: kind === "volume" ? Audio.icon
         : value < 0.34 ? "brightness_5" : value < 0.67 ? "brightness_6" : "brightness_7"
 
-    visible: shown || progress > 0.001
+    readonly property bool islandOn: !Serp.on && Settings.layout.topBar.island
+    visible: !islandOn && (shown || progress > 0.001)
     screen: Wm.screen
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "quantum-osd"
