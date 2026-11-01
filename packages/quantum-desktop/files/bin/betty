@@ -1,0 +1,16 @@
+#!/bin/sh
+# Un secreto de Quantum: escribe «betty» en la terminal.
+p='\033[38;2;255;143;200m'; d='\033[38;2;228;87;159m'; c='\033[38;2;255;214;232m'; n='\033[0m'; b='\033[1m'
+printf '\n'
+printf "      ${p}.--.   .--.${n}\n"
+printf "     ${p}(    \\\\ /    )${n}\n"
+printf "      ${d}'.   |   .'${n}\n"
+printf "     ${p}(    / \\\\    )${n}\n"
+printf "      ${p}'--'   '--'${n}\n\n"
+set -- "La biblioteca está abierta para ti… supongo." \
+       "Lee algo bonito hoy… supongo." \
+       "Tus archivos están bien guardados… supongo." \
+       "Hoy es un buen día para aprender algo nuevo… supongo."
+i=$(( $(date +%s) % $# + 1 ))
+eval "msg=\${$i}"
+printf "  ${b}${c}%s${n}\n\n" "$msg"

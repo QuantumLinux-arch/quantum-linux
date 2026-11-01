@@ -518,7 +518,7 @@ Window {
                 folder: win.special ? "" : win.path
                 trashMode: win.path === "quantum:trash"
                 searchMode: win.path === "quantum:search"
-                emptyText: trashMode ? "La Papelera está vacía" : searchMode ? (win.searching ? "Buscando…" : "No encontré nada con «" + win.searchQuery + "»")
+                emptyText: trashMode ? "La Papelera está vacía" : searchMode ? (win.searching ? "Buscando…" : "No encontré nada con «" + win.searchQuery + "»… supongo")
                          : win.path === "quantum:favorites" ? "Todavía no tienes favoritos" : win.path === "quantum:recent" ? "Nada reciente por aquí" : "Esta carpeta está vacía"
                 emptyHint: trashMode ? "Lo que borres llega aquí y lo puedes recuperar." : searchMode ? "Busco en " + win.titleFor(win.searchFolder) + " y sus subcarpetas."
                          : win.path === "quantum:favorites" ? "Clic derecho en una carpeta → «Agregar a Favoritos»." : win.special ? "" : "Arrastra archivos aquí o usa «Nuevo»."

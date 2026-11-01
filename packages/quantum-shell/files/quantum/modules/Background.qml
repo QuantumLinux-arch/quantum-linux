@@ -164,6 +164,60 @@ Variants {
             border.color: Theme.alpha(Theme.brandCyan, 0.7 * (1 - win.radius / win.maxRadius))
         }
 
+        // Un secreto: cada tanto (8 a 20 minutos) una mariposa rosada cruza el fondo volando.
+        // No sale con juegos, pantalla completa ni bloqueo. QUANTUM_BUTTERFLY=<segundos> para probarla.
+        Item {
+            id: butterfly
+            property real t: -1                       // 0..1 mientras vuela
+            property real flap: 0
+            property real startY: win.height * 0.4
+            property bool rtl: false
+            visible: t >= 0
+            width: 46; height: 46
+            x: (rtl ? 1 - t : t) * (win.width + 120) - 60
+            y: startY - Math.sin(t * Math.PI) * win.height * 0.12 + Math.sin(t * 18) * 18
+            rotation: (rtl ? -1 : 1) * (8 * Math.cos(t * 18))
+            Image {
+                anchors.fill: parent
+                source: Quickshell.shellDir + "/assets/mariposa-izq.svg"
+                sourceSize: Qt.size(92, 92)
+                transform: Scale { origin.x: 23; xScale: 0.25 + 0.75 * Math.abs(Math.cos(butterfly.flap)) }
+            }
+            Image {
+                anchors.fill: parent
+                source: Quickshell.shellDir + "/assets/mariposa-der.svg"
+                sourceSize: Qt.size(92, 92)
+                transform: Scale { origin.x: 23; xScale: 0.25 + 0.75 * Math.abs(Math.cos(butterfly.flap)) }
+            }
+            Image {
+                anchors.fill: parent
+                source: Quickshell.shellDir + "/assets/mariposa-cuerpo.svg"
+                sourceSize: Qt.size(92, 92)
+            }
+            FrameAnimation {
+                running: butterfly.t >= 0
+                onTriggered: {
+                    butterfly.flap += frameTime * 11;
+                    butterfly.t += frameTime / 11;            // cruza en 11 s
+                    if (butterfly.t > 1) butterfly.t = -1;
+                }
+            }
+            Timer {
+                readonly property int test: parseInt(Quickshell.env("QUANTUM_BUTTERFLY") || "0")
+                running: true
+                interval: test > 0 ? test * 1000 : (8 + Math.random() * 12) * 60000
+                repeat: true
+                onTriggered: {
+                    if (!win.paused && butterfly.t < 0) {
+                        butterfly.startY = win.height * (0.25 + 0.35 * Math.random());
+                        butterfly.rtl = Math.random() < 0.5;
+                        butterfly.t = 0;
+                    }
+                    if (test <= 0) interval = (8 + Math.random() * 12) * 60000;
+                }
+            }
+        }
+
         // Fondo vivo: se pausa con juegos, ventanas a pantalla completa o maximizadas,
         // el modo juego o la pantalla bloqueada, para no gastar batería ni gráfica.
         LazyLoader {

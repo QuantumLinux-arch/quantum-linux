@@ -13,7 +13,7 @@ printf '\n  %s%sQuantum Linux · Actualizaciones%s\n\n' "$b" "$c" "$n"
 list=$(checkupdates 2>/dev/null)
 quantum=$(pacman -Sl quantum 2>/dev/null | awk '{print $2}')
 if [ -z "$list" ] && ! flatpak remote-ls --updates 2>/dev/null | grep -q .; then
-    printf '  %sTodo está al día.%s\n\n' "$g" "$n"
+    printf '  %sTodo está al día… supongo.%s\n\n' "$g" "$n"
     qs -c quantum ipc call updates check >/dev/null 2>&1
     read -rp "  Presiona Enter para cerrar…"
     exit 0
@@ -38,7 +38,7 @@ fi
 
 if sudo pacman -Syu --noconfirm; then
     command -v flatpak >/dev/null && flatpak update -y --noninteractive
-    printf '\n  %s%sListo: Quantum Linux está al día.%s\n' "$b" "$g" "$n"
+    printf '\n  %s%sListo: Quantum Linux está al día… supongo.%s\n' "$b" "$g" "$n"
     # el hook de pacman anotó qué se actualizó: el escritorio pide reiniciar
     if [ -s /run/quantum/reboot-required ]; then
         printf '  %sReinicia para que se apliquen los cambios%s (Quantum te lo va a pedir).\n' "$b" "$n"

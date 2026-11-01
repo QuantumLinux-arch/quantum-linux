@@ -255,7 +255,7 @@ PanelWindow {
                 Txt {
                     anchors.centerIn: parent
                     visible: win.results.length === 0
-                    text: win.clipMode ? "Aún no has copiado nada" : "No encontré nada con «" + search.text + "»"
+                    text: win.clipMode ? "Aún no has copiado nada" : "No encontré nada con «" + search.text + "»… supongo"
                     color: Theme.fgMuted
                 }
             }
