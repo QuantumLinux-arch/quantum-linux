@@ -1,0 +1,24 @@
+# Maintainer: Quantum Linux <https://github.com/quantum-linux>
+
+pkgname=quantum-cronos
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Cronos: la máquina del tiempo de Quantum Linux (vuelve el sistema a un momento anterior)"
+arch=('any')
+url="https://github.com/quantum-linux"
+license=('GPL-3.0-or-later')
+depends=('python' 'python-pyqt6' 'qt6-declarative' 'qt6-svg' 'snapper' 'polkit' 'btrfs-progs' 'quantum-shell')
+
+_src="$startdir/src"
+
+package() {
+  install -d "$pkgdir/usr/lib/quantum-cronos"
+  cp -r "$_src/quantum_cronos" "$pkgdir/usr/lib/quantum-cronos/"
+  rm -rf "$pkgdir/usr/lib/quantum-cronos/quantum_cronos/__pycache__"
+  python -m compileall -q -j 0 -o 0 -o 1 -s "$pkgdir" -p / "$pkgdir/usr/lib/quantum-cronos"
+  install -Dm755 "$startdir/files/quantum-cronos" "$pkgdir/usr/bin/quantum-cronos"
+  install -Dm755 "$startdir/files/restore" "$pkgdir/usr/lib/quantum/cronos/restore"
+  install -Dm644 "$startdir/files/org.quantumlinux.cronos.policy" "$pkgdir/usr/share/polkit-1/actions/org.quantumlinux.cronos.policy"
+  install -Dm644 "$startdir/files/quantum-cronos.desktop" "$pkgdir/usr/share/applications/quantum-cronos.desktop"
+  install -Dm644 "$startdir/files/quantum-cronos.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/quantum-cronos.svg"
+}

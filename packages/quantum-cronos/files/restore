@@ -1,0 +1,31 @@
+#!/bin/bash
+# Cronos: vuelve el sistema al punto de restauración N. Lo ejecuta pkexec (como root).
+#   1. guarda el presente (para poder deshacer el viaje)
+#   2. devuelve los archivos del sistema a como estaban (snapper undochange N..0)
+#   3. pone en /boot el kernel de ese momento (/boot es otra partición y no viaja con la copia),
+#      rehace el initramfs, lo firma para el arranque seguro y actualiza GRUB
+# Tus archivos (/home) no se tocan. Al terminar hay que reiniciar.
+# Escribe «PASO n texto» para que Cronos muestre el avance.
+set -uo pipefail
+N="${1:-}"
+[[ "$N" =~ ^[0-9]+$ ]] && (( N > 0 )) || { echo "ERROR número de punto inválido"; exit 2; }
+snapper -c root list --columns number 2>/dev/null | grep -qE "^\s*$N\s*$" || { echo "ERROR no existe el punto $N"; exit 2; }
+
+echo "PASO 1 Guardando el presente"
+snapper -c root create --description "Antes de volver con Cronos" --cleanup-algorithm number \
+    --userdata important=yes || { echo "ERROR no pude guardar el presente"; exit 3; }
+
+echo "PASO 2 Volviendo en el tiempo"
+snapper -c root undochange "$N..0" || { echo "ERROR no pude volver al punto $N"; exit 4; }
+
+echo "PASO 3 Preparando el arranque"
+for d in /usr/lib/modules/*/; do
+    [[ -f "$d/pkgbase" && -f "$d/vmlinuz" ]] || continue
+    base=$(<"$d/pkgbase")
+    install -Dm644 "$d/vmlinuz" "/boot/vmlinuz-$base"
+done
+mkinitcpio -P >/dev/null 2>&1 || echo "AVISO mkinitcpio terminó con avisos"
+[[ -x /usr/lib/quantum/secureboot/sign ]] && /usr/lib/quantum/secureboot/sign >/dev/null 2>&1
+grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1 || echo "AVISO no pude actualizar GRUB"
+sync
+echo "PASO 4 Listo"

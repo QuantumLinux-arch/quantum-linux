@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+ <defs>
+  <linearGradient id="q" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4FD8FF"/><stop offset=".5" stop-color="#6A5CFF"/><stop offset="1" stop-color="#B14DFF"/></linearGradient>
+  <radialGradient id="bg" cx=".5" cy=".42" r=".7"><stop offset="0" stop-color="#2A1F6E"/><stop offset="1" stop-color="#0E0A24"/></radialGradient>
+  <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#BFF4FF" stop-opacity=".22"/><stop offset="1" stop-color="#E3B8FF" stop-opacity=".1"/></linearGradient>
+  <linearGradient id="sand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9FF0FF"/><stop offset="1" stop-color="#6A5CFF"/></linearGradient>
+  <radialGradient id="glow"><stop offset="0" stop-color="#7FE3FF" stop-opacity=".55"/><stop offset="1" stop-color="#7FE3FF" stop-opacity="0"/></radialGradient>
+ </defs>
+ <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#bg)"/>
+ <circle cx="128" cy="128" r="96" fill="url(#glow)" opacity=".5"/>
+ <!-- marcas del reloj alrededor -->
+ <g stroke="#C5C0FF" stroke-width="3" stroke-linecap="round" opacity=".35">
+  <path d="M128,30 v10 M128,216 v10 M30,128 h10 M216,128 h10 M59,59 l7,7 M190,190 l7,7 M197,59 l-7,7 M66,190 l-7,7"/>
+ </g>
+ <!-- reloj de arena -->
+ <path d="M84,58 H172 C172,96 140,112 134,128 C140,144 172,160 172,198 H84 C84,160 116,144 122,128 C116,112 84,96 84,58 Z" fill="url(#glass)" stroke="url(#q)" stroke-width="7" stroke-linejoin="round"/>
+ <path d="M100,78 H156 C152,96 136,106 128,118 C120,106 104,96 100,78 Z" fill="url(#sand)" opacity=".9"/>
+ <path d="M128,128 L128,182" stroke="#9FF0FF" stroke-width="3" stroke-dasharray="3 5" stroke-linecap="round"/>
+ <path d="M98,186 C106,170 150,170 158,186 Z" fill="url(#sand)"/>
+ <rect x="72" y="48" width="112" height="12" rx="6" fill="url(#q)"/>
+ <rect x="72" y="196" width="112" height="12" rx="6" fill="url(#q)"/>
+ <!-- la órbita de Quantum, con su electrón, girando hacia atrás -->
+ <ellipse cx="128" cy="128" rx="104" ry="34" fill="none" stroke="url(#q)" stroke-width="5" opacity=".9" transform="rotate(-24 128 128)"/>
+ <g transform="rotate(-24 128 128)"><circle cx="42.8" cy="147.5" r="8.0" fill="#9FF0FF" opacity="0.84"/><circle cx="48.3" cy="149.9" r="7.5" fill="#9FF0FF" opacity="0.77"/><circle cx="54.5" cy="152.0" r="7.0" fill="#9FF0FF" opacity="0.71"/><circle cx="61.2" cy="154.0" r="6.5" fill="#9FF0FF" opacity="0.64"/><circle cx="68.3" cy="155.9" r="6.0" fill="#9FF0FF" opacity="0.58"/><circle cx="76.0" cy="157.4" r="5.5" fill="#9FF0FF" opacity="0.51"/><circle cx="84.0" cy="158.8" r="5.0" fill="#9FF0FF" opacity="0.45"/><circle cx="92.4" cy="159.9" r="4.5" fill="#9FF0FF" opacity="0.39"/><circle cx="101.1" cy="160.8" r="4.0" fill="#9FF0FF" opacity="0.32"/><circle cx="109.9" cy="161.5" r="3.5" fill="#9FF0FF" opacity="0.26"/><circle cx="118.9" cy="161.9" r="3.0" fill="#9FF0FF" opacity="0.19"/><circle cx="128.0" cy="162.0" r="2.5" fill="#9FF0FF" opacity="0.13"/><circle cx="137.1" cy="161.9" r="2.0" fill="#9FF0FF" opacity="0.06"/><circle cx="33.7" cy="142.4" r="16" fill="#7FE3FF" opacity=".35"/><circle cx="33.7" cy="142.4" r="9" fill="#fff"/></g>
+</svg>

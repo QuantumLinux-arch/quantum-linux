@@ -125,6 +125,7 @@ polkit
 flatpak
 quantum-store
 quantum-foton
+quantum-cronos
 yay-bin
 
 # ---- Apps

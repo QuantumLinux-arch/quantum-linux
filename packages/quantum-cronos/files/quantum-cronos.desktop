@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Cronos
+Name[en]=Cronos
+GenericName=Máquina del tiempo
+Comment=Vuelve tu PC a como estaba antes de una actualización
+Comment[en]=Take your PC back to how it was before an update
+Exec=quantum-cronos
+Icon=quantum-cronos
+Terminal=false
+StartupWMClass=quantum-cronos
+Categories=System;Settings;Utility;
+Keywords=cronos;restaurar;restauracion;volver;atras;tiempo;maquina del tiempo;snapper;snapshot;backup;copia;
