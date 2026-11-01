@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
@@ -36,8 +37,8 @@ Variants {
         exclusionMode: ExclusionMode.Ignore
         anchors { top: true }
         margins.top: Settings.layout.style === "single" ? 8 : (Settings.layout.topBar.floating ? 9 : 5)
-        implicitWidth: 560
-        implicitHeight: 140
+        implicitWidth: 640
+        implicitHeight: 190
         color: "transparent"
         // solo la píldora recibe el mouse (lo transparente deja pasar los clics)
         mask: Region { item: pill }
@@ -65,6 +66,56 @@ Variants {
             volume: Qt.size(320, 46), brightness: Qt.size(320, 46), game: Qt.size(300, 46), job: Qt.size(340, 46)
         })[mode] ?? Qt.size(118, 34)
 
+        // ------------------------------------------------ cómo se deforma
+        // El tamaño sigue a un resorte; la velocidad del cambio aplasta la píldora (se estira a lo
+        // ancho y se afina de alto, y rebota), como una gota de gelatina.
+        property real lastW: pill.width
+        property real lastH: pill.height
+        property real squash: 0                 // + se estira a lo ancho, - a lo alto
+        property real energy: 0                 // 0..1: qué tan fuerte se está transformando
+        FrameAnimation {
+            running: win.visible
+            onTriggered: {
+                const dt = Math.max(0.008, frameTime);
+                const vw = (pill.width - win.lastW) / dt, vh = (pill.height - win.lastH) / dt;
+                win.lastW = pill.width; win.lastH = pill.height;
+                const target = Math.max(-0.16, Math.min(0.16, (vw - vh * 1.6) / 3200));
+                win.squash += (target - win.squash) * Math.min(1, dt * 14);
+                const e = Math.min(1, (Math.abs(vw) + Math.abs(vh)) / 1400);
+                win.energy = Math.max(e, win.energy - dt * 1.6);
+            }
+        }
+        readonly property bool rich: mode === "musicBig" || mode === "game"
+
+        // resplandor con los colores de Quantum, detrás de la píldora
+        Item {
+            id: glowSrc
+            anchors.centerIn: pill
+            width: pill.width + 10; height: pill.height + 10
+            visible: false
+            layer.enabled: true
+            Rectangle {
+                anchors.fill: parent
+                radius: Math.min(height / 2, 34)
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop { position: 0; color: Theme.brandCyan }
+                    GradientStop { position: 0.5; color: Theme.brandIndigo }
+                    GradientStop { position: 1; color: Theme.brandViolet }
+                }
+            }
+        }
+        MultiEffect {
+            anchors.fill: glowSrc
+            source: glowSrc
+            blurEnabled: true
+            blurMax: 48
+            blur: 1
+            transform: Scale { origin.x: glowSrc.width / 2; origin.y: 0; xScale: 1 + win.squash * 0.35; yScale: 1 - win.squash }
+            opacity: Math.min(0.9, (win.rich ? 0.38 : win.mode === "idle" ? 0 : 0.16) + win.energy * 0.75)
+            Behavior on opacity { NumberAnimation { duration: 260 } }
+        }
+
         Rectangle {
             id: pill
             anchors.horizontalCenter: parent.horizontalCenter
@@ -74,10 +125,32 @@ Variants {
             radius: Math.min(height / 2, 30)
             color: "#0B0A12"
             border.width: 1
-            border.color: Qt.rgba(1, 1, 1, 0.08)
+            border.color: Qt.rgba(1, 1, 1, 0.08 + 0.25 * win.energy)
             clip: true
-            Behavior on width { NumberAnimation { duration: 420; easing.type: Easing.OutBack; easing.overshoot: 1.1 } }
-            Behavior on height { NumberAnimation { duration: 420; easing.type: Easing.OutBack; easing.overshoot: 1.1 } }
+            antialiasing: true
+            Behavior on width { SpringAnimation { spring: 3.4; damping: 0.24; epsilon: 0.25 } }
+            Behavior on height { SpringAnimation { spring: 3.8; damping: 0.28; epsilon: 0.25 } }
+            transform: Scale {
+                origin.x: pill.width / 2
+                origin.y: 0
+                xScale: 1 + win.squash * 0.35
+                yScale: 1 - win.squash
+            }
+            // brillo superior con los colores de Quantum, que se enciende al transformarse
+            Rectangle {
+                anchors.top: parent.top
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: parent.width - 2 * Math.min(parent.radius, 24)
+                height: 1.5
+                opacity: 0.25 + 0.75 * win.energy + (win.rich ? 0.3 : 0)
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop { position: 0; color: "transparent" }
+                    GradientStop { position: 0.3; color: Theme.brandCyan }
+                    GradientStop { position: 0.7; color: Theme.brandViolet }
+                    GradientStop { position: 1; color: "transparent" }
+                }
+            }
 
             // debajo de los controles: detecta el mouse y abre el panel al tocarla en reposo
             MouseArea {
@@ -88,13 +161,38 @@ Variants {
                 onClicked: if (win.mode === "idle") Shell.toggleDashboard()
             }
 
-            // cada contenido aparece con un fundido cuando su forma está lista
+            // Cada contenido: lo anterior se va rápido y lo nuevo entra cuando la forma ya cambió,
+            // subiendo un poco y con un fundido (nunca se ven dos encimados).
             component Face: Item {
+                id: face
                 property string when: ""
+                readonly property bool on: win.mode === when
                 anchors.fill: parent
-                opacity: win.mode === when ? 1 : 0
-                visible: opacity > 0
-                Behavior on opacity { NumberAnimation { duration: 220 } }
+                opacity: 0
+                scale: 0.94
+                visible: opacity > 0.01
+                transform: Translate { id: lift; y: 6 }
+                states: State {
+                    when: face.on
+                    PropertyChanges { face.opacity: 1; face.scale: 1; lift.y: 0 }
+                }
+                transitions: [
+                    Transition {
+                        to: ""
+                        NumberAnimation { properties: "opacity,scale,y"; duration: 110; easing.type: Easing.InCubic }
+                    },
+                    Transition {
+                        from: ""
+                        SequentialAnimation {
+                            PauseAnimation { duration: 150 }
+                            ParallelAnimation {
+                                NumberAnimation { property: "opacity"; duration: 260; easing.type: Easing.OutCubic }
+                                NumberAnimation { property: "scale"; duration: 380; easing.type: Easing.OutBack; easing.overshoot: 1.6 }
+                                NumberAnimation { target: lift; property: "y"; duration: 380; easing.type: Easing.OutCubic }
+                            }
+                        }
+                    }
+                ]
             }
 
             // ------------------------------------------------------- en reposo
@@ -199,11 +297,30 @@ Variants {
             }
 
             // ---------------------------------------------- música (pequeña)
-            component Art: Rectangle {
-                radius: 8
-                color: Qt.rgba(1, 1, 1, 0.08)
-                clip: true
-                Image { anchors.fill: parent; source: win.player?.trackArtUrl ?? ""; fillMode: Image.PreserveAspectCrop; asynchronous: true }
+            // carátula con las esquinas redondeadas de verdad (clip solo recorta en rectángulo)
+            component Art: Item {
+                id: art
+                property real radius: 9
+                Rectangle { anchors.fill: parent; radius: art.radius; color: Qt.rgba(1, 1, 1, 0.08) }
+                Image {
+                    id: artImg
+                    anchors.fill: parent
+                    source: win.player?.trackArtUrl ?? ""
+                    sourceSize: Qt.size(art.width * 2, art.height * 2)
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    visible: false
+                    layer.enabled: true
+                }
+                Rectangle { id: artMask; anchors.fill: parent; radius: art.radius; visible: false; layer.enabled: true; layer.smooth: true }
+                MultiEffect {
+                    anchors.fill: parent
+                    source: artImg
+                    maskEnabled: true
+                    maskSource: artMask
+                    maskThresholdMin: 0.5
+                    maskSpreadAtMin: 1
+                }
                 Icon { anchors.centerIn: parent; visible: !(win.player?.trackArtUrl); text: "music_note"; size: 16; color: "white" }
             }
             component Bars: Row {
@@ -245,7 +362,7 @@ Variants {
                     anchors.fill: parent
                     anchors.margins: 14
                     spacing: 14
-                    Art { Layout.preferredWidth: 82; Layout.preferredHeight: 82; radius: 14 }
+                    Art { Layout.preferredWidth: 82; Layout.preferredHeight: 82; radius: 18 }
                     ColumnLayout {
                         Layout.fillWidth: true
                         spacing: 4
