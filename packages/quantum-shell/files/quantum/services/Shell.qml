@@ -25,6 +25,9 @@ Singleton {
     property bool wifiPage: false
     signal lockRequested
     signal snapRequested                    // diseños de ventanas (modules/snap)
+    // colores de la carátula de lo que suena (los pone la isla); vacío = los de Quantum
+    property var musicColors: []
+    function tint(i: int, fallback: color): color { return musicColors.length ? musicColors[i % musicColors.length] : fallback; }
     property bool locked: false             // lo marca Lock.qml (pausa el fondo animado)
 
     function closeAll(): void {

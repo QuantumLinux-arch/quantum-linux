@@ -152,9 +152,9 @@ Variants {
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
                     GradientStop { position: 0; color: "transparent" }
-                    GradientStop { position: 0.25; color: Theme.brandCyan }
-                    GradientStop { position: 0.5; color: Theme.brandIndigo }
-                    GradientStop { position: 0.75; color: Theme.brandViolet }
+                    GradientStop { position: 0.25; color: Shell.tint(0, Theme.brandCyan); Behavior on color { ColorAnimation { duration: 900 } } }
+                    GradientStop { position: 0.5; color: Shell.tint(1, Theme.brandIndigo); Behavior on color { ColorAnimation { duration: 900 } } }
+                    GradientStop { position: 0.75; color: Shell.tint(2, Theme.brandViolet); Behavior on color { ColorAnimation { duration: 900 } } }
                     GradientStop { position: 1; color: "transparent" }
                 }
             }

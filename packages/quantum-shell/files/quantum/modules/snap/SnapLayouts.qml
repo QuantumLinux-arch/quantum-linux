@@ -38,7 +38,7 @@ Scope {
     function choose(layout: var, zone: int): void {
         const z = layout[zone];
         Quickshell.execDetached([wf, "place", String(target.view.id)].concat(z.map(String)));
-        Sounds.play("click");
+        Sounds.playAt("whoosh", (z[0] + z[2] / 2 - 0.5) * 2);        // suena del lado de la zona
         const rest = layout.filter((_, i) => i !== zone);
         hoverZone = null;
         if (!rest.length) { close(); return; }
@@ -49,6 +49,7 @@ Scope {
     function fill(win: var): void {
         const z = pending[0];
         Quickshell.execDetached([wf, "place", String(win.id)].concat(z.map(String)));
+        Sounds.playAt("whoosh", (z[0] + z[2] / 2 - 0.5) * 2);
         others = others.filter(o => o.id !== win.id);
         pending = pending.slice(1);
         if (!pending.length || !others.length) close();

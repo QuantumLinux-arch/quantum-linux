@@ -40,7 +40,7 @@ PanelWindow {
         anim.duration = open ? 620 : 200;
         anim.easing.type = open ? Easing.OutCubic : Easing.InCubic;
         anim.restart();
-        if (open) { current = 0; row.forceActiveFocus(); }
+        if (open) { current = 0; row.forceActiveFocus(); Sounds.play("whoosh"); }
     }
     NumberAnimation { id: anim; target: win; property: "progress" }
     // 0 → 1 para el elemento i (el reloj es -1, los botones 0..4)

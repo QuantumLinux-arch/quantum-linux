@@ -16,7 +16,7 @@ Scope {
         target: Shell
         function onGameModeChanged() {
             // dentro de un juego a pantalla completa no se interrumpe
-            if (Shell.gameMode && !(Wm.active?.fullscreen ?? false)) root.t = 0;
+            if (Shell.gameMode && !(Wm.active?.fullscreen ?? false)) { root.t = 0; Sounds.play("whoosh"); }
         }
     }
     FrameAnimation {

@@ -316,15 +316,17 @@ def personalize_ini(s, decor):
     ms = lambda base: f"{round(base * k)}ms circle"
     anim = w.get("openAnimation", "zoom")
     anim = anim if anim in OPEN_ANIMS else "zoom"
-    mini = w.get("minimizeAnimation", "zoom")
-    mini = mini if mini in ("zoom", "squeezimize", "none") else "zoom"
+    mini = w.get("minimizeAnimation", "squeezimize")
+    mini = mini if mini in ("zoom", "squeezimize", "none") else "squeezimize"
+    # abrir con un pequeño rebote; cerrar desvaneciéndose (más suave que encogerse)
+    bounce = lambda base: f"{round(base * k)}ms easeOutElastic" if k > 0.5 else ms(base)
     th = max(24, min(48, int(w.get("titleHeight", 34))))
     border = max(0, min(4, int(w.get("borderSize", 1))))
     out = [
-        "[animate]", f"open_animation = {anim}", f"close_animation = {anim if anim != 'fire' else 'fade'}",
+        "[animate]", f"open_animation = {anim}", f"close_animation = {'fade' if anim in ('zoom', 'fire') else anim}",
         f"minimize_animation = {mini}",
-        f"duration = {ms(180)}", f"squeezimize_duration = {ms(200)}", f"fade_duration = {ms(200)}",
-        f"zoom_duration = {ms(180)}", f"fire_duration = {ms(500)}", f"spin_duration = {ms(250)}",
+        f"duration = {ms(180)}", f"squeezimize_duration = {ms(280)}", f"fade_duration = {ms(220)}",
+        f"zoom_duration = {bounce(340) if anim == 'zoom' else ms(180)}", f"fire_duration = {ms(500)}", f"spin_duration = {ms(250)}",
         "[grid]", f"duration = {ms(220)}",
         "[expo]", f"duration = {ms(280)}",
         "[vswitch]", f"duration = {ms(280)}",

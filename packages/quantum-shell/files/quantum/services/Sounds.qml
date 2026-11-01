@@ -24,7 +24,10 @@ Singleton {
         { id: "piano", name: "Piano", desc: "Notas de piano.", icon: "piano" },
         { id: "synthwave", name: "Synthwave", desc: "Ochentero y con energía.", icon: "graphic_eq" },
     ]
+    // sonidos que son iguales en todos los estilos (los del sistema, como el «whoosh»)
+    readonly property var shared: ["whoosh"]
     function file(pack: string, name: string): string {
+        if (shared.indexOf(name) >= 0) return dir + name + ".oga";
         return dir + (pack && pack !== "quantum" ? pack + "/" : "") + name + ".oga";
     }
 
@@ -64,5 +67,27 @@ Singleton {
                                  file(Settings.sounds.pack, name)]);
     }
     property var _last: ({})
+
+    // Sonido con ubicación: pan de -1 (izquierda) a 1 (derecha), según dónde pasa algo en la
+    // pantalla. La primera vez se prepara una copia con esa ubicación (ffmpeg) y queda guardada.
+    readonly property string cache: (Quickshell.env("XDG_CACHE_HOME") || Quickshell.env("HOME") + "/.cache") + "/quantum/sounds/"
+    function playAt(name: string, pan: real): void {
+        if (!enabled) return;
+        const now = Date.now();
+        if (now - (_last[name] ?? 0) < 70) return;
+        _last[name] = now;
+        const step = Math.round(Math.max(-1, Math.min(1, pan)) * 4);       // 9 posiciones
+        if (step === 0) {
+            Quickshell.execDetached(["pw-play", "--volume", String(Math.max(0, Math.min(1, volume))), file(Settings.sounds.pack, name)]);
+            return;
+        }
+        const a = (step / 4 + 1) * Math.PI / 4;                              // potencia constante
+        const l = Math.cos(a).toFixed(3), r = Math.sin(a).toFixed(3);
+        const src = file(Settings.sounds.pack, name);
+        const out = cache + (Settings.sounds.pack || "quantum") + "-" + name + "-" + step + ".oga";
+        Quickshell.execDetached(["sh", "-c",
+            "mkdir -p \"$(dirname \"$2\")\"; [ -s \"$2\" ] || ffmpeg -v error -y -i \"$1\" -af \"pan=stereo|c0=$3*c0|c1=$4*c1\" \"$2\" </dev/null; " +
+            "exec pw-play --volume \"$5\" \"$2\"", "sh", src, out, l, r, String(Math.max(0, Math.min(1, volume)))]);
+    }
 
 }

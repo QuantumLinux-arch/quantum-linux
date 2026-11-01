@@ -16,6 +16,23 @@ Scope {
     // para videos: qs -c quantum ipc call island demo volume 0.6 (no toca el volumen real)
     property real demoLevel: -1
     signal demoFlash(string kind)
+    // Colores de la carátula: los 3 más vivos, un poco más brillantes para que luzcan
+    readonly property var player: Mpris.players.values.find(p => p.isPlaying) ?? null
+    ColorQuantizer {
+        id: quant
+        source: island.player?.trackArtUrl ?? ""
+        depth: 3
+        rescaleSize: 64
+    }
+    readonly property var picked: {
+        const cs = (quant.colors ?? []).slice();
+        if (!island.player || !cs.length) return [];
+        cs.sort((a, b) => (b.hsvSaturation * b.hsvValue) - (a.hsvSaturation * a.hsvValue));
+        return cs.slice(0, 3).map(c => Qt.hsva(c.hsvHue < 0 ? 0.75 : c.hsvHue, Math.min(1, Math.max(0.45, c.hsvSaturation * 1.2)),
+                                               Math.min(1, Math.max(0.75, c.hsvValue * 1.25)), 1));
+    }
+    onPickedChanged: Shell.musicColors = picked
+
     IpcHandler {
         target: "island"
         function demo(kind: string, level: real): void { island.demoLevel = level; island.demoFlash(kind); }
@@ -56,14 +73,24 @@ Variants {
         readonly property real level: island.demoLevel >= 0 ? island.demoLevel
             : mode === "brightness" ? Brightness.value : (Audio.muted ? 0 : Audio.volume)
 
+        // la notificación que se muestra (la más nueva); se va sola a los 5 s o al tocarla
+        readonly property var notif: enabled_ && !Shell.controlCenterOpen ? (Notifs.popups[0] ?? null) : null
+        Timer {
+            running: !!win.notif && !win.hovered
+            interval: 5000
+            onTriggered: if (win.notif) Notifs.dismissPopup(win.notif)
+        }
+
         readonly property string mode: flash !== "" ? flash
+            : notif ? "notif"
             : Quarki.working ? "job"
             : player ? (hovered ? "musicBig" : "music")
             : "idle"
         // tamaño de cada forma
         readonly property size target: ({
             idle: Qt.size(118, 34), music: Qt.size(250, 38), musicBig: Qt.size(430, 112),
-            volume: Qt.size(320, 46), brightness: Qt.size(320, 46), game: Qt.size(300, 46), job: Qt.size(340, 46)
+            volume: Qt.size(320, 46), brightness: Qt.size(320, 46), game: Qt.size(300, 46), job: Qt.size(340, 46),
+            notif: Qt.size(440, (notif?.actions ?? []).filter(a => a.identifier !== "default").length ? 118 : 78)
         })[mode] ?? Qt.size(118, 34)
 
         // ------------------------------------------------ cómo se deforma
@@ -99,9 +126,9 @@ Variants {
                 radius: Math.min(height / 2, 34)
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
-                    GradientStop { position: 0; color: Theme.brandCyan }
-                    GradientStop { position: 0.5; color: Theme.brandIndigo }
-                    GradientStop { position: 1; color: Theme.brandViolet }
+                    GradientStop { position: 0; color: Shell.tint(0, Theme.brandCyan); Behavior on color { ColorAnimation { duration: 900 } } }
+                    GradientStop { position: 0.5; color: Shell.tint(1, Theme.brandIndigo); Behavior on color { ColorAnimation { duration: 900 } } }
+                    GradientStop { position: 1; color: Shell.tint(2, Theme.brandViolet); Behavior on color { ColorAnimation { duration: 900 } } }
                 }
             }
         }
@@ -112,7 +139,7 @@ Variants {
             blurMax: 48
             blur: 1
             transform: Scale { origin.x: glowSrc.width / 2; origin.y: 0; xScale: 1 + win.squash * 0.35; yScale: 1 - win.squash }
-            opacity: Math.min(0.9, (win.rich ? 0.38 : win.mode === "idle" ? 0 : 0.16) + win.energy * 0.75)
+            opacity: Math.min(0.9, (win.rich ? 0.42 : win.mode === "idle" ? 0 : win.mode === "music" ? 0.26 : 0.16) + win.energy * 0.75)
             Behavior on opacity { NumberAnimation { duration: 260 } }
         }
 
@@ -146,8 +173,8 @@ Variants {
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
                     GradientStop { position: 0; color: "transparent" }
-                    GradientStop { position: 0.3; color: Theme.brandCyan }
-                    GradientStop { position: 0.7; color: Theme.brandViolet }
+                    GradientStop { position: 0.3; color: Shell.tint(0, Theme.brandCyan) }
+                    GradientStop { position: 0.7; color: Shell.tint(2, Theme.brandViolet) }
                     GradientStop { position: 1; color: "transparent" }
                 }
             }
@@ -247,6 +274,76 @@ Variants {
                 }
             }
 
+            // ------------------------------------------------------ notificación
+            Face {
+                when: "notif"
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        const n = win.notif;
+                        if (!n) return;
+                        const def = n.actions.find(a => a.identifier === "default");
+                        if (def) def.invoke();
+                        Notifs.dismissPopup(n);
+                    }
+                }
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 14
+                    spacing: 8
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 12
+                        Rectangle {
+                            Layout.preferredWidth: 46; Layout.preferredHeight: 46; radius: 14
+                            color: Qt.rgba(1, 1, 1, 0.08)
+                            Image {
+                                anchors.fill: parent; anchors.margins: 6
+                                source: win.notif ? (win.notif.appIcon ? Quickshell.iconPath(win.notif.appIcon, true) : win.notif.image) : ""
+                                sourceSize: Qt.size(68, 68)
+                                fillMode: Image.PreserveAspectFit
+                            }
+                        }
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 2
+                            Txt {
+                                Layout.fillWidth: true
+                                text: win.notif ? (win.notif.summary || win.notif.appName) : ""
+                                color: "white"; font.weight: Font.Bold; elide: Text.ElideRight
+                            }
+                            Txt {
+                                Layout.fillWidth: true
+                                visible: text !== ""
+                                text: win.notif ? win.notif.body.replace(/<[^>]+>/g, "").replace(/\s+/g, " ") : ""
+                                color: Qt.rgba(1, 1, 1, 0.65); font.pixelSize: 12; elide: Text.ElideRight
+                            }
+                        }
+                        Txt { text: win.notif?.appName ?? ""; color: Qt.rgba(1, 1, 1, 0.4); font.pixelSize: 11 }
+                    }
+                    Row {
+                        spacing: 8
+                        visible: actRep.count > 0
+                        Repeater {
+                            id: actRep
+                            model: (win.notif?.actions ?? []).filter(a => a.identifier !== "default").slice(0, 3)
+                            Rectangle {
+                                required property var modelData
+                                width: actT.implicitWidth + 26; height: 30; radius: 15
+                                color: actArea.containsMouse ? Qt.rgba(1, 1, 1, 0.2) : Qt.rgba(1, 1, 1, 0.1)
+                                Txt { id: actT; anchors.centerIn: parent; text: parent.modelData.text; color: "white"; font.pixelSize: 12; font.weight: Font.DemiBold }
+                                MouseArea {
+                                    id: actArea
+                                    anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                                    onClicked: { const n = win.notif; parent.modelData.invoke(); if (n) Notifs.dismissPopup(n); }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             // ------------------------------------------------------ modo juego
             Face {
                 when: "game"
@@ -331,7 +428,8 @@ Variants {
                         required property int index
                         anchors.verticalCenter: parent.verticalCenter
                         width: 3; radius: 1.5
-                        color: ["#4FD8FF", "#6A5CFF", "#B14DFF", "#4FD8FF"][index]
+                        color: Shell.tint(index, ["#4FD8FF", "#6A5CFF", "#B14DFF", "#4FD8FF"][index])
+                        Behavior on color { ColorAnimation { duration: 900 } }
                         height: 6 + 10 * Math.abs(Math.sin(waves.t * (3 + index * 1.3) + index))
                     }
                 }

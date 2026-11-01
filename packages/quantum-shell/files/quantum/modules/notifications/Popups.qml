@@ -8,7 +8,9 @@ import qs.services
 PanelWindow {
     id: win
 
-    visible: Notifs.popups.length > 0 && !Shell.controlCenterOpen
+    // con la isla dinámica, las notificaciones salen de ella (modules/island)
+    readonly property bool islandOn: !Serp.on && Settings.layout.topBar.island
+    visible: !islandOn && Notifs.popups.length > 0 && !Shell.controlCenterOpen
     screen: Wm.screen
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "quantum-notifications"

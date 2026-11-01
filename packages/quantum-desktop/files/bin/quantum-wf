@@ -6,6 +6,7 @@
   quantum-wf place ID FX FY FW FH      → pone la ventana ID en esa zona (fracciones del área útil)
   quantum-wf others ID                 → JSON: las otras ventanas de esa pantalla (para completar el diseño)
   quantum-wf focus ID                  → enfoca la ventana ID
+  quantum-wf cursor                    → imprime «x y» cada vez que el mouse se mueve (estela del cursor)
 """
 import json
 import os
@@ -82,6 +83,28 @@ def others(vid):
     return sorted(out, key=lambda v: v["title"].lower())
 
 
+def cursor_stream():
+    """Una sola conexión, ~60 consultas por segundo; imprime solo si el mouse se movió."""
+    import time
+    s = socket.socket(socket.AF_UNIX)
+    s.connect(os.environ["WAYFIRE_SOCKET"])
+    body = json.dumps({"method": "window-rules/get_cursor_position", "data": {}}).encode()
+    msg = struct.pack("<I", len(body)) + body
+    last = None
+    while True:
+        s.sendall(msg)
+        n = struct.unpack("<I", s.recv(4))[0]
+        buf = b""
+        while len(buf) < n:
+            buf += s.recv(n - len(buf))
+        pos = json.loads(buf).get("pos", {})
+        cur = (round(pos.get("x", 0)), round(pos.get("y", 0)))
+        if cur != last:
+            print(cur[0], cur[1], flush=True)
+            last = cur
+        time.sleep(1 / 60)
+
+
 def main(a):
     if a == ["target"]:
         print(json.dumps(target()))
@@ -89,6 +112,11 @@ def main(a):
         print(json.dumps(place(int(a[1]), *map(float, a[2:]))))
     elif len(a) == 2 and a[0] == "others":
         print(json.dumps(others(int(a[1]))))
+    elif a == ["cursor"]:
+        try:
+            cursor_stream()
+        except (BrokenPipeError, KeyboardInterrupt, ConnectionError):
+            return 0
     elif len(a) == 2 and a[0] == "focus":
         print(json.dumps(call("window-rules/focus-view", {"id": int(a[1])})))
     else:

@@ -68,6 +68,7 @@ ShellRoot {
             SnapLayouts {}
             Island {}
             GameModeFx {}
+            CursorTrail {}
             Welcome {}
             RebootPrompt {}
         }

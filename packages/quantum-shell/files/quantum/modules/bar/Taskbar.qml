@@ -37,6 +37,20 @@ RowLayout {
             active: focused
             onRunningChanged: if (running) launching = false
 
+            // Le dice a Wayfire dónde está este ícono: al minimizar, la ventana se encoge hacia él
+            // (y al restaurarla sale de él).
+            function shareRect(): void {
+                const p = btn.mapToItem(null, 0, 0);
+                const r = Qt.rect(Math.round(p.x), Math.round(p.y), Math.round(btn.width), Math.round(btn.height));
+                for (const w of g.wins) {
+                    try { w.setRectangle(root.dock, r); } catch (e) {}
+                }
+            }
+            Timer { id: rectTimer; interval: 400; onTriggered: btn.shareRect() }
+            onGChanged: rectTimer.restart()
+            onXChanged: rectTimer.restart()
+            Component.onCompleted: rectTimer.restart()
+
             // reordenar arrastrando: el que se arrastra sigue al mouse y los demás se corren
             draggable: true
             z: dragging ? 10 : 0
@@ -67,6 +81,9 @@ RowLayout {
                         launching = true;
                         launchTimer.restart();
                         Apps.launch(g.entry);
+                        // el clic suena desde donde está el ícono en la pantalla
+                        const p = btn.mapToItem(null, btn.width / 2, 0);
+                        Sounds.playAt("click", (p.x / Math.max(1, root.dock.width) - 0.5) * 2);
                     }
                 } else if (g.wins.length === 1) {
                     Wm.toggle(g.wins[0]);

@@ -139,6 +139,11 @@ ColumnLayout {
             }
         }
         OptionRow {
+            title: "Estela del cursor"
+            help: "Una estela de luz sigue al mouse. Se apaga sola en el Modo juego."
+            Toggle { checked: Settings.appearance.cursorTrail; onToggled: c => Settings.set("appearance", "cursorTrail", c) }
+        }
+        OptionRow {
             title: "Ventanas gelatina"
             help: "Las ventanas se estiran como gelatina al moverlas. Divertido, pero consume más."
             advanced: true

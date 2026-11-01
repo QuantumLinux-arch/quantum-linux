@@ -71,12 +71,12 @@ Singleton {
     // aplican encima de esto, así un estilo siempre se ve igual.
     readonly property var defaults: ({
         appearance: { mode: "dark", dynamicColors: false, accent: "#6A5CFF", panelOpacity: 0.86, blur: true, textScale: 1.0,
-                      glass: { bar: true, dock: true, panels: true, windows: false }, windowOpacity: 0.9 },
+                      glass: { bar: true, dock: true, panels: true, windows: false }, windowOpacity: 0.9, cursorTrail: false },
         layout: { style: "split", topBar: { floating: true, showApp: true, island: true } },
         dock: { floating: true, align: "center", size: "medium", autohide: false, showSearch: true, showStart: true, showTray: true, showUpdates: true, showQuarki: true },
         clock: { format24h: true, showDate: true, showSeconds: false },
         lock: { left: ["weather", "fetch", "media"], right: ["stats", "notifs"], showNotifContent: false, city: "" },
-        windows: { tiling: false, corners: "soft", animations: "normal", openAnimation: "zoom", minimizeAnimation: "zoom", buttonsLeft: false,
+        windows: { tiling: false, corners: "soft", animations: "normal", openAnimation: "zoom", minimizeAnimation: "squeezimize", buttonsLeft: false,
                    wobbly: false, titleHeight: 34, borderSize: 1 }
     })
     readonly property var visualSections: ["appearance", "layout", "dock", "clock", "windows", "lock"]
@@ -261,6 +261,7 @@ Singleton {
                 property string iconTheme: "papirus"     // papirus | tela | fluent | whitesur | colloid | candy
                 property real panelOpacity: 0.86
                 property bool blur: true
+                property bool cursorTrail: false         // estela de luz detrás del mouse (modules/CursorTrail)
                 property real textScale: 1.0
                 // Efecto vidrio (Personalizar): qué partes son translúcidas con desenfoque
                 property JsonObject glass: JsonObject {
@@ -276,7 +277,7 @@ Singleton {
                 property string corners: "soft"          // sharp | soft | round
                 property string animations: "normal"     // none | fast | normal | smooth
                 property string openAnimation: "zoom"    // zoom | fade | fire | spin
-                property string minimizeAnimation: "zoom" // zoom | squeezimize | none
+                property string minimizeAnimation: "squeezimize" // zoom | squeezimize | none
                 property bool buttonsLeft: false
                 property bool wobbly: false
                 property int titleHeight: 34
