@@ -170,6 +170,14 @@ Singleton {
             celebrate();
             return true;
         }
+        // un guiño para quien hizo Quantum: su personaje favorito
+        if (/\b(beatrice|betty|beako|beatriz)\b/.test(t)) {
+            say(pick(["¿Beatrice? Es la favorita de quien creó Quantum. Por eso aquí todo se despide con un «…supongo».",
+                      "Betty no está aquí, pero dejó un guiño en el menú de apagado… supongo.",
+                      "¿Beako? Una guardiana de biblioteca con dos coletas y moños rosados. Le debemos más de una idea… supongo."]));
+            celebrate();
+            return true;
+        }
         if (/(quien eres|como te llamas|que eres|tu nombre)/.test(t)) {
             say("Soy **Quarki**, el asistente de Quantum. Vivo en tu barra de tareas: me duermo cuando no me usas y despierto cuando me necesitas. Puedo abrir e instalar apps y juegos, cambiar ajustes y responder tus dudas.");
             return true;

@@ -84,6 +84,9 @@ Item {
                 Behavior on opacity { NumberAnimation { duration: 400 } }
             }
             Text { text: Qt.formatTime(clk.date, "mm"); font.family: Serp.font; font.pixelSize: 150; font.weight: Font.Bold; color: Qt.rgba(1, 1, 1, 0.92) }
+            // el personaje que gira, chiquito junto a la hora
+            Item { width: 18; height: 1 }
+            Spin { anchors.bottom: parent.bottom; anchors.bottomMargin: 30; width: 80; height: 80 }
         }
         Text {
             anchors.horizontalCenter: parent.horizontalCenter

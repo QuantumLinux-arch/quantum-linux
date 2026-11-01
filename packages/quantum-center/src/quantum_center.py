@@ -661,6 +661,8 @@ def credits_page():
     lay.addLayout(grid)
     lay.addWidget(label("Y a todos los que comentan, prueban y comparten: cada idea ayuda a decidir "
                         "qué llega en la próxima versión.", "lead"))
+    # un guiño: el personaje favorito de quien creó Quantum
+    lay.addWidget(label("Y a Beatrice, la guardiana favorita de quien hizo Quantum… supongo.", "muted"))
     lay.addSpacing(8)
     lay.addWidget(label("Construido sobre software libre", "h2"))
     lay.addWidget(label(" · ".join(OPEN_SOURCE), "muted"))

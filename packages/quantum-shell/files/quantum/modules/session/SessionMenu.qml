@@ -23,11 +23,11 @@ PanelWindow {
     color: Theme.alpha(Theme.scrim, 0.62 * Math.min(1, progress))
 
     readonly property var actions: [
-        { icon: "lock", label: "Bloquear", hint: "Super + L", run: () => Shell.lock() },
-        { icon: "logout", label: "Cerrar sesión", hint: "", run: () => Wm.logout() },
-        { icon: "bedtime", label: "Suspender", hint: "", run: () => Quickshell.execDetached(["systemctl", "suspend"]) },
-        { icon: "restart_alt", label: "Reiniciar", hint: "", run: () => Quickshell.execDetached(["systemctl", "reboot"]) },
-        { icon: "power_settings_new", label: "Apagar", hint: "", run: () => Quickshell.execDetached(["systemctl", "poweroff"]) },
+        { icon: "lock", label: "Bloquear", hint: "Super + L", say: "Cuidaré tus cosas mientras no estás… supongo.", run: () => Shell.lock() },
+        { icon: "logout", label: "Cerrar sesión", hint: "", say: "Vuelve pronto… supongo.", run: () => Wm.logout() },
+        { icon: "bedtime", label: "Suspender", hint: "", say: "Una siesta cortita… supongo.", run: () => Quickshell.execDetached(["systemctl", "suspend"]) },
+        { icon: "restart_alt", label: "Reiniciar", hint: "", say: "Ahora mismo vuelvo… supongo.", run: () => Quickshell.execDetached(["systemctl", "reboot"]) },
+        { icon: "power_settings_new", label: "Apagar", hint: "", say: "Hasta luego… supongo.", run: () => Quickshell.execDetached(["systemctl", "poweroff"]) },
     ]
     property int current: 0
     // Los botones se achican en pantallas angostas
@@ -184,6 +184,33 @@ PanelWindow {
                     font.pixelSize: Theme.textSmall
                 }
             }
+        }
+    }
+
+    // el personaje que gira, a la derecha, con su frase (un guiño a Beatrice: «…supongo»)
+    Column {
+        anchors.left: row.right
+        anchors.leftMargin: Math.max(30, Math.min(70, (win.width - row.width) / 2 - 190))
+        anchors.verticalCenter: row.verticalCenter
+        anchors.verticalCenterOffset: -20
+        spacing: 22
+        visible: win.width - row.width > 380
+        opacity: win.stage(5)
+        transform: Translate { x: (1 - win.stage(5)) * 40 }
+        Spin {
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: Math.round(win.buttonSize * 1.15); height: width
+            running: win.visible
+        }
+        Txt {
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: 200
+            horizontalAlignment: Text.AlignHCenter
+            wrapMode: Text.WordWrap
+            text: win.actions[win.current].say
+            font.pixelSize: Theme.textSmall + 1
+            font.italic: true
+            color: Theme.alpha("white", 0.7)
         }
     }
 

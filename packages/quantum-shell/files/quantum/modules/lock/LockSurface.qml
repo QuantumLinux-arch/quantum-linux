@@ -265,6 +265,12 @@ Item {
                                 Txt { id: ap; anchors.centerIn: parent; text: clock.date.getHours() < 12 ? "AM" : "PM"; font.pixelSize: 34; font.weight: Font.Black; color: Theme.fg }
                             }
                         }
+                        // el personaje que gira, chiquito junto a la hora
+                        Spin {
+                            anchors.bottom: parent.bottom
+                            anchors.bottomMargin: 34
+                            width: 86; height: 86
+                        }
                     }
                     Txt {
                         readonly property real e: root.ease(root.stage(260, 600))

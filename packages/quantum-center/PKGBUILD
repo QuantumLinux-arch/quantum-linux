@@ -2,7 +2,7 @@
 
 pkgname=quantum-center
 pkgver=1.0.0
-pkgrel=17
+pkgrel=18
 pkgdesc="Centro Quantum: bienvenida, ajustes y mantenimiento de Quantum Linux"
 arch=('any')
 url="https://github.com/quantum-linux"
