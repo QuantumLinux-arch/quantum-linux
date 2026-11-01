@@ -58,7 +58,29 @@ Singleton {
         raw = raw.trim();
         if (!raw) return;
         messages = messages.concat([{ id: _next++, from: "me", text: raw, card: null }]);
-        if (!handle(raw)) converse();
+        const clauses = splitClauses(clean(raw));
+        if (clauses.length > 1 ? !runChain(clauses) : !handle(raw)) converse();
+    }
+
+    // «abre firefox y busca queso cheddar» → dos pedidos (solo se corta en «y»/«luego» si sigue una orden)
+    readonly property string verbs: "abre|abrir|abreme|busca|buscar|buscame|instala|instalame|instalar|descarga|pon|ponme|sube|baja|cambia|activa|" +
+        "desactiva|cierra|juega|toma|bloquea|apaga|reinicia|desinstala|borra|quita|muestra|muestrame|ve|entra|silencia|reproduce|dime"
+    function splitClauses(t: string): var {
+        const re = new RegExp("\\s+(?:y luego|y despues|y tambien|y|luego|despues|tambien)\\s+(?=(?:" + verbs + ")\\b)");
+        return t.split(re).map(c => c.trim()).filter(c => c);
+    }
+    function runChain(clauses: var): bool {
+        let any = false;
+        for (let i = 0; i < clauses.length; i++) {
+            // «abre el navegador y busca X»: el navegador se abre directo con la búsqueda
+            const o = openMatch(clauses[i]), sq = i + 1 < clauses.length ? webQuery(clauses[i + 1]) : null;
+            if (o && sq && sq.site !== "store") {
+                const app = findApp(target(o[1]));
+                if (app && isBrowser(app)) { webSearch(sq, app); any = true; i++; continue; }
+            }
+            if (handle(clauses[i])) any = true;
+        }
+        return any;
     }
 
     function norm(s: string): string {
@@ -86,14 +108,36 @@ Singleton {
         return t;
     }
 
-    // nombres comunes → lo que hay que buscar
-    readonly property var openAliases: ({
-        "navegador": "firefox", "internet": "firefox", "navegador web": "firefox",
-        "explorador": "quantum-files", "explorador de archivos": "quantum-files", "archivos": "quantum-files", "carpetas": "quantum-files", "mis archivos": "quantum-files",
-        "tienda": "quantum-store", "store": "quantum-store", "quantum store": "quantum-store", "tienda de apps": "quantum-store",
-        "terminal": "kitty", "consola": "kitty", "cmd": "kitty", "simbolo del sistema": "kitty",
-        "ajustes": "quantum-center", "configuracion": "quantum-center", "panel de control": "quantum-center", "centro quantum": "quantum-center",
-        "juegos": "quantum-foton", "mis juegos": "quantum-foton", "foton": "quantum-foton", "biblioteca": "quantum-foton"
+    // Cómo llama la gente a cada tipo de app (también como en Windows). Se busca primero por
+    // id y si no por la categoría que declara cada app (TerminalEmulator, WebBrowser…), así
+    // «abre la terminal» encuentra kitty, Konsole o la que haya.
+    readonly property var appKinds: [
+        { words: ["terminal", "consola", "cmd", "simbolo del sistema", "linea de comandos", "powershell", "terminal de comandos"],
+          ids: ["kitty"], cats: ["TerminalEmulator"] },
+        { words: ["navegador", "internet", "navegador web", "explorador web", "edge", "microsoft edge", "el internet"],
+          ids: ["firefox"], cats: ["WebBrowser"] },
+        { words: ["archivos", "explorador", "explorador de archivos", "carpetas", "mis archivos", "explorador de windows",
+                  "administrador de archivos", "gestor de archivos"], ids: ["quantum-files"], cats: ["FileManager"] },
+        { words: ["tienda", "store", "quantum store", "tienda de apps", "microsoft store", "app store", "play store"], ids: ["quantum-store"], cats: [] },
+        { words: ["ajustes", "configuracion", "panel de control", "centro quantum", "configuracion del sistema", "opciones"],
+          ids: ["quantum-center"], cats: ["Settings"] },
+        { words: ["juegos", "mis juegos", "foton", "biblioteca", "biblioteca de juegos"], ids: ["foton", "quantum-foton"], cats: [] },
+        { words: ["editor de texto", "bloc de notas", "notepad", "notas", "editor", "block de notas"], ids: [], cats: ["TextEditor"] },
+        { words: ["calculadora"], ids: [], cats: ["Calculator"] },
+        { words: ["administrador de tareas", "monitor del sistema", "task manager", "monitor", "procesos"], ids: [], cats: ["Monitor"] },
+        { words: ["reproductor de musica", "musica", "spotify"], ids: [], cats: ["Music"] },
+        { words: ["reproductor de video", "reproductor de videos", "reproductor", "peliculas", "vlc"], ids: [], cats: ["Video", "Player"] },
+        { words: ["visor de imagenes", "visor de fotos", "fotos", "galeria"], ids: [], cats: ["Viewer"] },
+    ]
+    // páginas web que la gente abre como si fueran apps
+    readonly property var sites: ({
+        "youtube": "https://www.youtube.com", "google": "https://www.google.com", "gmail": "https://mail.google.com",
+        "netflix": "https://www.netflix.com", "twitch": "https://www.twitch.tv", "tiktok": "https://www.tiktok.com",
+        "instagram": "https://www.instagram.com", "facebook": "https://www.facebook.com", "twitter": "https://x.com", "x": "https://x.com",
+        "whatsapp web": "https://web.whatsapp.com", "wikipedia": "https://es.wikipedia.org", "chatgpt": "https://chatgpt.com",
+        "github": "https://github.com", "reddit": "https://www.reddit.com", "amazon": "https://www.amazon.com",
+        "mercado libre": "https://www.mercadolibre.com", "outlook": "https://outlook.live.com", "drive": "https://drive.google.com",
+        "google drive": "https://drive.google.com", "canva": "https://www.canva.com", "classroom": "https://classroom.google.com"
     })
     readonly property var installAliases: ({
         "obs": ["obs studio", ""], "roblox": ["sober", "Roblox en Linux funciona con Sober."],
@@ -247,6 +291,16 @@ Singleton {
             return true;
         }
 
+        // ------------------------------------------------------- tus juegos y apps
+        if (/(cuantos|cuales|que|mis|lista de|muestrame|ver)( mis)? juegos|juegos (tengo|tenemos|hay|instalados)/.test(t)) {
+            answerGames(); return true;
+        }
+        if (/(cuantas|cuales|que|mis)( mis)? (apps|aplicaciones|programas)|(apps|aplicaciones|programas) (tengo|tenemos|hay|instalad)/.test(t)) {
+            const n = Apps.all.length;
+            say("Tienes **" + n + "** apps instaladas. Las ves todas en el menú de Inicio (Super + Espacio), y en Quantum Store encuentras más.");
+            return true;
+        }
+
         // ------------------------------------------------------------ carpetas
         if ((m = t.match(/^(?:abre|abrir|abreme|abras|muestra|muestrame|ve a|ir a|entra a)\s+(?:la carpeta (?:de )?|mis |la de |las |los |el )?(descargas|documentos|imagenes|fotos|musica|videos|escritorio|carpeta personal|inicio|home)$/))) {
             const key = folders[m[1]];
@@ -255,9 +309,11 @@ Singleton {
         }
 
         // ---------------------------------------------------- buscar en internet
-        if ((m = t.match(/^(?:busca|buscar|busques|googlea|googlear)\s+(?:en (?:internet|google|la web)\s+)?(.+?)(?:\s+en (?:internet|google|la web))?$/)) && /internet|google|la web|googlea/.test(t)) {
-            Qt.openUrlExternally("https://www.google.com/search?q=" + encodeURIComponent(m[1]));
-            say("Busqué «" + m[1] + "» en internet."); return true;
+        const sq = webQuery(t);
+        if (sq) {
+            if (sq.site === "store") installApp(target(sq.q));
+            else webSearch(sq, null);
+            return true;
         }
 
         // ------------------------------------------------- instalar y desinstalar
@@ -270,10 +326,39 @@ Singleton {
         }
 
         // --------------------------------------------------------------- abrir
-        if ((m = t.match(/^(?:abre|abrir|abreme|abras|ejecuta|ejecutar|ejecutes|inicia|iniciar|inicies|lanza|lanzar|entra a|entrar a|pon|ponme|juega|jugar|jugar a|quiero jugar|quiero jugar a|quiero usar|usa|usar)(?:me|lo|la)?\s+(.+)$/))) {
+        if ((m = openMatch(t))) {
             openApp(target(m[1])); return true;
         }
         return false;
+    }
+    function openMatch(t: string): var {
+        return t.match(/^(?:abre|abrir|abreme|abras|ejecuta|ejecutar|ejecutes|inicia|iniciar|inicies|lanza|lanzar|entra a|entrar a|ve a|pon|ponme|juega|jugar|jugar a|quiero jugar|quiero jugar a|quiero usar|usa|usar)(?:me|lo|la)?\s+(.+)$/);
+    }
+
+    // «busca queso cheddar», «busca X en youtube», «busca minecraft en la tienda»
+    function webQuery(t: string): var {
+        const m = t.match(/^(?:busca|buscar|busques|buscame|googlea|googlear|investiga)(?:me|lo|la)?\s+(?:en (google|internet|la web|youtube|la tienda|la store|tienda|store)\s+)?(.+?)(?:\s+en (google|internet|la web|youtube|la tienda|la store|tienda|store))?$/);
+        if (!m || /^actualizacion/.test(m[2])) return null;
+        const where = m[1] || m[3] || "";
+        return { q: m[2].replace(/^(sobre|acerca de|informacion de|info de)\s+/, ""),
+                 site: /youtube/.test(where) ? "youtube" : /tienda|store/.test(where) ? "store" : "google" };
+    }
+    function isBrowser(app: var): bool {
+        return Array.from(app?.categories ?? []).indexOf("WebBrowser") >= 0;
+    }
+    // abre la búsqueda; con un navegador elegido, en ese navegador
+    function webSearch(sq: var, app: var): void {
+        const url = sq.site === "youtube" ? "https://www.youtube.com/results?search_query=" + encodeURIComponent(sq.q)
+                                          : "https://www.google.com/search?q=" + encodeURIComponent(sq.q);
+        if (app) {
+            const cmd = (app.command?.length ? Array.from(app.command) : (app.exec ?? "").split(/\s+/)).filter(a => a && !/^%[a-zA-Z]$/.test(a));
+            Quickshell.execDetached(cmd.concat([url]));
+        } else {
+            Qt.openUrlExternally(url);
+        }
+        say("Busqué «" + sq.q + "» en " + (sq.site === "youtube" ? "YouTube" : "Google") + (app ? " con **" + app.name + "**." : "."));
+        celebrate();
+        later(() => { Shell.aiOpen = false; });
     }
 
     // pequeña pausa para que se vea la respuesta antes de cerrar el panel
@@ -282,13 +367,21 @@ Singleton {
 
     // -------------------------------------------------------------- abrir apps
     function findApp(q: string): var {
-        const alias = openAliases[q];
-        if (alias) {
-            const a = DesktopEntries.applications.values.find(e => e.id === alias);
-            if (a) return a;
+        const qn = norm(q);
+        const all = Apps.all;
+        const kind = appKinds.find(k => k.words.indexOf(qn) >= 0);
+        if (kind) {
+            for (const id of kind.ids) {
+                const a = all.find(e => e.id === id);
+                if (a) return a;
+            }
+            for (const c of kind.cats) {
+                const a = all.find(e => Array.from(e.categories ?? []).indexOf(c) >= 0);
+                if (a) return a;
+            }
         }
-        const qq = norm(alias || q);
-        const list = Apps.search(alias || q);
+        const qq = qn;
+        const list = Apps.search(q);
         for (const a of list.slice(0, 4)) {
             const name = norm(a.name);
             if (name.includes(qq) || qq.includes(name) || norm(a.genericName).includes(qq) || norm(a.keywords).includes(qq) || norm(a.id) === qq)
@@ -306,8 +399,69 @@ Singleton {
             later(() => { Shell.aiOpen = false; });     // como el menú de Inicio: se aparta
             return;
         }
+        // ¿uno de tus juegos? (Steam, Heroic…: los mismos de Fotón)
+        const g = findGame(q);
+        if (g) {
+            Quickshell.execDetached(g.launch);
+            say("Abriendo **" + g.name + "**. Que lo disfrutes.");
+            celebrate();
+            later(() => { Shell.aiOpen = false; });
+            return;
+        }
+        // ¿una página web? (YouTube, Gmail…)
+        const site = sites[norm(q)];
+        if (site) {
+            Qt.openUrlExternally(site);
+            say("Abrí **" + q.replace(/^./, c => c.toUpperCase()) + "** en el navegador.");
+            celebrate();
+            later(() => { Shell.aiOpen = false; });
+            return;
+        }
         say("No tienes **" + q + "** instalado. Lo busco en la Store…");
         installApp(q, true);
+    }
+    function openId(ids: var): void {
+        const list = Array.isArray(ids) ? ids : [ids];
+        const a = Apps.all.find(e => list.indexOf(e.id) >= 0);
+        if (!a) return;
+        Apps.launch(a);
+        later(() => { Shell.aiOpen = false; });
+    }
+
+    // ------------------------------------------------------------ tus juegos
+    property var games: []
+    property double gamesAt: 0
+    property bool gamesPending: false          // alguien preguntó y la lista todavía no llegaba
+    function refreshGames(): void {
+        if (!gamesProc.running && Date.now() - gamesAt > 60000) gamesProc.running = true;
+    }
+    Process {
+        id: gamesProc
+        command: root.helper.concat(["games"])
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try { root.games = JSON.parse(text); } catch (e) { root.games = []; }
+                root.gamesAt = Date.now();
+                if (root.gamesPending) { root.gamesPending = false; root.answerGames(); }
+            }
+        }
+    }
+    function findGame(q: string): var {
+        const qn = norm(q);
+        if (qn.length < 3) return null;
+        return games.find(g => norm(g.name) === qn) ?? games.find(g => norm(g.name).includes(qn) || qn.includes(norm(g.name))) ?? null;
+    }
+    function answerGames(): void {
+        if (gamesProc.running || !gamesAt) { gamesPending = true; refreshGames(); return; }
+        const fotonCard = { type: "app", id: ["foton", "quantum-foton"], label: "Abrir Fotón", icon: "sports_esports" };
+        const n = games.length;
+        if (!n) {
+            say("Todavía no encontré juegos instalados. Puedes instalarlos desde Steam o desde la tienda de Fotón.", fotonCard);
+            return;
+        }
+        const names = games.slice(0, 5).map(g => g.name);
+        say("Tienes **" + n + "** " + (n === 1 ? "juego" : "juegos") + ": " + names.join(", ") +
+            (n > 5 ? " y " + (n - 5) + " más." : ".") + " Los ves todos en Fotón.", fotonCard);
     }
 
     // --------------------------------------------------------------- instalar
@@ -452,6 +606,24 @@ Singleton {
                     code === 0 ? "Puedes abrirlo desde el menú de Inicio." : "Ábreme para ver qué pasó."]);
         }
     }
+    // botón de una acción propuesta por la IA
+    function runOrder(msgId: int, cmd: string): void {
+        const msg = messages.find(m => m.id === msgId);
+        if (msg?.card) patchCard(msgId, { done: (msg.card.done ?? []).concat([cmd]) });
+        if (!handle(cmd)) say("No supe cómo hacer «" + cmd + "».");
+    }
+    // texto del botón: «abre stardew valley» → «Abre stardew valley»
+    function orderLabel(cmd: string): string {
+        let t = cmd;
+        // los nombres de tus juegos y apps, bien escritos («stardew valley» → «Stardew Valley»)
+        for (const n of games.map(g => g.name).concat(Apps.all.map(a => a.name))) {
+            if (n.length < 4) continue;
+            const i = norm(t).indexOf(norm(n));
+            if (i >= 0 && norm(t).length === t.length) t = t.substring(0, i) + n + t.substring(i + n.length);
+        }
+        return t.replace(/^./, c => c.toUpperCase());
+    }
+
     function launchItem(item: var): void {
         Quickshell.execDetached(helper.concat(["launch", item.source, item.id]));
         say("Abriendo **" + item.name + "**.");
@@ -470,22 +642,31 @@ Singleton {
         const history = messages.filter(m => m.text && !m.card?.type?.match(/loading/))
             .slice(-12).map(m => ({ role: m.from === "me" ? "user" : "assistant", content: m.text }));
         const id = say("", { type: "loading" });
+        const appNames = Apps.all.map(a => a.name).slice(0, 80);
+        const facts = "Datos reales de este PC (úsalos y no inventes otros): " +
+            (userName ? "la persona se llama " + userName + ". " : "") +
+            "Hay " + Apps.all.length + " apps instaladas: " + appNames.join(", ") + ". " +
+            "Hay " + games.length + " juegos instalados" + (games.length ? ": " + games.slice(0, 40).map(g => g.name).join(", ") : "") + ". " +
+            "Para hacer algo en el PC escribe, sola en la última línea, la etiqueta [[orden: pedido simple]], por ejemplo " +
+            "[[orden: abre la terminal]], [[orden: busca recetas con queso en internet]], [[orden: sube el volumen]], " +
+            "[[orden: modo oscuro]], [[orden: instala minecraft]] o [[orden: abre hades]]. Puedes poner varias etiquetas.";
         Ai.chat(history,
             acc => root.patch(id, { text: root.stripTags(acc), card: null }),
             (text, err) => {
                 if (err && !text) { root.patch(id, { text: "No pude responder: " + err, card: null }); return; }
-                root.patch(id, { text: root.stripTags(text) || "Hecho.", card: null });
-                // acciones pedidas por la IA
-                const re = /\[\[\s*(abrir|instalar|desinstalar)\s*:\s*([^\]]+?)\s*\]\]/gi;
+                // lo que la IA propone hacer queda como botones: se hace solo si la persona lo aprieta
+                const re = /\[\[\s*(orden|abrir|instalar|desinstalar|buscar)\s*:\s*([^\]]+?)\s*\]\]/gi;
+                const verbs = { abrir: "abre ", instalar: "instala ", desinstalar: "desinstala ", buscar: "busca " };
+                const orders = [];
                 let mm;
                 while ((mm = re.exec(text)) !== null) {
-                    const what = root.target(root.norm(mm[2]));
-                    const verb = mm[1].toLowerCase();
-                    if (verb === "abrir") root.openApp(what);
-                    else if (verb === "instalar") root.installApp(what);
-                    else root.removeApp(what);
+                    const v = mm[1].toLowerCase();
+                    const cmd = (v === "orden" ? "" : verbs[v]) + mm[2].trim();
+                    if (orders.indexOf(cmd) < 0 && orders.length < 4) orders.push(cmd);
                 }
-            });
+                root.patch(id, { text: root.stripTags(text) || (orders.length ? "¿Lo hago?" : "Hecho."),
+                                 card: orders.length ? { type: "orders", items: orders } : null });
+            }, facts);
     }
     // quita las etiquetas de acciones y deja la voz de Quarki: sin «¡…!» ni muletillas al empezar
     function stripTags(s: string): string {
@@ -498,10 +679,14 @@ Singleton {
     }
 
     // --------------------------------------------------------------- inicio
-    Component.onCompleted: { Ai.check(); if (!userName) nameProc.running = true; }
+    Component.onCompleted: { Ai.check(); refreshGames(); if (!userName) nameProc.running = true; }
     Connections {
         target: Shell
-        function onAiOpenChanged() { if (Shell.aiOpen && Ai.status !== "ready") Ai.check(); }
+        function onAiOpenChanged() {
+            if (!Shell.aiOpen) return;
+            if (Ai.status !== "ready") Ai.check();
+            root.refreshGames();
+        }
     }
     Process {
         id: nameProc

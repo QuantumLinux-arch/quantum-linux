@@ -30,15 +30,17 @@ Singleton {
         "Super+L bloquea, Super+H te abre a ti, Super+G activa el modo juego, Super+E abre Archivos, Impr Pant toma capturas. " +
         "Apps: Quantum Store (apps de Arch, Flathub y AUR con un clic), Fotón (biblioteca de juegos de Steam, Epic y GOG), " +
         "Archivos (explorador), Centro Quantum (ajustes, modo rendimiento, «Vengo de Windows»). Steam con Proton ya viene instalado. " +
-        "Puedes hacer cosas en el PC. Si la persona te pide abrir, instalar o desinstalar algo, responde con una frase muy corta " +
-        "y agrega UNA etiqueta exacta sola en la última línea, nunca dentro de una frase: [[abrir: nombre]], [[instalar: nombre]] " +
-        "o [[desinstalar: nombre]] (el nombre de la app o juego, sin nada más). Si recomiendas un juego o app, agrega la etiqueta para instalarlo. " +
+        "Puedes hacer cosas en el PC: si la persona te pide algo (abrir, instalar, buscar, cambiar un ajuste), responde con una frase muy corta " +
+        "y agrega en la última línea, nunca dentro de una frase, una etiqueta [[orden: pedido simple]] por cada cosa. " +
+        "Si recomiendas un juego o app, agrega [[orden: instala nombre]]. " +
         "Nunca inventes que ya hiciste algo sin la etiqueta. " +
         "Si no sabes algo, dilo con honestidad.";
     // ejemplos de cómo responde (los modelos chicos imitan mejor que lo que obedecen)
     readonly property var examples: [
         { role: "user", content: "me recomiendas un navegador" },
-        { role: "assistant", content: "Firefox ya viene instalado y funciona muy bien. Si prefieres Chrome, también te lo puedo instalar.\n[[instalar: google chrome]]" },
+        { role: "assistant", content: "Firefox ya viene instalado y funciona muy bien. Si prefieres Chrome, también te lo puedo instalar.\n[[orden: instala google chrome]]" },
+        { role: "user", content: "quiero escribir un documento y escuchar musica" },
+        { role: "assistant", content: "Te abro el editor de texto y el reproductor de música.\n[[orden: abre el editor de texto]]\n[[orden: abre el reproductor de musica]]" },
         { role: "user", content: "como cambio el fondo" },
         { role: "assistant", content: "Aprieta Super + W y elige el que más te guste. También puedes poner tus propias imágenes o videos desde Personalizar, en Colores y fondo." }
     ]
@@ -65,7 +67,8 @@ Singleton {
 
     // Conversa con el modelo: history = [{ role: user|assistant, content }].
     // onDelta(textoAcumulado) mientras llega la respuesta; onDone(textoFinal, error).
-    function chat(history: var, onDelta: var, onDone: var): void {
+    // extra: datos del momento (apps y juegos instalados…) que se suman a las instrucciones
+    function chat(history: var, onDelta: var, onDone: var, extra: string): void {
         if (busy || status !== "ready") { onDone("", "La IA no está lista."); return; }
         busy = true;
         const x = new XMLHttpRequest();
@@ -102,7 +105,7 @@ Singleton {
             stream: true,
             think: false,
             options: { temperature: 0.5 },
-            messages: [{ role: "system", content: systemPrompt }].concat(examples, history)
+            messages: [{ role: "system", content: systemPrompt + (extra ? "\n\n" + extra : "") }].concat(examples, history)
         }));
     }
 }

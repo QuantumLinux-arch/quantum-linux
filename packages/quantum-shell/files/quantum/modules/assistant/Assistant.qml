@@ -189,7 +189,7 @@ Scope {
                                     Layout.fillWidth: true
                                     sourceComponent: !msg.c ? null : msg.c.type === "loading" ? loadingC
                                         : msg.c.type === "install" || msg.c.type === "remove" || msg.c.type === "installed" ? appC
-                                        : msg.c.type === "choices" ? choicesC : actionC
+                                        : msg.c.type === "choices" ? choicesC : msg.c.type === "orders" ? ordersC : actionC
                                     property var card: msg.c
                                     property int msgId: msg.modelData.id
                                 }
@@ -525,6 +525,28 @@ Scope {
                 }
             }
 
+            // lo que propone la IA: un botón por acción (se hace solo al apretarlo)
+            Component {
+                id: ordersC
+                Flow {
+                    id: oc
+                    readonly property var cd: parent.card
+                    readonly property int mid: parent.msgId
+                    spacing: 8
+                    Repeater {
+                        model: oc.cd.items
+                        PillButton {
+                            required property string modelData
+                            readonly property bool used: (oc.cd.done ?? []).indexOf(modelData) >= 0
+                            text: Quarki.orderLabel(modelData)
+                            icon: used ? "check" : "bolt"
+                            primary: !used
+                            onClicked: if (!used) Quarki.runOrder(oc.mid, modelData)
+                        }
+                    }
+                }
+            }
+
             // un botón: apagar, Steam, Store o instalar la IA
             Component {
                 id: actionC
@@ -548,6 +570,7 @@ Scope {
                         onClicked: { Quickshell.execDetached(["quantum-store"]); Shell.aiOpen = false; }
                     }
                     PillButton { visible: xc.cd.type === "aiSetup"; text: "Instalar mi IA"; icon: "psychology"; primary: true; onClicked: win.setup = true }
+                    PillButton { visible: xc.cd.type === "app"; text: xc.cd.label ?? ""; icon: xc.cd.icon ?? "open_in_new"; primary: true; onClicked: Quarki.openId(xc.cd.id) }
                 }
             }
 

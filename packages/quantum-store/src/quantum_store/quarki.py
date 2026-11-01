@@ -4,6 +4,7 @@ las mismas fuentes que Quantum Store, y responde en JSON para que el shell lo mu
   python3 -m quantum_store.quarki search "minecraft"     → la mejor opción y alternativas
   python3 -m quantum_store.quarki owner firefox.desktop  → de qué paquete es una app (para desinstalar)
   python3 -m quantum_store.quarki launch flathub com.spotify.Client
+  python3 -m quantum_store.quarki games                 → los juegos instalados (los mismos que muestra Fotón)
 """
 import json
 import os
@@ -156,11 +157,25 @@ def launch(src, id_):
     return 0
 
 
+def games():
+    """Los juegos que ve Fotón (Steam, Heroic, los instalados y los de Windows), sin internet."""
+    sys.path.insert(0, os.environ.get("QUANTUM_FOTON_SRC") or "/usr/lib/quantum-foton")
+    try:
+        from foton.library import all_games
+        found = all_games(lookup=False)
+    except Exception as e:      # sin Fotón o con algo raro en una biblioteca: lista vacía
+        print(f"quarki: no pude leer los juegos ({e})", file=sys.stderr)
+        return []
+    return [{"name": g["name"], "source": g["source"], "launch": g["launch"]} for g in found if g.get("launch")]
+
+
 def main(argv):
     if len(argv) >= 2 and argv[0] == "search":
         print(json.dumps(search(" ".join(argv[1:])), ensure_ascii=False))
     elif len(argv) == 2 and argv[0] == "owner":
         print(json.dumps(owner(argv[1]), ensure_ascii=False))
+    elif argv == ["games"]:
+        print(json.dumps(games(), ensure_ascii=False))
     elif len(argv) == 3 and argv[0] == "launch":
         return launch(argv[1], argv[2])
     else:
