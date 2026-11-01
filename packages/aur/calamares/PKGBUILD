@@ -9,6 +9,7 @@ pkgdesc="Distribution-independent installer framework"
 url="https://codeberg.org/Calamares/calamares"
 license=("GPL-3.0-or-later")
 arch=('i686' 'x86_64')
+options=('!debug')        # sin el paquete -debug (63 MB que nadie descarga)
 
 # Quantum Linux: se agregan ckbcomp (teclado), python (módulos), rsync
 # (unpackfs) y las bibliotecas de KDE que Calamares enlaza si están presentes al

@@ -48,9 +48,22 @@ if ! gh release view "$TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
         --notes "Repositorio de pacman de Quantum Linux. No descargues estos archivos a mano: Quantum los usa para actualizarse solo." >/dev/null
 fi
 
-msg "Subiendo a GitHub"
+# Solo se sube lo que GitHub no tiene igual (mismo nombre y mismo tamaño): una publicación
+# normal pasa de ~165 MB a unos pocos. Si un paquete cambió sin subir de versión, su tamaño
+# cambia y se vuelve a subir, así la base de datos nunca queda descuadrada.
+declare -A remote_size
+while IFS=$'\t' read -r name size; do remote_size["$name"]=$size; done \
+    < <(gh release view "$TAG" --repo "$GH_REPO" --json assets --jq '.assets[] | [.name, .size] | @tsv')
+new=()
+for f in ./*.pkg.tar.zst; do
+    f=${f#./}
+    if [[ "${remote_size[$f]:-}" != "$(stat -c %s "$f")" ]]; then
+        new+=("$f" "$f.sig")
+    fi
+done
+msg "Subiendo a GitHub ($(( ${#new[@]} / 2 )) paquetes nuevos de $(ls *.pkg.tar.zst | wc -l))"
 # primero lo nuevo (paquetes y luego la base de datos que los menciona)…
-gh release upload "$TAG" --repo "$GH_REPO" --clobber ./*.pkg.tar.zst ./*.pkg.tar.zst.sig
+(( ${#new[@]} )) && gh release upload "$TAG" --repo "$GH_REPO" --clobber "${new[@]}"
 gh release upload "$TAG" --repo "$GH_REPO" --clobber quantum.db quantum.db.sig quantum.files quantum.files.sig
 # …y después se borran las versiones viejas que ya nadie pide
 mapfile -t remote < <(gh release view "$TAG" --repo "$GH_REPO" --json assets --jq '.assets[].name')
