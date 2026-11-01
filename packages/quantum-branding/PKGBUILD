@@ -4,7 +4,7 @@
 
 pkgname=quantum-branding
 pkgver=1.0.0
-pkgrel=7
+pkgrel=9
 pkgdesc="Identidad visual de Quantum Linux"
 arch=('any')
 url="https://github.com/quantum-linux"

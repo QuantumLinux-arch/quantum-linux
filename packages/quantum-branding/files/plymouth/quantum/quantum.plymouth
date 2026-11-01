@@ -1,6 +1,6 @@
 [Plymouth Theme]
 Name=Quantum
-Description=Arranque de Quantum Linux: el cubo cuántico late mientras el sistema enciende
+Description=Arranque de Quantum Linux: el logo con un cometa que orbita mientras el sistema enciende
 ModuleName=script
 
 [script]

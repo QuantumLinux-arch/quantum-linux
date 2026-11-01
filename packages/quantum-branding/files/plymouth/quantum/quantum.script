@@ -1,6 +1,6 @@
 # Tema de arranque de Quantum Linux.
-# El átomo de Quantum al centro: un halo que respira, tres electrones que orbitan
-# dejando estela (como en el fondo vivo del escritorio) y estrellas que titilan.
+# El logo de Quantum al centro con un halo que respira, una órbita grande e inclinada y un
+# cometa que la recorre con estela (como el cierre de los videos), y estrellas que titilan.
 # Incluye el cuadro de contraseña para discos cifrados.
 
 Window.SetBackgroundTopColor(0.020, 0.016, 0.047);
@@ -21,71 +21,64 @@ for (i = 0; i < 70; i++) {
     star_base[i] = 0.15 + Math.Random() * 0.45;
 }
 
-# ---------- halo y átomo ----------
+# ---------- halo, logo y órbita ----------
 glow.image = Image("glow.png");
 glow.sprite = Sprite(glow.image);
 glow.sprite.SetX(cx - glow.image.GetWidth() / 2);
 glow.sprite.SetY(cy - glow.image.GetHeight() / 2);
 glow.sprite.SetZ(5);
 
-atom.image = Image("atom.png");
-atom.sprite = Sprite(atom.image);
-atom.sprite.SetX(cx - atom.image.GetWidth() / 2);
-atom.sprite.SetY(cy - atom.image.GetHeight() / 2);
-atom.sprite.SetZ(10);
-# el logo mide 256 de lado: escala de las órbitas
-k = atom.image.GetWidth() / 256;
+logo.image = Image("orbit-logo.png");
+logo.sprite = Sprite(logo.image);
+logo.sprite.SetX(cx - logo.image.GetWidth() / 2);
+logo.sprite.SetY(cy - logo.image.GetHeight() / 2);
+logo.sprite.SetZ(10);
 
-# ---------- electrones y estelas ----------
-# órbita i: elipse de 104 x 38 girada (90, -30, 30 grados), como en el logo
-orbit_rot[0] = 90 * 3.14159 / 180;
-orbit_rot[1] = -30 * 3.14159 / 180;
-orbit_rot[2] = 30 * 3.14159 / 180;
-orbit_speed[0] = 0.040;
-orbit_speed[1] = 0.031;
-orbit_speed[2] = 0.035;
-orbit_phase[0] = 0;
-orbit_phase[1] = 2.09;
-orbit_phase[2] = 4.18;
-trail_image[0] = Image("trail-cyan.png");
-trail_image[1] = Image("trail-indigo.png");
-trail_image[2] = Image("trail-violet.png");
-electron_image = Image("electron.png");
-TRAIL = 7;
-for (o = 0; o < 3; o++) {
-    for (j = 0; j < TRAIL; j++) {
-        trail[o * TRAIL + j] = Sprite(trail_image[o]);
-        trail[o * TRAIL + j].SetZ(15);
-        trail[o * TRAIL + j].SetOpacity(0.55 * (1 - j / TRAIL));
+# la órbita (600x600, inclinada -24 grados): la mitad de atrás pasa detrás del logo
+orbit_back.image = Image("orbit-back.png");
+orbit_back.sprite = Sprite(orbit_back.image);
+orbit_back.sprite.SetPosition(cx - 300, cy - 300, 6);
+orbit_front.image = Image("orbit-front.png");
+orbit_front.sprite = Sprite(orbit_front.image);
+orbit_front.sprite.SetPosition(cx - 300, cy - 300, 12);
+
+# ---------- el cometa: cabeza y estela de 30 puntos ----------
+RX = 265; RY = 82;
+TILT = -24 * 3.14159 / 180;
+TRAIL = 30;
+for (j = 0; j < TRAIL; j++) {
+    if (j < 10) {
+        comet_image[j] = Image("comet-0" + j + ".png");
+    } else {
+        comet_image[j] = Image("comet-" + j + ".png");
     }
-    electron[o] = Sprite(electron_image);
-    electron[o].SetZ(20);
+    comet[j] = Sprite(comet_image[j]);
 }
 
-fun orbit_point(o, a) {
-    x = 104 * k * Math.Cos(a);
-    y = 38 * k * Math.Sin(a);
-    r = orbit_rot[o];
-    p.x = cx + x * Math.Cos(r) - y * Math.Sin(r);
-    p.y = cy + x * Math.Sin(r) + y * Math.Cos(r);
+fun orbit_point(u) {
+    x = RX * Math.Cos(u);
+    y = RY * Math.Sin(u);
+    p.x = cx + x * Math.Cos(TILT) - y * Math.Sin(TILT);
+    p.y = cy + x * Math.Sin(TILT) + y * Math.Cos(TILT);
     return p;
 }
 
 t = 0;
 fun refresh_callback() {
     t++;
-    glow.sprite.SetOpacity(0.55 + 0.25 * Math.Sin(t / 25));
-    atom.sprite.SetOpacity(0.92 + 0.08 * Math.Sin(t / 25));
-    for (o = 0; o < 3; o++) {
-        a = orbit_phase[o] + t * orbit_speed[o];
-        for (j = 0; j < TRAIL; j++) {
-            p = orbit_point(o, a - (j + 1) * 0.07);
-            trail[o * TRAIL + j].SetX(p.x - trail_image[o].GetWidth() / 2);
-            trail[o * TRAIL + j].SetY(p.y - trail_image[o].GetHeight() / 2);
+    glow.sprite.SetOpacity(0.5 + 0.2 * Math.Sin(t / 22));
+    u = t * 0.052;
+    for (j = 0; j < TRAIL; j++) {
+        uu = u - j * 0.028;
+        p = orbit_point(uu);
+        comet[j].SetX(p.x - comet_image[j].GetWidth() / 2);
+        comet[j].SetY(p.y - comet_image[j].GetHeight() / 2);
+        # por delante del logo en la mitad de abajo, por detrás en la de arriba
+        if (Math.Sin(uu) > 0) {
+            comet[j].SetZ(20);
+        } else {
+            comet[j].SetZ(8);
         }
-        p = orbit_point(o, a);
-        electron[o].SetX(p.x - electron_image.GetWidth() / 2);
-        electron[o].SetY(p.y - electron_image.GetHeight() / 2);
     }
     for (i = 0; i < 70; i++) {
         star[i].SetOpacity(star_base[i] * (0.55 + 0.45 * Math.Sin(t * star_speed[i] + star_phase[i])));
@@ -109,7 +102,7 @@ fun display_password_callback(prompt, bullets) {
     global.status = "password";
 
     ex = cx - entry.image.GetWidth() / 2;
-    ey = cy + atom.image.GetHeight() / 2 + 30;
+    ey = cy + 170;
 
     if (!global.entry_sprite) global.entry_sprite = Sprite(entry.image);
     global.entry_sprite.SetPosition(ex, ey, 30);
@@ -143,6 +136,6 @@ fun message_callback(text) {
 Plymouth.SetMessageFunction(message_callback);
 
 fun quit_callback() {
-    atom.sprite.SetOpacity(1);
+    logo.sprite.SetOpacity(1);
 }
 Plymouth.SetQuitFunction(quit_callback);

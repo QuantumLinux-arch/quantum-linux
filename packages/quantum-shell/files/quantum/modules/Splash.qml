@@ -1,12 +1,13 @@
 import QtQuick
+import QtQuick.Shapes
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import qs.services
 
-// Pantalla de carga al iniciar sesión: continúa la animación de arranque (el átomo
-// de Quantum) mientras el escritorio carga de fondo, y luego se desvanece para que
-// aparezca todo de golpe. Es liviana a propósito (sin desenfoques ni formas) para
+// Pantalla de carga al iniciar sesión: continúa la animación de arranque (el logo de
+// Quantum con su órbita y el cometa) mientras el escritorio carga de fondo, y luego se desvanece para que
+// aparezca todo de golpe. Es liviana a propósito (sin desenfoques, solo formas simples) para
 // mostrarse enseguida aunque sea la primera vez o no haya tarjeta gráfica.
 // No aparece al recargar el shell (por ejemplo, tras una actualización).
 Scope {
@@ -81,50 +82,80 @@ Scope {
                         opacity: (0.15 + 0.45 * rnd(4)) * (0.55 + 0.45 * Math.sin(win.time * (1 + rnd(6) * 2) + index))
                     }
                 }
-                // el átomo: crece un poco al irse, como si el escritorio saliera de él
+                // el logo con una órbita grande e inclinada y un cometa que la recorre (como el
+                // cierre de los videos); crece un poco al irse, como si el escritorio saliera de él
                 Item {
                     id: atom
                     anchors.centerIn: parent
                     anchors.verticalCenterOffset: -30
-                    width: 360; height: 360
-                    scale: (1 + 0.03 * Math.sin(win.time * 1.6)) * (1 + 0.5 * (1 - win.fade))
-                    readonly property real k: width / 256
-                    Image {
+                    width: 600; height: 600
+                    scale: (1 + 0.02 * Math.sin(win.time * 1.6)) * (1 + 0.5 * (1 - win.fade))
+                    readonly property real tilt: -24 + 10 * Math.sin(win.time * 0.6)
+                    readonly property real u: win.time * 2.6
+                    readonly property var cols: ["#4FD8FF", "#6A5CFF", "#B14DFF"]
+
+                    // halo que respira
+                    Shape {
                         anchors.fill: parent
-                        source: Quickshell.shellDir + "/assets/quantum-atom.svg"
-                        sourceSize: Qt.size(720, 720)
+                        opacity: 0.45 + 0.15 * Math.sin(win.time * 2.2)
+                        ShapePath {
+                            strokeWidth: 0
+                            fillGradient: RadialGradient {
+                                centerX: 300; centerY: 300; centerRadius: 210; focalX: 300; focalY: 300
+                                GradientStop { position: 0; color: "#996A5CFF" }
+                                GradientStop { position: 0.55; color: "#336A5CFF" }
+                                GradientStop { position: 1; color: "#006A5CFF" }
+                            }
+                            PathAngleArc { centerX: 300; centerY: 300; radiusX: 210; radiusY: 210; startAngle: 0; sweepAngle: 360 }
+                        }
                     }
-                    Repeater {
-                        model: [90, -30, 30]
-                        Item {
-                            id: orb
-                            required property real modelData
-                            required property int index
+                    // mitad de atrás de la órbita y el cometa cuando pasa por detrás
+                    component Half: Item {
+                        id: half
+                        property bool front: false
+                        anchors.fill: parent
+                        rotation: atom.tilt
+                        Shape {
                             anchors.fill: parent
-                            rotation: modelData
-                            readonly property real a: win.time * [2.4, 1.9, 2.1][index] + index * 2.09
-                            Repeater {
-                                model: 6
-                                Rectangle {
-                                    required property int index
-                                    readonly property real b: orb.a - index * 0.08
-                                    readonly property real sz: (22 - index * 2.6)
-                                    x: atom.width / 2 + 104 * atom.k * Math.cos(b) - sz / 2
-                                    y: atom.height / 2 + 38 * atom.k * Math.sin(b) - sz / 2
-                                    width: sz; height: sz; radius: sz / 2
-                                    color: index === 0 ? "white" : ["#4FD8FF", "#6A5CFF", "#B14DFF"][orb.index]
-                                    opacity: index === 0 ? 1 : 0.55 * (1 - index / 6)
-                                    border.width: index === 0 ? 3 : 0
-                                    border.color: ["#4FD8FF", "#6A5CFF", "#B14DFF"][orb.index]
+                            ShapePath {
+                                strokeColor: Qt.rgba(0.77, 0.75, 1, 0.3)
+                                strokeWidth: 2
+                                fillColor: "transparent"
+                                startX: 35; startY: 300
+                                PathArc {
+                                    x: 565; y: 300; radiusX: 265; radiusY: 82
+                                    direction: half.front ? PathArc.Counterclockwise : PathArc.Clockwise
                                 }
                             }
                         }
+                        Repeater {
+                            model: 45
+                            Rectangle {
+                                required property int index
+                                readonly property real b: atom.u - index * 0.018
+                                readonly property real r: 6.5 - index * 0.12
+                                visible: (Math.sin(b) > 0) === half.front
+                                x: 300 + 265 * Math.cos(b) - r
+                                y: 300 + 82 * Math.sin(b) - r
+                                width: 2 * r; height: width; radius: r
+                                color: index === 0 ? "white" : atom.cols[Math.min(2, Math.floor(index / 15))]
+                                opacity: 0.86 * Math.pow(1 - index / 45, 1.8)
+                            }
+                        }
                     }
+                    Half { front: false }
+                    Image {
+                        anchors.centerIn: parent
+                        width: 230; height: 230
+                        source: Quickshell.shellDir + "/assets/quantum-mark.svg"
+                        sourceSize: Qt.size(460, 460)
+                    }
+                    Half { front: true }
                 }
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.top: atom.bottom
-                    anchors.topMargin: 40
+                    anchors.top: atom.verticalCenter
+                    anchors.topMargin: 190
                     text: "Preparando tu escritorio"
                     font.family: "Inter"
                     font.pixelSize: 17

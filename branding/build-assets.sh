@@ -54,6 +54,10 @@ for c in cyan:4FD8FF indigo:6A5CFF violet:B14DFF; do
     magick -size 18x18 xc:none -fill "#${c#*:}" -draw 'circle 9,9 9,2' -blur 0x1.2 "$P/trail-${c%%:*}.png"
 done
 magick -size 420x420 xc:none -fill '#6A5CFF' -draw 'circle 210,210 210,90' -blur 0x45 "$P/glow.png"
+# Órbita grande con cometa (como el cierre de los videos): logo completo, las dos mitades de la
+# órbita (la de atrás pasa detrás del logo) y los puntos del cometa, del más brillante al más tenue
+svg -w 230 "$HERE/src/quantum-mark.svg" -o "$P/orbit-logo.png"
+python3 "$HERE/plymouth-orbit.py" "$P"
 magick -size 5x5 xc:none -fill white -draw 'circle 2,2 2,0' "$P/star.png"
 magick -size 10x10 xc:none -fill '#EEEAFB' -draw 'circle 5,5 5,1' "$P/bullet.png"
 magick -size 320x46 xc:none -fill '#15121F' -stroke '#3A3352' -strokewidth 2 \
