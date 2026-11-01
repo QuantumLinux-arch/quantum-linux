@@ -4,6 +4,7 @@
 
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import qs.services
 import "modules"
 import "modules/bar"
@@ -69,8 +70,18 @@ ShellRoot {
             Island {}
             GameModeFx {}
             CursorTrail {}
-            Welcome {}
-            RebootPrompt {}
+            LazyLoader { active: !Settings.ui.welcomed || Shell.welcomeRequested; Welcome {} }
+            IpcHandler {
+                target: "welcome"
+                function open(): void { if (Shell.welcome) Shell.welcome.show(); else Shell.welcomeRequested = true; }
+                function close(): void { if (Shell.welcome) Shell.welcome.open = false; }
+                function next(): void { if (Shell.welcome) Shell.welcome.step = Math.min(4, Shell.welcome.step + 1); }
+                function step(n: int): void { if (Shell.welcome) Shell.welcome.step = n; }
+                function shell(id: string): void { if (Shell.welcome) Serp.choose(id, Shell.welcome.lookTouched, true); }
+                function pick(id: string): void { if (Shell.welcome) Shell.welcome.pick(id); }
+            }
+            // el aviso de reinicio solo existe cuando hace falta reiniciar
+            LazyLoader { active: Updates.rebootNeeded; RebootPrompt {} }
         }
     }
 }

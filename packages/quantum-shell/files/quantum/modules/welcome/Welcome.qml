@@ -47,7 +47,8 @@ PanelWindow {
         stdout: StdioCollector {
             onStreamFinished: {
                 win.live = text.trim() === "live";
-                if (!win.live && !Settings.ui.welcomed) openTimer.start();
+                if (Shell.welcomeRequested) win.show();
+                else if (!win.live && !Settings.ui.welcomed) openTimer.start();
             }
         }
     }
@@ -63,15 +64,11 @@ PanelWindow {
         applyIcons();
     }
 
-    IpcHandler {
-        target: "welcome"
-        function open(): void { win.show(); }
-        function close(): void { win.open = false; }
-        function next(): void { win.step = Math.min(4, win.step + 1); }
-        function step(n: int): void { win.step = n; }
-        function shell(id: string): void { Serp.choose(id, win.lookTouched, true); }
-        function pick(id: string): void { win.pick(id); }
-    }
+    // El IPC «welcome» vive en shell.qml (esta ventana se carga solo cuando hace falta)
+    Component.onCompleted: Shell.welcome = win
+    Component.onDestruction: if (Shell.welcome === win) Shell.welcome = null
+    // al terminar de cerrarse, se descarga (si ya se completó)
+    onProgressChanged: if (!open && progress <= 0.001 && Settings.ui.welcomed) Shell.welcomeRequested = false
 
     // ---------------------------------------------------------------- estilos (paso 1)
     // Usan los mismos valores que los estilos de un clic de Personalizar (styles/*.json).

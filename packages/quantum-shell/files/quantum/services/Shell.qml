@@ -25,6 +25,9 @@ Singleton {
     property bool wifiPage: false
     signal lockRequested
     signal snapRequested                    // diseños de ventanas (modules/snap)
+    // La bienvenida solo se carga si falta completarla o si alguien la pide (ahorra memoria)
+    property bool welcomeRequested: false
+    property var welcome: null              // la bienvenida cargada (para el IPC de shell.qml)
     // colores de la carátula de lo que suena (los pone la isla); vacío = los de Quantum
     property var musicColors: []
     function tint(i: int, fallback: color): color { return musicColors.length ? musicColors[i % musicColors.length] : fallback; }

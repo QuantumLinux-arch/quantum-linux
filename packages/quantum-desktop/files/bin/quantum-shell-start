@@ -3,4 +3,10 @@
 # Quickshell elige sus íconos solo al arrancar, por eso cambiarlos recarga el shell.
 theme=$(cat "${XDG_STATE_HOME:-$HOME/.local/state}/quantum/icon-theme" 2>/dev/null)
 export QS_ICON_THEME="${theme:-Papirus-Dark}"
+# En PCs con poca memoria (menos de 4 GB) todas las ventanas del escritorio se dibujan en un
+# solo hilo: ahorra ~60 MB. Con más memoria se deja un hilo por ventana (lo más fluido).
+mem=$(awk '/^MemTotal:/ {print $2}' /proc/meminfo 2>/dev/null)
+if [ -z "${QSG_RENDER_LOOP:-}" ] && [ "${mem:-0}" -gt 0 ] && [ "$mem" -lt 4194304 ]; then
+    export QSG_RENDER_LOOP=basic
+fi
 exec qs -c quantum "$@"

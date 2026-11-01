@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 
 // Personaje que gira como una peonza (menú de apagado y bloqueo). Si existe una imagen propia en
 // ~/.config/quantum/gira.gif, .png o .webp, gira esa; si no, Quarki.
@@ -13,6 +14,19 @@ Item {
     readonly property string dir: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/quantum/"
     readonly property var names: ["gira.gif", "gira.png", "gira.webp"]
     property int tryIndex: 0
+    // qué archivos existen (así no se intenta abrir lo que no está)
+    property var found: [false, false, false]
+    Process {
+        running: root.running
+        command: ["sh", "-c", "for f in \"$@\"; do [ -s \"$f\" ] && echo 1 || echo 0; done", "sh"].concat(root.names.map(n => root.dir + n))
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const f = text.trim().split("\n").map(x => x === "1");
+                root.found = f;
+                root.tryIndex = Math.max(0, f.indexOf(true));
+            }
+        }
+    }
     readonly property bool own: custom.status === AnimatedImage.Ready
 
     property real turn: 0
@@ -40,7 +54,7 @@ Item {
             id: custom
             anchors.fill: parent
             visible: root.own
-            source: root.tryIndex < root.names.length ? "file://" + root.dir + root.names[root.tryIndex] : ""
+            source: root.running && root.tryIndex < root.names.length && root.found[root.tryIndex] ? "file://" + root.dir + root.names[root.tryIndex] : ""
             fillMode: Image.PreserveAspectFit
             cache: false
             playing: root.running
@@ -50,6 +64,7 @@ Item {
         Mascot {
             anchors.fill: parent
             visible: !root.own
+            active: root.running
             mood: "awake"
             showZ: false
         }

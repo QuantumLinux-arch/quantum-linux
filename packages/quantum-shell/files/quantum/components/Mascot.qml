@@ -9,6 +9,7 @@ Item {
     id: root
 
     property string mood: "awake"
+    property bool active: true                // false: se detiene (p. ej. en una ventana cerrada)
     property bool showZ: true                 // las «z» al dormir
     property point look: Qt.point(0, 0)       // hacia dónde mira (-1..1)
     readonly property real u: width / 200     // unidad: el dibujo mide 200x200
@@ -27,14 +28,22 @@ Item {
     property real breath: 0
     readonly property real tilt: -14 + wobble * Math.sin(phase)
 
+    // Despierto: a 60 cuadros por segundo. Dormido solo respira despacio, así que 10 bastan
+    // (se ve igual de suave y gasta seis veces menos).
+    function tick(dt: real): void {
+        particle += dt * spin;
+        phase += dt * (mood === "work" ? 1.7 : 0.7);
+        breath += dt * (asleep ? 1.6 : 2.2);
+    }
     FrameAnimation {
-        running: root.visible
-        onTriggered: {
-            const dt = Math.min(frameTime, 0.05);
-            root.particle += dt * root.spin;
-            root.phase += dt * (root.mood === "work" ? 1.7 : 0.7);
-            root.breath += dt * (root.asleep ? 1.6 : 2.2);
-        }
+        running: root.visible && root.active && !root.asleep
+        onTriggered: root.tick(Math.min(frameTime, 0.05))
+    }
+    Timer {
+        running: root.visible && root.active && root.asleep
+        interval: 100
+        repeat: true
+        onTriggered: root.tick(0.1)
     }
 
     // ¿la partícula pasa por delante (mitad de abajo del aro)?
@@ -66,7 +75,7 @@ Item {
     // parpadeo de vez en cuando
     property real blink: 1
     Timer {
-        running: root.visible && !root.asleep
+        running: root.visible && root.active && !root.asleep
         interval: 2600 + Math.random() * 2600
         repeat: true
         onTriggered: { interval = 2400 + Math.random() * 3200; blinkAnim.restart(); }

@@ -100,8 +100,16 @@ Variants {
         property real lastH: pill.height
         property real squash: 0                 // + se estira a lo ancho, - a lo alto
         property real energy: 0                 // 0..1: qué tan fuerte se está transformando
+        // Solo corre mientras la píldora cambia de forma; al quedar quieta se detiene (así no
+        // se redibuja la pantalla 60 veces por segundo sin motivo).
+        property bool morphing: false
+        Connections {
+            target: pill
+            function onWidthChanged() { win.morphing = true; }
+            function onHeightChanged() { win.morphing = true; }
+        }
         FrameAnimation {
-            running: win.visible
+            running: win.visible && win.morphing
             onTriggered: {
                 const dt = Math.max(0.008, frameTime);
                 const vw = (pill.width - win.lastW) / dt, vh = (pill.height - win.lastH) / dt;
@@ -110,6 +118,9 @@ Variants {
                 win.squash += (target - win.squash) * Math.min(1, dt * 14);
                 const e = Math.min(1, (Math.abs(vw) + Math.abs(vh)) / 1400);
                 win.energy = Math.max(e, win.energy - dt * 1.6);
+                if (Math.abs(vw) < 2 && Math.abs(vh) < 2 && win.energy < 0.01 && Math.abs(win.squash) < 0.002) {
+                    win.energy = 0; win.squash = 0; win.morphing = false;
+                }
             }
         }
         readonly property bool rich: mode === "musicBig" || mode === "game"
@@ -382,6 +393,7 @@ Variants {
                                 width: 6; height: 6; radius: 3; color: "#7FE3FF"
                                 SequentialAnimation on opacity {
                                     loops: Animation.Infinite
+                                    running: win.mode === "job"        // si no, redibuja la isla sin parar
                                     PauseAnimation { duration: index * 160 }
                                     NumberAnimation { from: 0.25; to: 1; duration: 320 }
                                     NumberAnimation { from: 1; to: 0.25; duration: 320 }
