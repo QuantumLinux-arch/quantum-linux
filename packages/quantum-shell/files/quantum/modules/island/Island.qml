@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Services.Mpris
 import qs.services
@@ -9,6 +10,16 @@ import qs.components
 // Isla dinámica (Caelestial): una píldora arriba al centro que cambia de forma según lo que pasa.
 // Prioridad: volumen o brillo > modo juego > lo que instala Quarki > la música que suena.
 // Con la música, al pasar el mouse se agranda con el título y los controles.
+Scope {
+    id: island
+    // para videos: qs -c quantum ipc call island demo volume 0.6 (no toca el volumen real)
+    property real demoLevel: -1
+    signal demoFlash(string kind)
+    IpcHandler {
+        target: "island"
+        function demo(kind: string, level: real): void { island.demoLevel = level; island.demoFlash(kind); }
+    }
+
 Variants {
     model: Quickshell.screens
 
@@ -40,6 +51,9 @@ Variants {
         Connections { target: Audio; function onChanged() { if (win.enabled_) win.show("volume"); } }
         Connections { target: Brightness; function onChanged() { if (win.enabled_) win.show("brightness"); } }
         Connections { target: Shell; function onGameModeChanged() { if (win.enabled_) win.show("game"); } }
+        Connections { target: island; function onDemoFlash(kind) { win.show(kind); } }
+        readonly property real level: island.demoLevel >= 0 ? island.demoLevel
+            : mode === "brightness" ? Brightness.value : (Audio.muted ? 0 : Audio.volume)
 
         readonly property string mode: flash !== "" ? flash
             : Quarki.working ? "job"
@@ -115,7 +129,7 @@ Variants {
                         implicitHeight: 6; radius: 3
                         color: Qt.rgba(1, 1, 1, 0.14)
                         Rectangle {
-                            width: parent.width * (win.mode === "brightness" ? Brightness.value : (Audio.muted ? 0 : Audio.volume))
+                            width: parent.width * win.level
                             height: parent.height; radius: 3
                             Behavior on width { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
                             gradient: Gradient {
@@ -129,7 +143,7 @@ Variants {
                     Txt {
                         Layout.preferredWidth: 34
                         horizontalAlignment: Text.AlignRight
-                        text: Math.round(100 * (win.mode === "brightness" ? Brightness.value : (Audio.muted ? 0 : Audio.volume)))
+                        text: Math.round(100 * win.level)
                         color: "white"; font.weight: Font.Bold; font.pixelSize: 13
                     }
                 }
@@ -264,4 +278,5 @@ Variants {
         }
         SystemClock { id: clock; precision: SystemClock.Minutes }
     }
+}
 }
