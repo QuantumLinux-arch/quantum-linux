@@ -1,6 +1,6 @@
 import QtQuick
 
-// Etiqueta de origen: Arch, Flathub, Comunidad (AUR) o Android
+// Etiqueta de origen: Arch, Flathub o Comunidad (AUR)
 Rectangle {
     property string source: "arch"
     implicitWidth: lbl.implicitWidth + 16

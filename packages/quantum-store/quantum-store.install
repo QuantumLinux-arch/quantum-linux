@@ -1,0 +1,9 @@
+post_upgrade() {
+  # Quantum ya no incluye Android (Waydroid). Si alguien lo había activado, se apaga su
+  # servicio para que no siga gastando memoria; sus apps y datos de Android no se borran.
+  if systemctl is-enabled waydroid-container.service >/dev/null 2>&1; then
+    systemctl disable --now waydroid-container.service >/dev/null 2>&1 || true
+    echo ":: Android (Waydroid) ya no viene con Quantum: se apagó su servicio."
+    echo "   Para quitarlo del todo: sudo pacman -Rns waydroid"
+  fi
+}

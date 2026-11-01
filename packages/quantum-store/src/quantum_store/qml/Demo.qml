@@ -43,14 +43,7 @@ Item {
         [5.6, () => { click(); window.openApp("flathub:com.discordapp.Discord"); store.mark("details"); }],
         [6.9, () => moveTo("btn-install")],
         [7.7, () => { click(); store.install("flathub:com.discordapp.Discord", "Discord"); store.mark("install"); }],
-        [10.6, () => moveTo("nav-android")],
-        [11.4, () => { click(); find("search").text = ""; window.go("android"); store.mark("android"); }],
-        [12.6, () => scroll("flick-android", 230, 1000)],
-        [14.0, () => moveTo("card-android:io.anuke.mindustry")],
-        [14.8, () => { click(); window.openApp("android:io.anuke.mindustry"); store.mark("apk"); }],
-        [16.0, () => moveTo("btn-install")],
-        [16.8, () => { click(); store.install("android:io.anuke.mindustry", "Mindustry"); }],
-        [20.0, () => store.mark("end")],
+        [12.0, () => store.mark("end")],
     ]
     property int idx: 0
     property real t0: 0
@@ -66,7 +59,7 @@ Item {
     // empezar cuando la portada ya cargó
     Timer {
         interval: 200; repeat: true; running: true
-        onTriggered: if ((store.home.popular || []).length && (store.android.games || []).length) {
+        onTriggered: if ((store.home.popular || []).length) {
             stop(); starter.start();
         }
     }

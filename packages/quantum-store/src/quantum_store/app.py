@@ -1,6 +1,6 @@
 """Quantum Store: la tienda de apps de Quantum Linux (PyQt6 + QML).
 
-Uso: quantum-store [--apk ARCHIVO.apk] [--page inicio|juegos|android|instaladas]
+Uso: quantum-store [--page inicio|juegos|instaladas]
 Variables para desarrollo:
   QUANTUM_STORE_DRYRUN=1   no instala nada: solo muestra los comandos
   QUANTUM_STORE_SCREENSHOT=archivo.png  guarda capturas de cada página y sale
@@ -88,7 +88,6 @@ class Store(QObject):
     resultsChanged = pyqtSignal()
     detailsChanged = pyqtSignal()
     jobsChanged = pyqtSignal()
-    androidChanged = pyqtSignal()
     installedChanged = pyqtSignal()
     busyChanged = pyqtSignal()
     colorsChanged = pyqtSignal()
@@ -98,7 +97,7 @@ class Store(QObject):
     def __init__(self):
         super().__init__()
         self._home, self._results, self._details = {}, {}, {}
-        self._jobs, self._android, self._installed = [], {}, []
+        self._jobs, self._installed = [], []
         self._busy = set()
         self._colors = {}
         self._procs = {}
@@ -121,9 +120,6 @@ class Store(QObject):
 
     @pyqtProperty("QVariant", notify=jobsChanged)
     def jobs(self): return self._jobs
-
-    @pyqtProperty("QVariant", notify=androidChanged)
-    def android(self): return self._android
 
     @pyqtProperty("QVariant", notify=installedChanged)
     def installed(self): return self._installed
@@ -180,14 +176,9 @@ class Store(QObject):
                 res = {**res, "installed": True}
             self._details = res
             self.detailsChanged.emit()
-        elif kind == "android":
-            self._android = res or {"status": "missing"}
-            self.androidChanged.emit()
         elif kind == "installed":
             self._installed = res or []
             self.installedChanged.emit()
-        elif kind == "catalog":
-            self.refreshAndroid()
 
     # ---------------------------------------------------------------- portada
     @pyqtSlot()
@@ -221,7 +212,7 @@ class Store(QObject):
         q = q.strip()
         if len(q) < 2:
             return
-        for src in ("flathub", "arch", "aur", "android"):
+        for src in ("flathub", "arch", "aur"):
             self._bg(f"search:{self._search_gen}:{src}", SOURCES[src].search, q)
 
     # ---------------------------------------------------------------- detalles
@@ -306,8 +297,6 @@ class Store(QObject):
     @pyqtSlot(str, str)
     def install(self, key, name):
         src, id_ = key.split(":", 1)
-        if src == "android":
-            return self.installAndroid(id_, name)
         if src == "aur" and not shutil.which("yay") and not DRYRUN:
             self.toast.emit("Falta yay para instalar desde AUR")
             return
@@ -316,10 +305,7 @@ class Store(QObject):
     @pyqtSlot(str, str)
     def remove(self, key, name):
         src, id_ = key.split(":", 1)
-        if src == "android":
-            self._job(key, name, "remove", ["waydroid", "app", "remove", id_])
-        else:
-            self._job(key, name, "remove", SOURCES[src].remove_cmd(id_))
+        self._job(key, name, "remove", SOURCES[src].remove_cmd(id_))
 
     @pyqtSlot(str)
     def launch(self, key):
@@ -329,8 +315,6 @@ class Store(QObject):
             return
         if src == "flathub":
             QProcess.startDetached("flatpak", ["run", id_])
-        elif src == "android":
-            QProcess.startDetached("waydroid", ["app", "launch", id_])
         else:
             # repos/AUR: buscar su .desktop por nombre de paquete
             QProcess.startDetached("sh", ["-c", f"gtk-launch $(pacman -Qlq {id_} | grep -m1 '/usr/share/applications/.*\\.desktop$' | xargs -r basename)"])
@@ -340,102 +324,6 @@ class Store(QObject):
         p = self._procs.get(key)
         if p:
             p.kill()
-
-    # ----------------------------------------------------------------- Android
-    @pyqtSlot()
-    def refreshAndroid(self):
-        a = SOURCES["android"]
-
-        def state():
-            st = a.status()
-            apps = a.installed_apps() if st == "running" else {}
-            return {"status": st, "catalog": a.catalog_ready(),
-                    "apps": [item("android", k, v, "", "theme:android", True) for k, v in sorted(apps.items(), key=lambda x: x[1])],
-                    "games": a.featured("games", 18) if a.catalog_ready() else [],
-                    "newest": a.featured(None, 18) if a.catalog_ready() else []}
-        self._bg("android", state)
-
-    @pyqtSlot()
-    def downloadCatalog(self):
-        a = SOURCES["android"]
-        job = {"key": "android:catalog", "name": "Catálogo de F-Droid", "kind": "download",
-               "progress": 0, "line": "Descargando el catálogo (66 MB)…", "state": "running"}
-        self._jobs = self._jobs + [job]
-        self.jobsChanged.emit()
-
-        def prog(x):
-            job["progress"] = x
-            QTimer.singleShot(0, self.jobsChanged.emit)
-
-        def build():
-            n = a.build_catalog(prog)
-            job.update(state="done", progress=1, line=f"{n} apps listas")
-            return n
-        self._bg("catalog", build)
-
-    @pyqtSlot()
-    def setupAndroid(self):
-        a = SOURCES["android"]
-        if a.status() == "missing" and not DRYRUN:
-            self.toast.emit("Falta Waydroid en el sistema")
-            return
-        self._job("android:setup", "Activar Android", "setup", a.setup_cmd(), then=self.startAndroid)
-
-    @pyqtSlot()
-    def startAndroid(self):
-        if not DRYRUN:
-            # sesión en segundo plano + ventanas separadas para cada app (como apps nativas)
-            QProcess.startDetached("sh", ["-c", "waydroid session start >/dev/null 2>&1 & sleep 12; "
-                                          "waydroid prop set persist.waydroid.multi_windows true"])
-        QTimer.singleShot(15000, self.refreshAndroid)
-        self.toast.emit("Iniciando Android…")
-
-    def installAndroid(self, id_, name):
-        d = SOURCES["android"].details(id_)
-        url, path = d.get("apk"), SOURCES["android"].apk_path(id_)
-        if not url:
-            self.toast.emit("No encontré el APK")
-            return
-        path.parent.mkdir(parents=True, exist_ok=True)
-        key = f"android:{id_}"
-        if DRYRUN:
-            return self._job(key, name, "install", ["waydroid", "app", "install", str(path)])
-        job = {"key": key, "name": name, "kind": "install", "progress": 0, "line": "Descargando APK…", "state": "running"}
-        self._jobs = [j for j in self._jobs if j["key"] != key] + [job]
-        self.jobsChanged.emit()
-
-        def download():
-            req = urllib.request.Request(url, headers={"User-Agent": UA})
-            with urllib.request.urlopen(req, timeout=60) as r, open(path, "wb") as f:
-                total, done = int(r.headers.get("Content-Length") or 0), 0
-                while chunk := r.read(1 << 16):
-                    f.write(chunk)
-                    done += len(chunk)
-                    if total:
-                        job["progress"] = done / total * 0.8
-                        QTimer.singleShot(0, self.jobsChanged.emit)
-            return str(path)
-
-        def after(tag, res):
-            if tag != f"apk:{id_}":
-                return
-            self._done.disconnect(after)
-            self._jobs = [j for j in self._jobs if j["key"] != key]
-            if isinstance(res, Exception):
-                self.toast.emit("No pude descargar el APK")
-                self.jobsChanged.emit()
-                return
-            self._job(key, name, "install", ["waydroid", "app", "install", res])
-        self._done.connect(after)
-        self._bg(f"apk:{id_}", download)
-
-    @pyqtSlot(str)
-    def openApk(self, path):
-        path = path.replace("file://", "")
-        if not Path(path).is_file():
-            return
-        name = Path(path).stem
-        self._job(f"android:local-{name}", name, "install", ["waydroid", "app", "install", path])
 
     # -------------------------------------------------------------- instaladas
     @pyqtSlot()
@@ -457,7 +345,6 @@ class Store(QObject):
 
 def main():
     ap = argparse.ArgumentParser(description="Quantum Store")
-    ap.add_argument("--apk", help="instala un APK con Waydroid")
     ap.add_argument("--page", default="inicio")
     ap.add_argument("--search", help="abre la búsqueda con este texto")
     ap.add_argument("--app", help="abre la ficha de una app (p. ej. flathub:com.heroicgameslauncher.hgl)")
@@ -488,10 +375,7 @@ def main():
     if not engine.rootObjects():
         return 1
     store.loadHome()
-    store.refreshAndroid()
     store.refreshInstalled()
-    if args.apk:
-        store.openApk(args.apk)
     win = engine.rootObjects()[0]
     if args.search:
         store.search(args.search)

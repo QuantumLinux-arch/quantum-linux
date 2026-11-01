@@ -15,7 +15,6 @@ Flickable {
         { src: "flathub", title: "Apps (Flathub)", note: "" },
         { src: "arch", title: "Paquetes de Arch", note: "" },
         { src: "aur", title: "Comunidad (AUR)", note: "Hechos por la comunidad, no revisados por Arch" },
-        { src: "android", title: "Android (F-Droid)", note: "Se abren con Android dentro de Quantum" },
     ]
     ColumnLayout {
         id: col
@@ -44,7 +43,7 @@ Flickable {
             }
         }
         T {
-            visible: (store.busy || []).length === 0 && ["flathub", "arch", "aur", "android"].every(s => !(pg.r[s] || []).length)
+            visible: (store.busy || []).length === 0 && ["flathub", "arch", "aur"].every(s => !(pg.r[s] || []).length)
             text: "No encontré nada. Prueba con otra palabra."
             color: theme.muted
             font.pixelSize: 16

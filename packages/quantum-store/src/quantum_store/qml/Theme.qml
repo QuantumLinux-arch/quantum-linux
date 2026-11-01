@@ -39,6 +39,6 @@ QtObject {
         return s === "flathub" ? "#4A90E2" : s === "arch" ? "#1793D1" : s === "aur" ? "#E5A50A" : "#3DDC84";
     }
     function sourceName(s) {
-        return s === "flathub" ? "Flathub" : s === "arch" ? "Arch" : s === "aur" ? "Comunidad" : "Android";
+        return s === "flathub" ? "Flathub" : s === "arch" ? "Arch" : s === "aur" ? "Comunidad" : "";
     }
 }

@@ -2,15 +2,16 @@
 
 pkgname=quantum-store
 pkgver=1.0.0
-pkgrel=8
-pkgdesc="Quantum Store: apps de Arch, Flathub, AUR y Android (Waydroid) en una sola tienda"
+pkgrel=9
+pkgdesc="Quantum Store: apps de Arch, Flathub y AUR en una sola tienda"
 arch=('any')
 url="https://github.com/quantum-linux"
 license=('GPL-3.0-or-later')
 depends=('python' 'python-pyqt6' 'qt6-declarative' 'qt6-svg' 'quantum-shell' 'papirus-icon-theme'
-         'polkit' 'flatpak' 'yay' 'base-devel' 'git' 'waydroid')
+         'polkit' 'flatpak' 'yay' 'base-devel' 'git')
 optdepends=('wine: abrir programas de Windows (se instala solo la primera vez)')
 provides=('appstore')
+install=quantum-store.install
 
 _src="$startdir/src"
 
@@ -20,9 +21,7 @@ package() {
   # precompilado: abre más rápido (los usuarios no pueden escribir en /usr/lib)
   python -m compileall -q -j 0 -o 0 -o 1 -s "$pkgdir" -p / "$pkgdir/usr/lib/quantum-store"
   install -Dm755 "$startdir/files/quantum-store" "$pkgdir/usr/bin/quantum-store"
-  install -Dm755 "$startdir/files/android-setup" "$pkgdir/usr/lib/quantum-store/android-setup"
   install -Dm644 "$startdir/files/quantum-store.desktop" "$pkgdir/usr/share/applications/quantum-store.desktop"
-  install -Dm644 "$startdir/files/quantum-store-apk.desktop" "$pkgdir/usr/share/applications/quantum-store-apk.desktop"
   install -Dm755 "$startdir/files/quantum-exe" "$pkgdir/usr/bin/quantum-exe"
   install -Dm644 "$startdir/files/quantum-exe.desktop" "$pkgdir/usr/share/applications/quantum-exe.desktop"
   install -Dm644 "$startdir/files/quantum-store.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/quantum-store.svg"

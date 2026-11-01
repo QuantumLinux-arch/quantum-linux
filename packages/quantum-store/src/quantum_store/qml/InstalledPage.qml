@@ -14,10 +14,10 @@ Flickable {
         width: pg.width - 40
         spacing: 18
         T { text: "Tus apps"; font.pixelSize: 32; font.weight: Font.ExtraBold }
-        T { text: "Lo que instalaste desde Flathub, la comunidad (AUR) y Android."; color: theme.muted; font.pixelSize: 15 }
-        AppGrid { apps: (store.installed || []).concat(store.android.apps || []) }
+        T { text: "Lo que instalaste desde Flathub y la comunidad (AUR)."; color: theme.muted; font.pixelSize: 15 }
+        AppGrid { apps: store.installed || [] }
         T {
-            visible: !(store.installed || []).length && !(store.android.apps || []).length
+            visible: !(store.installed || []).length
             text: "Todavía no instalaste nada. Explora el Inicio."
             color: theme.muted; font.pixelSize: 16
         }

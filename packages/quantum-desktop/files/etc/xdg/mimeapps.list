@@ -12,7 +12,6 @@ video/x-matroska=org.gnome.Showtime.desktop
 video/webm=org.gnome.Showtime.desktop
 audio/mpeg=org.gnome.Showtime.desktop
 audio/flac=org.gnome.Showtime.desktop
-application/vnd.android.package-archive=quantum-store-apk.desktop
 application/x-ms-dos-executable=quantum-exe.desktop
 application/x-msdownload=quantum-exe.desktop
 application/vnd.microsoft.portable-executable=quantum-exe.desktop

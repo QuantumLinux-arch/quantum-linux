@@ -24,7 +24,6 @@ ApplicationWindow {
     readonly property var nav: [
         { id: "inicio", icon: "home", text: "Inicio" },
         { id: "juegos", icon: "sports_esports", text: "Juegos" },
-        { id: "android", icon: "android", text: "Android" },
         { id: "instaladas", icon: "apps", text: "Tus apps" },
     ]
 
@@ -84,12 +83,6 @@ ApplicationWindow {
                                 font.pixelSize: 15
                                 font.weight: navItem.on ? Font.Bold : Font.Medium
                                 color: navItem.on ? theme.onPrimaryContainer : theme.fg
-                            }
-                            Rectangle {
-                                visible: navItem.modelData.id === "android" && (store.android.status || "") === "running"
-                                Layout.rightMargin: 14
-                                implicitWidth: 8; implicitHeight: 8; radius: 4
-                                color: "#3DDC84"
                             }
                         }
                         MouseArea {
@@ -238,10 +231,9 @@ ApplicationWindow {
             StackLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                currentIndex: ["inicio", "juegos", "android", "instaladas", "buscar", "detalle"].indexOf(window.page)
+                currentIndex: ["inicio", "juegos", "instaladas", "buscar", "detalle"].indexOf(window.page)
                 HomePage {}
                 GamesPage {}
-                AndroidPage {}
                 InstalledPage {}
                 SearchPage {}
                 DetailsPage {}
@@ -272,12 +264,4 @@ ApplicationWindow {
 
     // demostración guiada para los videos (QUANTUM_STORE_DEMO=1)
     Loader { anchors.fill: parent; active: demoMode; source: "Demo.qml"; z: 100 }
-
-    // soltar un .apk sobre la ventana lo instala
-    DropArea {
-        anchors.fill: parent
-        onDropped: d => {
-            for (const u of d.urls) if (String(u).toLowerCase().endsWith(".apk")) { store.openApk(String(u)); window.go("android"); }
-        }
-    }
 }

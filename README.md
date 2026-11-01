@@ -31,8 +31,8 @@ Versión actual: 1.0 «Quark» (beta).
   actualización), zram, arranque seguro con shim firmado + llave propia (MOK).
 - **Juegos:** Steam con Proton, Proton-GE, umu, MangoHud, GameMode y **Fotón** (biblioteca de
   juegos de Steam, Epic, GOG y Windows).
-- **Apps propias:** Centro Quantum (bienvenida y ajustes), Quantum Store (repos de Arch, Flathub,
-  AUR y Android), Fotón y «Pasar a Quantum» (trae tus cosas desde Windows).
+- **Apps propias:** Centro Quantum (bienvenida y ajustes), Quantum Store (repos de Arch, Flathub
+  y AUR), Fotón y «Pasar a Quantum» (trae tus cosas desde Windows).
 - **Instaladores:** Calamares con diseño propio, y un instalador para Windows (beta) que prepara
   un pendrive e instala Quantum solo.
 

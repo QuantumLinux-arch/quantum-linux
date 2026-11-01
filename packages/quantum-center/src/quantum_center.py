@@ -373,7 +373,7 @@ def home_page():
     tile_grid(lay, [
         ("foton", "Juega", "Fotón junta tus juegos de Steam, Epic y GOG. Steam con Proton ya viene listo.",
          "Abrir Fotón", lambda: launch("foton")),
-        ("quantum-store", "Instala apps", "Miles de apps, juegos y apps de Android, con un clic.",
+        ("quantum-store", "Instala apps", "Miles de apps y juegos, con un clic.",
          "Abrir Quantum Store", lambda: launch("quantum-store")),
         ("quantum-personalize", "Personaliza", "Cambia el aspecto, la barra, el dock y las ventanas al instante.",
          "Abrir Personalizar", open_personalize),
@@ -638,7 +638,7 @@ CREDITS = [
      "Creador de Serpantinum, el escritorio que inspiró a Serpantium. Gracias por compartir tu trabajo (@ilyamiro.dev)."),
 ]
 OPEN_SOURCE = ["Arch Linux", "Wayfire", "Quickshell", "Calamares", "matugen", "Papirus",
-               "Material Symbols", "Inter", "Waydroid", "CachyOS"]
+               "Material Symbols", "Inter", "CachyOS"]
 
 
 def credits_page():

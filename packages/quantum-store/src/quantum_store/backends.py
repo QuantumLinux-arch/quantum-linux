@@ -1,14 +1,12 @@
-"""Fuentes de apps de Quantum Store: repos de Arch, Flathub, AUR y Android (F-Droid).
+"""Fuentes de apps de Quantum Store: repos de Arch, Flathub y AUR.
 
 Cada fuente devuelve elementos con la misma forma:
     {key, source, id, name, summary, icon, installed, version, badge}
 `icon` es una URL (http…) o "theme:<nombre>" para íconos del tema del sistema.
 """
-import gzip
 import json
 import os
 import re
-import shutil
 import subprocess
 import time
 import urllib.parse
@@ -210,142 +208,4 @@ class Aur:
         return ["pkexec", "pacman", "-Rns", "--noconfirm", id_]
 
 
-# ---------------------------------------------------------------- Android
-
-class Android:
-    """Apps Android con Waydroid; catálogo de F-Droid (apps libres)."""
-    label = "Android"
-    REPO = "https://f-droid.org/repo"
-    INDEX = CACHE / "fdroid-catalog.json"
-    # juegos conocidos que van primero en la fila de juegos
-    TOP_GAMES = ["io.anuke.mindustry", "net.minetest.minetest", "org.supertuxkart.stk",
-                 "com.shatteredpixel.shatteredpixeldungeon", "com.unciv.app", "dev.lucanlm.antimine",
-                 "name.boyle.chris.sgtpuzzles", "com.gitlab.ardash.appleflinger.android"]
-
-    # ---- estado de Waydroid
-    def status(self):
-        if not shutil.which("waydroid"):
-            return "missing"
-        out = run(["waydroid", "status"], timeout=10)
-        if "not initialized" in out.lower() or not out.strip():
-            return "uninitialized"
-        if re.search(r"Session:\s*RUNNING", out):
-            return "running"
-        return "stopped"
-
-    def installed_apps(self):
-        out = run(["waydroid", "app", "list"], timeout=20)
-        apps, cur = [], {}
-        for line in out.splitlines():
-            if line.startswith("Name:"):
-                cur = {"name": line.split(":", 1)[1].strip()}
-            elif line.startswith("packageName:"):
-                cur["id"] = line.split(":", 1)[1].strip()
-                apps.append(cur)
-        return {a["id"]: a["name"] for a in apps}
-
-    # ---- catálogo F-Droid
-    def catalog_ready(self):
-        return self.INDEX.exists()
-
-    def build_catalog(self, progress=None):
-        """Descarga el índice de F-Droid (~66 MB) y guarda una versión compacta."""
-        CACHE.mkdir(parents=True, exist_ok=True)
-        raw = CACHE / "fdroid-index-v2.json"
-        req = urllib.request.Request(f"{self.REPO}/index-v2.json", headers={"User-Agent": UA, "Accept-Encoding": "gzip"})
-        with urllib.request.urlopen(req, timeout=60) as r, open(raw, "wb") as f:
-            total = int(r.headers.get("Content-Length") or 0)
-            done = 0
-            stream = gzip.GzipFile(fileobj=r) if r.headers.get("Content-Encoding") == "gzip" else r
-            while chunk := stream.read(1 << 16):
-                f.write(chunk)
-                done += len(chunk)
-                if progress and total:
-                    progress(min(0.99, done / total))
-        idx = json.loads(raw.read_text())
-        apps = []
-        for pkg, p in idx.get("packages", {}).items():
-            md = p.get("metadata", {})
-            best = None
-            for v in p.get("versions", {}).values():
-                man = v.get("manifest", {})
-                native = man.get("nativecode") or []
-                if native and "x86_64" not in native:
-                    continue  # Waydroid en PC necesita x86_64 o apps sin código nativo
-                if best is None or man.get("versionCode", 0) > best["manifest"].get("versionCode", 0):
-                    best = v
-            if not best:
-                continue
-            loc = lambda d: (d or {}).get("es") or (d or {}).get("es-ES") or (d or {}).get("en-US") or next(iter((d or {}).values()), "")
-            icon = loc(md.get("icon"))
-            apps.append({
-                "id": pkg, "name": loc(md.get("name")) or pkg, "summary": loc(md.get("summary")),
-                "icon": f"{self.REPO}{icon['name']}" if isinstance(icon, dict) and icon.get("name") else "",
-                "apk": f"{self.REPO}{best['file']['name']}", "version": best["manifest"].get("versionName", ""),
-                "categories": md.get("categories", []), "added": md.get("added", 0),
-                "updated": md.get("lastUpdated", 0),
-                "description": re.sub(r"<[^>]+>", " ", loc(md.get("description")) or "")[:1200],
-            })
-        apps.sort(key=lambda a: -a["updated"])
-        self.INDEX.write_text(json.dumps(apps))
-        raw.unlink(missing_ok=True)
-        return len(apps)
-
-    def _catalog(self):
-        try:
-            return json.loads(self.INDEX.read_text())
-        except (OSError, ValueError):
-            return []
-
-    def _as_item(self, a, inst):
-        return item("android", a["id"], a["name"], a["summary"], a["icon"] or "theme:android",
-                    a["id"] in inst, a["version"], "Android")
-
-    def search(self, q, limit=40):
-        ql = q.lower()
-        inst = self.installed_apps() if self.status() == "running" else {}
-        hits = [a for a in self._catalog() if ql in a["name"].lower() or ql in (a["summary"] or "").lower()]
-        hits.sort(key=lambda a: (not a["name"].lower().startswith(ql), a["name"].lower()))
-        return [self._as_item(a, inst) for a in hits[:limit]]
-
-    def featured(self, category=None, limit=18):
-        inst = self.installed_apps() if self.status() == "running" else {}
-        cat = self._catalog()
-        if category is None:
-            cat = sorted(cat, key=lambda a: -a.get("added", 0))
-        if category == "games":
-            cat = [a for a in cat if any(c.endswith("Game") for c in a["categories"])]
-            top = {k: i for i, k in enumerate(self.TOP_GAMES)}
-            cat.sort(key=lambda a: top.get(a["id"], len(top)))
-        elif category:
-            cat = [a for a in cat if category in a["categories"]]
-        # una app por autor/ícono para que la fila sea variada
-        seen, out = set(), []
-        for a in cat:
-            tag = a["icon"] or a["id"].rsplit(".", 1)[0]
-            if tag in seen or a["id"].rsplit(".", 1)[0] in seen:
-                continue
-            seen.update((tag, a["id"].rsplit(".", 1)[0]))
-            out.append(self._as_item(a, inst))
-            if len(out) >= limit:
-                break
-        return out
-
-    def details(self, id_):
-        a = next((x for x in self._catalog() if x["id"] == id_), None) or {"id": id_, "name": id_, "summary": "",
-                                                                          "icon": "", "version": "", "description": ""}
-        inst = self.installed_apps() if self.status() == "running" else {}
-        return {**self._as_item(a, inst), "description": a.get("description", ""),
-                "facts": [["Fuente", "F-Droid (apps libres)"], ["Versión", a.get("version", "")],
-                          ["Paquete", id_]],
-                "apk": a.get("apk", ""), "screenshots": []}
-
-    def apk_path(self, id_):
-        return CACHE / "apk" / f"{safe_name(id_)}.apk"
-
-    def setup_cmd(self):
-        # Descarga Android (LineageOS, ~1 GB) y activa el servicio del contenedor
-        return ["pkexec", "/usr/lib/quantum-store/android-setup"]
-
-
-SOURCES = {"arch": Arch(), "flathub": Flathub(), "aur": Aur(), "android": Android()}
+SOURCES = {"arch": Arch(), "flathub": Flathub(), "aur": Aur()}

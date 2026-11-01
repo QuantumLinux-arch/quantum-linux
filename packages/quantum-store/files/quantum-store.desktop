@@ -2,10 +2,10 @@
 Type=Application
 Name=Quantum Store
 GenericName=Tienda de apps
-Comment=Instala apps, juegos y apps de Android
+Comment=Instala apps y juegos con un clic
 Exec=quantum-store %U
 Icon=quantum-store
 Terminal=false
 Categories=System;PackageManager;
-Keywords=tienda;apps;instalar;programas;juegos;android;apk;flatpak;aur;store;software;
+Keywords=tienda;apps;instalar;programas;juegos;flatpak;aur;store;software;
 StartupWMClass=quantum-store
