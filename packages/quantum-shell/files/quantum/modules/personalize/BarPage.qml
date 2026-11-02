@@ -51,6 +51,7 @@ ColumnLayout {
         title: "Quantum Shell"
         help: Serp.on ? "Serpantium: barra de píldoras arriba, paneles oscuros y tonos rosados."
             : Atomic.on ? "Atomic: todo es de Cristal Cuántico, que refracta tu fondo como un vidrio real."
+                          + (Atomic.weak ? " " + Atomic.weakWhy + ": puede ir lento, Caelestial será más fluido." : "")
             : "Caelestial: barra arriba, dock y paneles de vidrio."
         icon: "dashboard"
         Segmented {

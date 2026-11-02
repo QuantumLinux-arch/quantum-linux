@@ -398,16 +398,23 @@ PanelWindow {
 
 
     // ---------------------------------------------------------------- paso 3: la forma del shell
+    function stepShell(d: int): void {
+        const ids = shells.map(x => x.id);
+        const i = Math.max(0, ids.indexOf(Settings.ui.shell));
+        Serp.choose(ids[Math.max(0, Math.min(ids.length - 1, i + d))], win.lookTouched, true);
+    }
     readonly property var shells: [
         { id: "caelestial", name: "Caelestial", tag: "El de siempre",
           desc: "Inspirado en Caelestia Shell, pero más liviano: barra arriba, dock flotante y paneles de vidrio con tus colores." },
+        { id: "atomic", name: "Atomic", tag: "Cristal",
+          desc: "Todo de Cristal Cuántico: los paneles refractan tu fondo como un vidrio real. Necesita una tarjeta gráfica." },
         { id: "serpantium", name: "Serpantium", tag: "Nuevo",
           desc: "Inspirado en Serpantinum de ilyamiro: barra de píldoras, paneles oscuros que bajan, letra monoespaciada y tonos rosados." },
     ]
     Row {
         anchors.horizontalCenter: parent.horizontalCenter
         y: Math.round(parent.height * 0.33)
-        spacing: 36
+        spacing: 26
         visible: win.step === 2
         Repeater {
             model: win.shells
@@ -416,7 +423,8 @@ PanelWindow {
                 required property var modelData
                 readonly property bool on: Settings.ui.shell === modelData.id
                 readonly property bool serp: modelData.id === "serpantium"
-                width: Math.min(620, (win.width - 300) / 2); height: width * 0.8; radius: 30
+                readonly property bool atomic: modelData.id === "atomic"
+                width: Math.min(520, (win.width - 260) / 3); height: width * 0.92; radius: 30
                 color: on ? Qt.rgba(0.2, 0.18, 0.28, 0.92) : sa.containsMouse ? Qt.rgba(0.17, 0.15, 0.22, 0.9) : Qt.rgba(0.13, 0.12, 0.17, 0.86)
                 border.width: on ? 3 : 1
                 border.color: on ? (serp ? "#F4A7C9" : "#C5C0FF") : Qt.rgba(1, 1, 1, 0.08)
@@ -462,11 +470,12 @@ PanelWindow {
                     clip: true
                     Image {
                         anchors.fill: parent; fillMode: Image.PreserveAspectCrop; asynchronous: true; sourceSize: Qt.size(480, 270)
-                        source: "file://" + win.wallDir + "/thumbs/" + (sc.serp ? "serpantium" : "orbita") + ".jpg"
+                        source: sc.atomic ? Quickshell.shellDir + "/assets/atomic-preview.jpg"
+                                          : "file://" + win.wallDir + "/thumbs/" + (sc.serp ? "serpantium" : "orbita") + ".jpg"
                     }
                     // Caelestial: barra arriba, dock flotante, panel de vidrio
                     Item {
-                        anchors.fill: parent; visible: !sc.serp
+                        anchors.fill: parent; visible: !sc.serp && !sc.atomic
                         Rectangle { x: 8; y: 6; width: parent.width - 16; height: 16; radius: 8; color: Qt.rgba(0.08, 0.07, 0.12, 0.75) }
                         Rectangle {
                             anchors.right: parent.right; anchors.rightMargin: 14; y: 30; width: parent.width * 0.3; height: parent.height * 0.55; radius: 12
@@ -520,7 +529,7 @@ PanelWindow {
                             Txt { id: st; anchors.centerIn: parent; text: sc.modelData.tag; color: sc.serp ? "#F4A7C9" : "#A39DB8"; font.pixelSize: 14; font.weight: Font.DemiBold }
                         }
                     }
-                    Txt { width: parent.width; wrapMode: Text.WordWrap; text: sc.modelData.desc; color: "#A39DB8"; font.pixelSize: 18; elide: Text.ElideNone }
+                    Txt { width: parent.width; wrapMode: Text.WordWrap; text: sc.modelData.desc; color: "#A39DB8"; font.pixelSize: 16; elide: Text.ElideNone }
                 }
                 Rectangle {
                     anchors.right: parent.right; anchors.top: parent.top; anchors.margins: 34
@@ -795,8 +804,8 @@ PanelWindow {
     // teclado: flechas para elegir, Enter para seguir, Esc para saltar
     Item {
         focus: win.open
-        Keys.onLeftPressed: if (win.step === 2) Serp.choose("caelestial", win.lookTouched, true); else if (win.step === 0) { const i = win.options.findIndex(o => o.id === win.chosen); win.pick(win.options[Math.max(0, i - 1)].id); }
-        Keys.onRightPressed: if (win.step === 2) Serp.choose("serpantium", win.lookTouched, true); else if (win.step === 0) { const i = win.options.findIndex(o => o.id === win.chosen); win.pick(win.options[Math.min(win.options.length - 1, i + 1)].id); }
+        Keys.onLeftPressed: if (win.step === 2) win.stepShell(-1); else if (win.step === 0) { const i = win.options.findIndex(o => o.id === win.chosen); win.pick(win.options[Math.max(0, i - 1)].id); }
+        Keys.onRightPressed: if (win.step === 2) win.stepShell(1); else if (win.step === 0) { const i = win.options.findIndex(o => o.id === win.chosen); win.pick(win.options[Math.min(win.options.length - 1, i + 1)].id); }
         Keys.onReturnPressed: win.step < 4 ? win.step++ : win.finish()
         Keys.onEscapePressed: win.finish()
     }

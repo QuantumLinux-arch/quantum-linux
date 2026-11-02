@@ -20,10 +20,10 @@ Singleton {
 
     // Superficies
     readonly property color surface: col("surface", "#13121c")
-    readonly property color surfaceLow: col("surface_container_low", "#1b1a24")
-    readonly property color surfaceContainer: col("surface_container", "#1f1f28")
-    readonly property color surfaceHigh: col("surface_container_high", "#2a2933")
-    readonly property color surfaceHighest: col("surface_container_highest", "#35343e")
+    readonly property color surfaceLow: Atomic.on ? Qt.rgba(1, 1, 1, 0.05) : col("surface_container_low", "#1b1a24")
+    readonly property color surfaceContainer: Atomic.on ? Qt.rgba(1, 1, 1, 0.07) : col("surface_container", "#1f1f28")
+    readonly property color surfaceHigh: Atomic.on ? Qt.rgba(1, 1, 1, 0.10) : col("surface_container_high", "#2a2933")
+    readonly property color surfaceHighest: Atomic.on ? Qt.rgba(1, 1, 1, 0.17) : col("surface_container_highest", "#35343e")
     readonly property color fg: col("on_surface", "#e4e0ee")
     readonly property color fgMuted: col("on_surface_variant", "#c8c4d4")
     readonly property color outline: col("outline", "#928f9e")
@@ -33,7 +33,7 @@ Singleton {
     // Acentos
     readonly property color primary: col("primary", "#c5c0ff")
     readonly property color primaryFg: col("on_primary", "#2a1a9a")
-    readonly property color primaryContainer: col("primary_container", "#6a5cff")
+    readonly property color primaryContainer: Atomic.on ? alpha(col("primary_container", "#6a5cff"), 0.62) : col("primary_container", "#6a5cff")
     readonly property color primaryContainerFg: col("on_primary_container", "#ffffff")
     readonly property color secondaryContainer: col("secondary_container", "#433f6f")
     readonly property color secondaryContainerFg: col("on_secondary_container", "#e3dfff")
