@@ -23,7 +23,7 @@ Variants {
 
         // Aspecto (Personalizar)
         readonly property bool single: !Serp.on && Settings.layout.style === "single"
-        readonly property bool floating: Serp.on || Settings.dock.floating
+        readonly property bool floating: Serp.on || Atomic.on || Settings.dock.floating
         readonly property bool full: single || !floating          // ocupa todo el ancho
         readonly property int barH: Math.round(56 * Theme.dockScale)
         readonly property int gap: floating ? 10 : 0

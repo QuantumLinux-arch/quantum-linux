@@ -161,7 +161,13 @@ Variants {
             width: win.target.width
             height: win.target.height
             radius: Math.min(height / 2, 30)
-            color: "#0B0A12"
+            color: Atomic.on ? "transparent" : "#0B0A12"
+            // Atomic: la isla es de Cristal Cuántico y brilla más mientras se transforma
+            Loader {
+                anchors.fill: parent
+                active: Atomic.on
+                sourceComponent: Glass { radius: pill.radius; dim: 0.6; glow: win.energy * 0.8 }
+            }
             border.width: 1
             border.color: Qt.rgba(1, 1, 1, 0.08 + 0.25 * win.energy)
             clip: true

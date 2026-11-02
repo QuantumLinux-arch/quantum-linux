@@ -50,10 +50,11 @@ ColumnLayout {
     Group {
         title: "Quantum Shell"
         help: Serp.on ? "Serpantium: barra de píldoras arriba, paneles oscuros y tonos rosados."
-                      : "Caelestial: barra arriba, dock y paneles de vidrio."
+            : Atomic.on ? "Atomic: todo es de Cristal Cuántico, que refracta tu fondo como un vidrio real."
+            : "Caelestial: barra arriba, dock y paneles de vidrio."
         icon: "dashboard"
         Segmented {
-            options: [{ v: "caelestial", t: "Caelestial", i: "blur_on" }, { v: "serpantium", t: "Serpantium", i: "terminal" }]
+            options: [{ v: "caelestial", t: "Caelestial", i: "blur_on" }, { v: "atomic", t: "Atomic", i: "lens_blur" }, { v: "serpantium", t: "Serpantium", i: "terminal" }]
             value: Settings.ui.shell
             onPicked: v => Serp.choose(v, false, false)
         }

@@ -104,7 +104,7 @@ ColumnLayout {
             : "Caelestial: barra arriba, dock y paneles de vidrio. Inspirado en Caelestia Shell, pero más liviano."
         icon: "dashboard"
         Segmented {
-            options: [{ v: "caelestial", t: "Caelestial", i: "blur_on" }, { v: "serpantium", t: "Serpantium", i: "terminal" }]
+            options: [{ v: "caelestial", t: "Caelestial", i: "blur_on" }, { v: "atomic", t: "Atomic", i: "lens_blur" }, { v: "serpantium", t: "Serpantium", i: "terminal" }]
             value: Settings.ui.shell
             onPicked: v => Serp.choose(v, false, false)
         }

@@ -366,7 +366,7 @@ Singleton {
             }
             property JsonObject ui: JsonObject {
                 property bool welcomed: false            // ya pasó por la bienvenida del primer inicio
-                property string shell: "caelestial"      // caelestial | serpantium (paso 3 de la bienvenida)
+                property string shell: "caelestial"      // caelestial | atomic (de cristal) | serpantium
                 property bool filesPinned: false         // ya se cambió Nautilus por Archivos en la barra
                 property string serpApps: "bar"          // Serpantium: apps en la barra de arriba (bar) o en un dock abajo (dock)
                 property var before: ({})                // fondo y colores de antes de Serpantium (para volver)

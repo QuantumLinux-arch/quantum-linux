@@ -16,7 +16,7 @@ Variants {
 
         required property ShellScreen modelData
 
-        readonly property bool floating: Settings.layout.topBar.floating
+        readonly property bool floating: Atomic.on || Settings.layout.topBar.floating
 
         screen: modelData
         visible: Settings.layout.style !== "single"

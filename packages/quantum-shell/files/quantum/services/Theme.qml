@@ -68,6 +68,7 @@ Singleton {
     readonly property real panelOpacity: Settings.appearance?.panelOpacity ?? 0.86
     // Efecto vidrio: opacidad de cada parte (bar, dock, panels); sin vidrio, casi opaca
     function glassOpacity(kind: string): real {
+        if (Atomic.on) return 0;        // Atomic: el cristal (Glass) es el fondo
         return (Settings.appearance?.glass?.[kind] ?? true) ? panelOpacity : 0.97;
     }
 
