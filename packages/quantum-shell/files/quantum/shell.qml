@@ -35,6 +35,8 @@ ShellRoot {
             Sounds.play("startup");
             // apps de inicio que no deben competir con la carga del escritorio
             Quickshell.execDetached(["quantum-center", "--autostart"]);
+            // si se dijo «Más tarde» en la bienvenida, se recuerda con una notificación (no insiste más)
+            if (Settings.ui.welcomed) Quickshell.execDetached(["sh", "-c", "sleep 20; exec quantum-drivers --check"]);
         }
     }
 

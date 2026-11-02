@@ -61,6 +61,8 @@ PanelWindow {
         Sounds.stopPreview();
         Settings.setUi("welcomed", true);
         open = false;
+        // si hay una NVIDIA sin su driver, se ofrece instalarlo apenas termina la bienvenida
+        Quickshell.execDetached(["quantum-drivers", "--now"]);
         applyIcons();
     }
 

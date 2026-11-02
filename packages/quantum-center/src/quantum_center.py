@@ -618,6 +618,8 @@ def system_page():
         ("edit-clear-all", "Liberar espacio", "Borra paquetes viejos de la caché.",
          "Limpiar", lambda: run_in_terminal(
              "Liberar espacio", "sudo paccache -rk1 && sudo paccache -ruk0 && flatpak uninstall --unused -y")),
+        ("quantum-drivers", "Drivers", "Revisa tu tarjeta gráfica e instala el driver de NVIDIA con un clic.",
+         "Abrir", lambda: launch("quantum-drivers")),
         ("utilities-system-monitor", "Mi PC", "Procesador, gráfica, memoria y uso en tiempo real.",
          "Abrir", lambda: launch("missioncenter")),
         ("utilities-terminal", "Información del sistema", "Un resumen bonito para compartir tu escritorio.",
@@ -684,6 +686,19 @@ def community_page():
         ("applications-games", "ProtonDB", "Revisa qué tan bien corre un juego antes de comprarlo.",
          "https://www.protondb.com"),
     ]
+    # Ayuda y sugerencias: lo lee directamente quien hace Quantum
+    c, cl = card("heroCard")
+    row = QHBoxLayout()
+    row.addWidget(icon("quantum-ayuda", 48))
+    row.addSpacing(10)
+    col = QVBoxLayout()
+    col.addWidget(label("Ayuda y sugerencias", "h2"))
+    col.addWidget(label("¿Algo no funciona o tienes una idea? Cuéntanos: lo lee directamente quien hace Quantum.", "muted"))
+    row.addLayout(col, 1)
+    row.addWidget(button("Reportar un problema", lambda _=False: launch("quantum-ayuda", "--problema")))
+    row.addWidget(button("Enviar una idea", lambda _=False: launch("quantum-ayuda", "--sugerencia")))
+    cl.addLayout(row)
+    lay.addWidget(c)
     for ic, title, desc, url in links:
         c, cl = card()
         row = QHBoxLayout()

@@ -1,0 +1,22 @@
+[Desktop Entry]
+Type=Application
+Name=Ayuda y sugerencias
+Name[en]=Help and feedback
+GenericName=Reportar un problema
+Comment=Cuéntanos si algo no funciona o comparte una idea para Quantum
+Comment[en]=Report a problem or share an idea for Quantum
+Exec=quantum-ayuda
+Icon=quantum-ayuda
+Terminal=false
+StartupWMClass=quantum-ayuda
+Categories=System;Utility;
+Keywords=ayuda;problema;error;reportar;sugerencia;idea;feedback;bug;soporte;
+Actions=problema;sugerencia;
+
+[Desktop Action problema]
+Name=Reportar un problema
+Exec=quantum-ayuda --problema
+
+[Desktop Action sugerencia]
+Name=Enviar una sugerencia
+Exec=quantum-ayuda --sugerencia

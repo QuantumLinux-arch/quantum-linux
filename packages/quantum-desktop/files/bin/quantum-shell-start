@@ -9,4 +9,18 @@ mem=$(awk '/^MemTotal:/ {print $2}' /proc/meminfo 2>/dev/null)
 if [ -z "${QSG_RENDER_LOOP:-}" ] && [ "${mem:-0}" -gt 0 ] && [ "$mem" -lt 4194304 ]; then
     export QSG_RENDER_LOOP=basic
 fi
+# Si el escritorio se acaba de caer (Quickshell guarda un reporte), se ofrece contarnos qué pasó.
+crashes="${XDG_CACHE_HOME:-$HOME/.cache}/quickshell/crashes"
+stamp="${XDG_STATE_HOME:-$HOME/.local/state}/quantum/ultima-caida"
+last=$(ls -1t "$crashes" 2>/dev/null | head -1)
+if [ -n "$last" ] && [ "$last" != "$(cat "$stamp" 2>/dev/null)" ] && command -v quantum-ayuda >/dev/null; then
+    mkdir -p "$(dirname "$stamp")"; echo "$last" > "$stamp"
+    # solo si fue hace poco (una caída vieja no se anuncia al encender)
+    if [ -n "$(find "$crashes/$last" -maxdepth 0 -mmin -5 2>/dev/null)" ]; then
+        ( sleep 6
+          r=$(notify-send -a "Quantum" -i quantum-ayuda -A "contar=Contarnos qué pasó" \
+              "El escritorio se reinició por un error" "Ya está funcionando. Si nos cuentas qué hacías, lo arreglamos más rápido.")
+          [ "$r" = contar ] && exec quantum-ayuda --caida ) >/dev/null 2>&1 &
+    fi
+fi
 exec qs -c quantum "$@"

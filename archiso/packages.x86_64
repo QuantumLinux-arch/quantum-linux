@@ -126,6 +126,8 @@ flatpak
 quantum-store
 quantum-foton
 quantum-cronos
+quantum-ayuda
+quantum-drivers
 yay-bin
 
 # ---- Apps

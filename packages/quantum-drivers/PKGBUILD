@@ -1,0 +1,24 @@
+# Maintainer: Quantum Linux <https://github.com/quantum-linux>
+
+pkgname=quantum-drivers
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Drivers: revisa la tarjeta gráfica e instala el driver de NVIDIA con un clic"
+arch=('any')
+url="https://github.com/quantum-linux"
+license=('GPL-3.0-or-later')
+depends=('python' 'python-pyqt6' 'qt6-declarative' 'qt6-svg' 'pciutils' 'polkit' 'libnotify' 'yay' 'quantum-shell')
+
+_src="$startdir/src"
+
+package() {
+  install -d "$pkgdir/usr/lib/quantum-drivers"
+  cp -r "$_src/quantum_drivers" "$pkgdir/usr/lib/quantum-drivers/"
+  rm -rf "$pkgdir/usr/lib/quantum-drivers/quantum_drivers/__pycache__"
+  python -m compileall -q -j 0 -o 0 -o 1 -s "$pkgdir" -p / "$pkgdir/usr/lib/quantum-drivers"
+  install -Dm755 "$startdir/files/quantum-drivers" "$pkgdir/usr/bin/quantum-drivers"
+  install -Dm755 "$startdir/files/install-nvidia" "$pkgdir/usr/lib/quantum/drivers/install-nvidia"
+  install -Dm644 "$startdir/files/org.quantumlinux.drivers.policy" "$pkgdir/usr/share/polkit-1/actions/org.quantumlinux.drivers.policy"
+  install -Dm644 "$startdir/files/quantum-drivers.desktop" "$pkgdir/usr/share/applications/quantum-drivers.desktop"
+  install -Dm644 "$startdir/files/quantum-drivers.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/quantum-drivers.svg"
+}

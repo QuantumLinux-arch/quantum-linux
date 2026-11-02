@@ -1,0 +1,34 @@
+#!/bin/bash
+# Instala el driver de NVIDIA (lo ejecuta pkexec, como root). Escribe «PASO n texto» para la ventana.
+#   install-nvidia open   → nvidia-open-dkms y compañía, de los repos de Arch
+#   install-nvidia post   → solo lo de después (para los drivers antiguos, que se instalan desde el AUR)
+set -uo pipefail
+mode="${1:-}"
+[[ "$mode" == open || "$mode" == post ]] || { echo "ERROR modo inválido"; exit 2; }
+
+# Arranque seguro: los módulos que compila DKMS se firman con la llave de este PC
+D=/var/lib/quantum/secureboot
+if [[ -f $D/MOK.key && -f $D/MOK.crt ]]; then
+    mkdir -p /etc/dkms/framework.conf.d
+    printf 'mok_signing_key=%s\nmok_certificate=%s\n' "$D/MOK.key" "$D/MOK.crt" > /etc/dkms/framework.conf.d/quantum-mok.conf
+fi
+
+if [[ "$mode" == open ]]; then
+    echo "PASO 1 Descargando el driver"
+    pacman -Sy --needed --noconfirm archlinux-keyring >/dev/null 2>&1
+    pacman -S --needed --noconfirm linux-zen-headers nvidia-open-dkms nvidia-utils lib32-nvidia-utils nvidia-settings \
+        || { echo "ERROR no se pudo instalar el driver (¿hay internet?)"; exit 3; }
+fi
+
+echo "PASO 2 Preparándolo para tu sistema"
+# sin «kms» en el initramfs, para que el driver básico (nouveau) no se cargue antes que el de NVIDIA
+for f in /etc/mkinitcpio.conf /etc/mkinitcpio.conf.d/*.conf; do
+    [[ -f $f ]] && sed -i '/^HOOKS=/ s/ kms\b//' "$f"
+done
+dkms autoinstall >/dev/null 2>&1 || true
+
+echo "PASO 3 Activándolo"
+mkinitcpio -P >/dev/null 2>&1 || echo "AVISO mkinitcpio terminó con avisos"
+[[ -x /usr/lib/quantum/secureboot/sign ]] && /usr/lib/quantum/secureboot/sign >/dev/null 2>&1
+grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1 || true
+echo "PASO 4 Listo"

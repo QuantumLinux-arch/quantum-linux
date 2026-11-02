@@ -1,0 +1,25 @@
+# Maintainer: Quantum Linux <https://github.com/quantum-linux>
+
+pkgname=quantum-ayuda
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Ayuda y sugerencias: reportar un problema o enviar una idea a quienes hacen Quantum"
+arch=('any')
+url="https://github.com/quantum-linux"
+license=('GPL-3.0-or-later')
+depends=('python' 'python-pyqt6' 'qt6-declarative' 'qt6-svg' 'pciutils' 'quantum-shell')
+optdepends=('mesa-utils: nombre de la gráfica que dibuja el escritorio')
+
+_src="$startdir/src"
+
+package() {
+  install -d "$pkgdir/usr/lib/quantum-ayuda"
+  cp -r "$_src/quantum_ayuda" "$pkgdir/usr/lib/quantum-ayuda/"
+  rm -rf "$pkgdir/usr/lib/quantum-ayuda/quantum_ayuda/__pycache__"
+  python -m compileall -q -j 0 -o 0 -o 1 -s "$pkgdir" -p / "$pkgdir/usr/lib/quantum-ayuda"
+  install -Dm755 "$startdir/files/quantum-ayuda" "$pkgdir/usr/bin/quantum-ayuda"
+  # a dónde llegan los mensajes (dirección del formulario de Formspree)
+  install -Dm644 "$startdir/files/endpoint" "$pkgdir/usr/share/quantum-ayuda/endpoint"
+  install -Dm644 "$startdir/files/quantum-ayuda.desktop" "$pkgdir/usr/share/applications/quantum-ayuda.desktop"
+  install -Dm644 "$startdir/files/quantum-ayuda.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/quantum-ayuda.svg"
+}

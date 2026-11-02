@@ -124,6 +124,8 @@ Singleton {
         { words: ["juegos", "mis juegos", "foton", "biblioteca", "biblioteca de juegos"], ids: ["foton", "quantum-foton"], cats: [] },
         { words: ["editor de texto", "bloc de notas", "notepad", "notas", "editor", "block de notas"], ids: [], cats: ["TextEditor"] },
         { words: ["calculadora"], ids: [], cats: ["Calculator"] },
+        { words: ["drivers", "driver", "controladores", "driver de nvidia", "drivers de nvidia", "driver de la grafica"], ids: ["quantum-drivers"], cats: [] },
+        { words: ["ayuda", "ayuda y sugerencias", "sugerencias", "reportar un problema"], ids: ["quantum-ayuda"], cats: [] },
         { words: ["cronos", "maquina del tiempo", "restaurar", "restaurar el sistema", "punto de restauracion",
                   "puntos de restauracion", "volver atras", "copias de seguridad"], ids: ["quantum-cronos"], cats: [] },
         { words: ["administrador de tareas", "monitor del sistema", "task manager", "monitor", "procesos"], ids: [], cats: ["Monitor"] },
@@ -298,6 +300,16 @@ Singleton {
             const b = UPower.displayDevice;
             if (!b?.isLaptopBattery) { say("Este PC no tiene batería: va enchufado a la corriente."); return true; }
             say("La batería está al " + Math.round(b.percentage * 100) + " %" + (b.state === UPowerDeviceState.Charging ? " y cargando." : "."));
+            return true;
+        }
+
+        // ------------------------------------------------------- ayuda y sugerencias
+        if (/(reportar|reporta|reporto|avisar|contar).*(problema|error|falla|bug)|algo (no funciona|anda mal|fallo)|tengo un problema|enviar? (una )?(sugerencia|idea)|tengo una (idea|sugerencia)|quiero (sugerir|proponer)/.test(t)) {
+            const idea = /(sugerencia|idea|sugerir|proponer)/.test(t);
+            say(idea ? "Me encanta que tengas ideas. Te abro el formulario: lo lee directamente quien hace Quantum."
+                     : "Te abro «Ayuda y sugerencias». Cuéntanos qué pasó y lo revisamos.");
+            Quickshell.execDetached(["quantum-ayuda", idea ? "--sugerencia" : "--problema"]);
+            later(() => { Shell.aiOpen = false; });
             return true;
         }
 

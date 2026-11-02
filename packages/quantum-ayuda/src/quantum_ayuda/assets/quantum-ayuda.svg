@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+ <defs>
+  <linearGradient id="q" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4FD8FF"/><stop offset=".5" stop-color="#6A5CFF"/><stop offset="1" stop-color="#B14DFF"/></linearGradient>
+  <radialGradient id="bg" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#2A1F6E"/><stop offset="1" stop-color="#0E0A24"/></radialGradient>
+  <radialGradient id="glow"><stop offset="0" stop-color="#7FE3FF" stop-opacity=".5"/><stop offset="1" stop-color="#7FE3FF" stop-opacity="0"/></radialGradient>
+ </defs>
+ <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#bg)"/>
+ <circle cx="128" cy="118" r="92" fill="url(#glow)" opacity=".45"/>
+ <!-- burbuja -->
+ <path d="M60,62 H196 A22,22 0 0 1 218,84 V152 A22,22 0 0 1 196,174 H120 L82,206 L88,174 H60 A22,22 0 0 1 38,152 V84 A22,22 0 0 1 60,62 Z" fill="url(#q)"/>
+ <path d="M60,62 H196 A22,22 0 0 1 218,84 V100 C170,84 96,84 38,108 V84 A22,22 0 0 1 60,62 Z" fill="#fff" opacity=".14"/>
+ <!-- chispa (idea) -->
+ <path d="M104,92 C107,112 112,117 132,120 C112,123 107,128 104,148 C101,128 96,123 76,120 C96,117 101,112 104,92 Z" fill="#fff"/>
+ <!-- corazón pequeño -->
+ <path d="M170,104 c-7,-12 -26,-6 -20,8 c3,8 20,20 20,20 c0,0 17,-12 20,-20 c6,-14 -13,-20 -20,-8 z" fill="#fff" opacity=".92"/>
+ <circle cx="152" cy="150" r="5" fill="#fff" opacity=".7"/><circle cx="174" cy="150" r="5" fill="#fff" opacity=".7"/><circle cx="196" cy="150" r="5" fill="#fff" opacity=".7"/>
+</svg>

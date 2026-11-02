@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Drivers
+Name[en]=Drivers
+GenericName=Drivers de la tarjeta gráfica
+Comment=Revisa tu tarjeta gráfica e instala el driver de NVIDIA con un clic
+Exec=quantum-drivers
+Icon=quantum-drivers
+Terminal=false
+StartupWMClass=quantum-drivers
+Categories=System;Settings;HardwareSettings;
+Keywords=drivers;controladores;nvidia;grafica;tarjeta;gpu;amd;intel;
