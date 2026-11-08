@@ -19,6 +19,7 @@ Item {
 
     readonly property real km: Theme.animMult > 0 ? Theme.animMult : 0.001
     property bool asking: false                   // ya se ve la contraseña (al tocar una tecla)
+    Connections { target: root.lock; function onAsleepChanged() { if (root.lock.asleep && !root.preview) root.asking = false; } }
     readonly property var battery: UPower.displayDevice
     readonly property string home: Quickshell.env("HOME") ?? ""
 
@@ -156,7 +157,12 @@ Item {
                     text: root.lock.password
                     onTextChanged: { root.lock.password = text; if (text.length) root.asking = true; }
                     onAccepted: root.preview ? root.closePreview() : root.lock.tryUnlock()
-                    Keys.onPressed: e => { root.asking = true; }
+                    // la tecla que despierta (o que muestra el campo) no se escribe en la contraseña
+                    Keys.onPressed: e => {
+                        const wasAsleep = !root.preview && root.lock.wake();
+                        if (wasAsleep) e.accepted = true;
+                        root.asking = true;
+                    }
                     Keys.onEscapePressed: { if (root.preview) root.closePreview(); else if (!text.length) root.asking = false; }
                     Component.onCompleted: forceActiveFocus()
                     Text {
@@ -181,7 +187,7 @@ Item {
     MouseArea {
         anchors.fill: parent
         z: -1
-        onClicked: { root.asking = true; input.forceActiveFocus(); }
+        onClicked: { root.lock.wake(); root.asking = true; input.forceActiveFocus(); }
     }
 
     // abajo: estado

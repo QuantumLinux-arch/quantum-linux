@@ -35,15 +35,17 @@ PanelWindow {
     NumberAnimation { id: anim; target: win; property: "progress"; easing.overshoot: 1.15 }
 
     readonly property string current: Settings.appearance.wallpaper
-    readonly property string sysDir: current.indexOf("/usr/share/backgrounds/quantum/") === 0 || !current.startsWith("/")
-        ? "/usr/share/backgrounds/quantum" : current.substring(0, current.lastIndexOf("/"))
+    readonly property string sysDir: "/usr/share/backgrounds/quantum"
+    readonly property var custom: Settings.appearance.customWallpapers ?? []
+    onCustomChanged: if (open) lister.running = true
 
-    // fondos del sistema + ~/Imágenes/Fondos (si existe)
+    // fondos del sistema + ~/Imágenes/Fondos (si existe) + los propios que elegiste (quedan guardados)
     Process {
         id: lister
-        command: ["bash", "-c", Settings.wallListScript, "bash", win.sysDir, Quickshell.env("QUANTUM_WALLPAPERS") || "/usr/share/backgrounds/quantum",
+        // primero tus fondos propios, después los de Quantum
+        command: ["bash", "-c", Settings.wallListScript, "bash"].concat(win.custom).concat([win.sysDir, Quickshell.env("QUANTUM_WALLPAPERS") || "/usr/share/backgrounds/quantum",
                   (Quickshell.env("QUANTUM_WALLPAPERS") || "/usr/share/backgrounds/quantum") + "/animados",
-                  Quickshell.env("HOME") + "/Imágenes/Fondos", Quickshell.env("HOME") + "/Pictures/Wallpapers"]
+                  Quickshell.env("HOME") + "/Imágenes/Fondos", Quickshell.env("HOME") + "/Pictures/Wallpapers"])
         stdout: StdioCollector {
             onStreamFinished: win.walls = text.trim().split("\n").filter(s => s.length)
         }
@@ -217,6 +219,20 @@ PanelWindow {
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: Settings.set("appearance", "wallpaper", tile.modelData)
+                            }
+                            // los fondos propios se pueden quitar de la lista (el archivo no se borra)
+                            Rectangle {
+                                readonly property bool mine: win.custom.indexOf(tile.modelData) >= 0
+                                visible: mine && !tile.on && (tileArea.containsMouse || rmArea.containsMouse)
+                                anchors.right: parent.right; anchors.top: parent.top; anchors.margins: 10
+                                width: 30; height: 30; radius: 15
+                                color: rmArea.containsMouse ? Theme.error : Qt.rgba(0, 0, 0, 0.6)
+                                Icon { anchors.centerIn: parent; text: "close"; size: 18; color: "white" }
+                                MouseArea {
+                                    id: rmArea
+                                    anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                                    onClicked: Settings.forgetWallpaper(tile.modelData)
+                                }
                             }
                         }
                     }

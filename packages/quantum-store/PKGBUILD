@@ -2,7 +2,7 @@
 
 pkgname=quantum-store
 pkgver=1.0.0
-pkgrel=9
+pkgrel=10
 pkgdesc="Quantum Store: apps de Arch, Flathub y AUR en una sola tienda"
 arch=('any')
 url="https://github.com/quantum-linux"

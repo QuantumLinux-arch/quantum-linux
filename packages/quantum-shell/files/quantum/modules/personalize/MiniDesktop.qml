@@ -20,8 +20,12 @@ Rectangle {
     readonly property bool light: get("appearance", "mode") === "light"
     readonly property color accent: get("appearance", "dynamicColors") ? Theme.primaryContainer : get("appearance", "accent")
     readonly property string wallpaper: v.appearance?.wallpaper ?? ""
-    readonly property bool single: get("layout", "style") === "single"
-    readonly property bool dockFloat: get("dock", "floating")
+    readonly property bool dockTop: get("dock", "position") === "top"
+    readonly property string shape: get("dock", "shape") ?? "auto"
+    readonly property bool single: get("layout", "style") === "single" || dockTop
+    readonly property bool dockFloat: shape === "auto" ? get("dock", "floating") : shape !== "attached"
+    readonly property bool dockFull: shape === "auto" ? (single || !dockFloat) : shape !== "dock"
+    readonly property real dockAlpha: get("dock", "opacity") ?? -1
     readonly property bool dockLeft: get("dock", "align") === "left"
     readonly property bool topFloat: get("layout", "topBar", "floating")
     readonly property bool hidden: get("dock", "autohide")
@@ -130,14 +134,15 @@ Rectangle {
     // barra de tareas
     Rectangle {
         id: dockBar
-        readonly property bool full: root.single || !root.dockFloat
+        readonly property bool full: root.dockFull
         readonly property real gap: root.dockFloat ? 5 * root.k : 0
         height: 15 * root.k
         width: full ? root.width - 2 * gap : 92 * root.k
         x: full ? gap : (root.width - width) / 2
-        y: root.height - height - gap + (root.hidden ? height * 0.75 : 0)
+        y: root.dockTop ? gap - (root.hidden ? height * 0.75 : 0)
+                        : root.height - height - gap + (root.hidden ? height * 0.75 : 0)
         radius: root.dockFloat ? root.cr + 3 * root.k : 0
-        color: root.panel
+        color: root.dockAlpha >= 0 ? Qt.rgba(root.panel.r, root.panel.g, root.panel.b, root.dockAlpha) : root.panel
         opacity: root.hidden ? 0.7 : 1
         Row {
             anchors.verticalCenter: parent.verticalCenter

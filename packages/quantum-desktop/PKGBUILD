@@ -5,7 +5,7 @@
 
 pkgname=quantum-desktop
 pkgver=1.0.0
-pkgrel=32
+pkgrel=34
 pkgdesc="Escritorio de Quantum Linux sobre Wayfire"
 arch=('any')
 url="https://github.com/quantum-linux"
@@ -13,7 +13,7 @@ license=('GPL-3.0-or-later')
 depends=('wayfire' 'quantum-wayfire-decor' 'quantum-display' 'quantum-files' 'quantum-shell' 'quantum-ayuda' 'quantum-drivers' 'ffmpeg' 'quantum-branding' 'python' 'matugen'
          'hypridle' 'polkit-gnome' 'xdg-desktop-portal' 'xdg-desktop-portal-wlr' 'xdg-desktop-portal-gtk'
          'kitty' 'qt6ct' 'qt5ct' 'adw-gtk-theme' 'adwaita-cursors' 'default-cursors' 'papirus-icon-theme'
-         'grim' 'slurp' 'swappy' 'wl-clipboard' 'cliphist' 'brightnessctl' 'playerctl'
+         'wlr-randr' 'wdisplays' 'glib2' 'grim' 'slurp' 'swappy' 'wl-clipboard' 'cliphist' 'brightnessctl' 'playerctl'
          'libnotify' 'xdg-user-dirs' 'wireplumber')
 backup=('etc/xdg/quantum/settings.json' 'etc/xdg/mimeapps.list')
 
@@ -22,6 +22,7 @@ _files="$startdir/files"
 package() {
   cd "$_files"
   install -Dm755 bin/quantum-theme "$pkgdir/usr/bin/quantum-theme"
+  install -Dm755 bin/quantum-displays "$pkgdir/usr/bin/quantum-displays"
   install -Dm755 bin/quantum-screenshot "$pkgdir/usr/bin/quantum-screenshot"
   install -Dm755 bin/quantum-session "$pkgdir/usr/bin/quantum-session"
   install -Dm755 bin/quantum-update "$pkgdir/usr/bin/quantum-update"
@@ -38,4 +39,5 @@ package() {
   install -Dm644 etc/xdg/quantum/settings.json "$pkgdir/etc/xdg/quantum/settings.json"
   install -Dm644 etc/xdg/mimeapps.list "$pkgdir/etc/xdg/mimeapps.list"
   install -Dm644 skel/.config/kitty/kitty.conf "$pkgdir/etc/skel/.config/kitty/kitty.conf"
+  install -Dm644 skel/.config/quantum/seed-desktop "$pkgdir/etc/skel/.config/quantum/seed-desktop"
 }

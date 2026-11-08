@@ -1,10 +1,20 @@
 #!/bin/bash
 # Instala el driver de NVIDIA (lo ejecuta pkexec, como root). Escribe «PASO n texto» para la ventana.
 #   install-nvidia open   → nvidia-open-dkms y compañía, de los repos de Arch
+#   install-nvidia clean  → quita el driver abierto y compañía, que chocan con los antiguos del AUR (580xx/470xx/390xx)
 #   install-nvidia post   → solo lo de después (para los drivers antiguos, que se instalan desde el AUR)
 set -uo pipefail
 mode="${1:-}"
-[[ "$mode" == open || "$mode" == post ]] || { echo "ERROR modo inválido"; exit 2; }
+[[ "$mode" == open || "$mode" == post || "$mode" == clean ]] || { echo "ERROR modo inválido"; exit 2; }
+
+if [[ "$mode" == clean ]]; then
+    echo "PASO 1 Quitando el driver que no sirve para tu tarjeta"
+    old=$(pacman -Qq nvidia-settings nvidia-open-dkms nvidia-open nvidia-open-lts nvidia nvidia-lts nvidia-dkms \
+                     nvidia-utils lib32-nvidia-utils opencl-nvidia lib32-opencl-nvidia 2>/dev/null | grep -v -- '-[0-9]*xx')
+    # -dd: el driver antiguo trae los mismos nombres (nvidia-utils…) y los reemplaza enseguida
+    [[ -n "$old" ]] && { pacman -Rdd --noconfirm $old || { echo "ERROR no se pudo quitar el driver anterior"; exit 4; }; }
+    exit 0
+fi
 
 # Arranque seguro: los módulos que compila DKMS se firman con la llave de este PC
 D=/var/lib/quantum/secureboot

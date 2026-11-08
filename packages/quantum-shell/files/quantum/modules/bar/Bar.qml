@@ -19,7 +19,7 @@ Variants {
         readonly property bool floating: Atomic.on || Settings.layout.topBar.floating
 
         screen: modelData
-        visible: Settings.layout.style !== "single"
+        visible: Settings.layout.style !== "single" && Settings.dock.position !== "top"
         WlrLayershell.namespace: "quantum-bar"
         anchors { top: true; left: true; right: true }
         implicitHeight: floating ? 54 : 46
@@ -30,13 +30,13 @@ Variants {
         Rectangle {
             anchors.fill: parent
             visible: !bar.floating
-            color: Theme.alpha(Theme.surface, Theme.glassOpacity("bar"))
+            color: Theme.alpha(Theme.panelBase, Theme.glassOpacity("bar"))
             Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: Theme.alpha(Theme.fg, 0.08) }
         }
 
         component Section: Card {
             radius: height / 2
-            color: bar.floating ? Theme.alpha(Theme.surface, Theme.glassOpacity("bar")) : "transparent"
+            color: bar.floating ? Theme.alpha(Theme.panelBase, Theme.glassOpacity("bar")) : "transparent"
             border.width: bar.floating ? 1 : 0
             implicitHeight: 42
             implicitWidth: row.implicitWidth + 12

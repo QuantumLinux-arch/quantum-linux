@@ -26,6 +26,7 @@ PanelWindow {
     readonly property string user: Quickshell.env("USER") ?? ""
 
     onOpenChanged: {
+        menuIndex = -1;
         enterAnim.to = open ? 1 : 0;
         enterAnim.duration = open ? 340 : 170;
         enterAnim.easing.type = open ? Easing.OutBack : Easing.InCubic;
@@ -41,6 +42,11 @@ PanelWindow {
     readonly property var results: clipMode
         ? Clipboard.entries.filter(e => Apps.normalize(e.text).includes(Apps.normalize(search.text)))
         : Apps.search(search.text)
+
+    // clic derecho sobre una app: anclar al escritorio o fijar en la barra
+    property int menuIndex: -1
+    property point menuPos: Qt.point(0, 0)
+    readonly property var menuApp: menuIndex >= 0 && !clipMode ? (results[menuIndex] ?? null) : null
 
     function activate(index: int): void {
         const item = results[index];
@@ -63,18 +69,18 @@ PanelWindow {
     Card {
         id: card
 
-        // Se abre desde la barra de tareas, como el menú Inicio de Windows 11
+        // Se abre desde la barra de tareas, como el menú Inicio de Windows 11 (arriba si la barra está arriba)
         property real enter: 0
+        readonly property bool fromTop: !Serp.on && Settings.dock.position === "top"
         anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 78
+        y: fromTop ? 78 : parent.height - height - 78
         width: Math.min(720, parent.width - 40)
         height: Math.min(640, parent.height - 78 - 70)
         color: Theme.alpha(Theme.surface, 0.94)
         opacity: Math.min(1, enter * 1.3)
         scale: 0.96 + 0.04 * enter
-        transformOrigin: Item.Bottom
-        transform: Translate { y: (1 - card.enter) * 40 }
+        transformOrigin: fromTop ? Item.Top : Item.Bottom
+        transform: Translate { y: (1 - card.enter) * (card.fromTop ? -40 : 40) }
         NumberAnimation { id: enterAnim; target: card; property: "enter"; easing.overshoot: 1.05 }
 
         // línea de color de Quantum arriba
@@ -94,7 +100,7 @@ PanelWindow {
             }
         }
 
-        MouseArea { anchors.fill: parent }  // no cerrar al hacer clic dentro
+        MouseArea { anchors.fill: parent; onClicked: win.menuIndex = -1 }  // no cerrar al hacer clic dentro
 
         ColumnLayout {
             anchors.fill: parent
@@ -206,8 +212,18 @@ PanelWindow {
                         anchors.margins: 3
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton
                         onEntered: grid.currentIndex = cell.index
-                        onClicked: win.activate(cell.index)
+                        onClicked: e => {
+                            if (e.button === Qt.RightButton && !win.clipMode) {
+                                const p = cell.mapToItem(card, e.x, e.y);
+                                win.menuPos = Qt.point(Math.min(p.x, card.width - appMenu.width - 10), Math.min(p.y, card.height - appMenu.height - 10));
+                                win.menuIndex = cell.index;
+                            } else {
+                                win.menuIndex = -1;
+                                win.activate(cell.index);
+                            }
+                        }
                     }
 
                     // Modo apps: ícono grande y nombre
@@ -301,6 +317,43 @@ PanelWindow {
                     IconButton {
                         icon: "power_settings_new"
                         onClicked: { Shell.launcherOpen = false; Shell.toggleSession(); }
+                    }
+                }
+            }
+        }
+
+        // menú de clic derecho de una app
+        Rectangle {
+            id: appMenu
+            visible: win.menuApp !== null
+            x: win.menuPos.x; y: win.menuPos.y; z: 50
+            width: 240; height: amCol.implicitHeight + 12
+            radius: Theme.radius
+            color: Theme.alpha(Theme.surface, 0.98)
+            border.width: 1; border.color: Theme.outlineVariant
+            readonly property bool pinned: win.menuApp ? (Settings.dock.pinned ?? []).indexOf(win.menuApp.id) >= 0 : false
+            Column {
+                id: amCol
+                x: 6; y: 6; width: parent.width - 12
+                Repeater {
+                    model: [
+                        { i: "desktop_windows", t: "Anclar al escritorio",
+                          f: () => { Desktop.pinApp(win.menuApp.id); Shell.launcherOpen = false; } },
+                        { i: appMenu.pinned ? "keep_off" : "keep", t: appMenu.pinned ? "Quitar de la barra" : "Fijar en la barra",
+                          f: () => Wm.togglePin(win.menuApp.id) },
+                    ]
+                    Rectangle {
+                        id: amRow
+                        required property var modelData
+                        width: amCol.width; height: 38; radius: Theme.radiusSmall
+                        color: amArea.containsMouse ? Theme.surfaceHigh : "transparent"
+                        Icon { x: 12; anchors.verticalCenter: parent.verticalCenter; text: amRow.modelData.i; size: 19; color: Theme.fgMuted }
+                        Txt { x: 42; anchors.verticalCenter: parent.verticalCenter; text: amRow.modelData.t }
+                        MouseArea {
+                            id: amArea
+                            anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                            onClicked: { const f = amRow.modelData.f; f(); win.menuIndex = -1; }
+                        }
                     }
                 }
             }

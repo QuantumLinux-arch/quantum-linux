@@ -190,4 +190,6 @@ ColumnLayout {
             }
         }
     }
+
+    MoreOptions { hint: "ajustes finos del mouse" }
 }

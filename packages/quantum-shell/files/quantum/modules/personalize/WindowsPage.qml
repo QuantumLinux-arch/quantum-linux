@@ -187,4 +187,6 @@ ColumnLayout {
             }
         }
     }
+
+    MoreOptions { hint: "barra de título y bordes" }
 }

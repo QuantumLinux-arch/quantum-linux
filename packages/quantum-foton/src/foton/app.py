@@ -40,6 +40,7 @@ class Foton(QObject):
         self._flatpaks = set()
         self._jobs = {}                 # id del catálogo -> avance (0..1) mientras se instala
         self._pending = L.pending_games()
+        self._play_roblox = False       # «Jugar» en Roblox sin Sober: se instala y se abre al terminar
         self._bg.connect(self._done)
         self._tick.connect(lambda w: (self.storeChanged if w == "store" else self.toolsChanged).emit())
         self._load_colors()
@@ -69,7 +70,7 @@ class Foton(QObject):
     @pyqtProperty("QVariant", notify=toolsChanged)
     def tools(self):
         return {"gamemode": L.gamemode_on(), "fps": L.fps_on(), "ge": self._ge,
-                "steam": L.steam_root() is not None}
+                "steam": L.steam_root() is not None, "potato": L.potato_on()}
 
     def _load_colors(self):
         try:
@@ -103,6 +104,10 @@ class Foton(QObject):
             c = next((x for x in self._catalog if x["id"] == cid), {})
             if isinstance(res, Exception):
                 self.toast.emit(f"No pude instalar {c.get('name', cid)}. Revisa tu internet.")
+            elif c.get("ref") == L.SOBER and self._play_roblox:
+                self._play_roblox = False
+                L.launch(L.roblox_game(True))
+                self.toast.emit("Roblox está listo. Abriéndolo… (la primera vez inicia sesión con tu cuenta)")
             else:
                 self.toast.emit(f"{c.get('name', cid)} está listo para jugar")
             self.storeChanged.emit()
@@ -187,6 +192,13 @@ class Foton(QObject):
         g = next((x for x in self._games if x["key"] == key), None)
         if not g:
             return
+        if g.get("roblox") and not g.get("installed"):
+            rid = next((c["id"] for c in self._catalog if c["ref"] == L.SOBER), None)
+            if rid and rid not in self._jobs:
+                self._play_roblox = True
+                self.install(rid)
+                self.toast.emit("Instalando Roblox (Sober). Se abre solo al terminar.")
+            return
         L.launch(g)
         if g["source"] == "windows" and not (Path.home() / ".local/share/umu").exists():
             self.toast.emit(f"Preparando Proton para {g['name']}: la primera vez tarda unos minutos")
@@ -199,6 +211,17 @@ class Foton(QObject):
         L.set_gamemode(on)
         self.toast.emit("Modo juego activado: sin notificaciones ni efectos" if on else "Modo juego desactivado")
         QTimer.singleShot(600, self.toolsChanged.emit)
+
+    @pyqtSlot(bool)
+    def setPotato(self, on):
+        try:
+            L.set_potato(on)
+        except OSError:
+            self.toast.emit("No pude cambiar la configuración de Roblox")
+            return
+        self.toast.emit("Roblox con gráficos papa: más FPS en PCs modestos (se aplica al abrirlo)" if on
+                        else "Roblox con gráficos normales")
+        self.toolsChanged.emit()
 
     @pyqtSlot(bool)
     def setFps(self, on):

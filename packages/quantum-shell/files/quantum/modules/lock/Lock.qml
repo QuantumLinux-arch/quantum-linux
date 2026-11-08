@@ -19,6 +19,21 @@ Scope {
     property bool leaving: false
     property bool success: false
 
+    // Tras 30 s sin tocar nada el campo «se duerme» (y se borra lo escrito). La siguiente tecla solo lo despierta y
+    // no se escribe: así la tecla con la que se enciende la pantalla apagada no queda en la contraseña.
+    property bool asleep: false
+    function poke(): void { sleepTimer.restart(); }
+    function wake(): bool {
+        if (!asleep) { poke(); return false; }
+        asleep = false; poke(); return true;
+    }
+    Timer {
+        id: sleepTimer
+        interval: 30000
+        running: lock.locked && !root.asleep && !root.busy && !root.leaving
+        onTriggered: { root.password = ""; root.error = ""; root.asleep = true; }
+    }
+
     Timer {
         id: demo
         property string left: ""
@@ -60,6 +75,7 @@ Scope {
             root.password = "";
             root.error = "";
             root.leaving = false;
+            root.asleep = false;
             lock.locked = true;
             Shell.locked = true;
             Sounds.play("lock");
@@ -132,6 +148,9 @@ Scope {
     IpcHandler {
         target: "lock"
         function lock(): void { Shell.lock(); }
+        // bloqueo automático (inactividad o antes de suspender): el campo empieza dormido, porque la próxima tecla
+        // será la que enciende la pantalla
+        function lockAsleep(): void { Shell.lock(); root.asleep = true; }
         function preview(): void { root.previewOpen = true; Sounds.play("lock"); }
         function closePreview(): void { root.leave(); }
         // solo en la vista previa (para videos y pruebas): escribe letras de a una

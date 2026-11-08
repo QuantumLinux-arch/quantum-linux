@@ -22,9 +22,48 @@ Variants {
         readonly property bool shown: !(Wm.active?.fullscreen ?? false)
 
         // Aspecto (Personalizar)
-        readonly property bool single: !Serp.on && Settings.layout.style === "single"
-        readonly property bool floating: Serp.on || Atomic.on || Settings.dock.floating
-        readonly property bool full: single || !floating          // ocupa todo el ancho
+        // Arriba: siempre como «una sola barra» (la barra superior de información se quita)
+        readonly property bool top: !Serp.on && Settings.dock.position === "top"
+        readonly property bool single: !Serp.on && (Settings.layout.style === "single" || top)
+        // Forma (Personalizar → Barra de tareas): flotante, pegada o dock; «auto» = la del estilo
+        readonly property string shape: Serp.on ? "auto" : (Settings.dock.shape ?? "auto")
+        readonly property bool floating: shape === "auto" ? (Serp.on || Atomic.on || Settings.dock.floating)
+                                                          : (shape !== "attached" || Atomic.on)
+        readonly property bool full: shape === "auto" ? (single || !floating) : shape !== "dock"   // ocupa todo el ancho
+        // Fondo: transparencia elegida (0 = solo los íconos) o la del vidrio
+        readonly property real bgOpacity: (Settings.dock.opacity ?? -1) >= 0 ? Settings.dock.opacity
+                                                                            : Math.min(0.97, Theme.glassOpacity("dock") + 0.04)
+        readonly property bool clear: bgOpacity < 0.05 && !Atomic.on
+
+        // Elementos y su orden: los de antes de «apps» van a la izquierda (o al centro con las apps), los de
+        // después a la derecha. Los que falten en la lista guardada se agregan al final.
+        readonly property var allIds: ["start", "search", "quarki", "apps", "weather", "sysmon", "tray", "clock", "desktop"]
+        readonly property var order: {
+            const o = (Settings.dock.order ?? []).filter(id => allIds.includes(id));
+            for (const id of allIds) if (!o.includes(id)) o.push(id);
+            return o;
+        }
+        function shows(id: string): bool {
+            switch (id) {
+            case "start": return Settings.dock.showStart && !Serp.on;
+            case "search": return Settings.dock.showSearch && !Serp.on;
+            case "quarki": return Settings.dock.showQuarki && !Serp.on;
+            case "apps": return true;
+            case "tray": return single;
+            case "clock": return single && (Settings.dock.showClock ?? true);
+            case "weather": return (Settings.dock.showWeather ?? false) && !Serp.on;
+            case "sysmon": return (Settings.dock.showSysmon ?? false) && !Serp.on;
+            case "desktop": return (Settings.dock.showDesktop ?? false) && !Serp.on;
+            }
+            return false;
+        }
+        readonly property var leftIds: {
+            const a = order.slice(0, order.indexOf("apps") + 1).filter(id => shows(id));
+            if (a.length > 1) a.splice(a.length - 1, 0, "sep");          // línea antes de las apps
+            return a;
+        }
+        readonly property var rightIds: order.slice(order.indexOf("apps") + 1).filter(id => shows(id))
+        property var taskbar: null
         readonly property int barH: Math.round(56 * Theme.dockScale)
         readonly property int gap: floating ? 10 : 0
         readonly property bool alignLeft: !Serp.on && Settings.dock.align === "left"
@@ -46,7 +85,7 @@ Variants {
         visible: shown || card.opacity > 0.01
         WlrLayershell.namespace: "quantum-dock"
         WlrLayershell.layer: WlrLayer.Top
-        anchors { bottom: true; left: true; right: true }
+        anchors { bottom: !dock.top; top: dock.top; left: true; right: true }
         // La ventana tiene SIEMPRE el mismo alto (cambiarlo hacía que la barra saltara
         // un instante hacia arriba al mostrar el globo). Lo transparente no se come
         // los clics: la máscara de abajo solo deja pasar el mouse a la barra, el globo
@@ -77,7 +116,7 @@ Variants {
             id: peek
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.bottom: parent.bottom
+            y: dock.top ? 0 : parent.height - height
             height: 3
             // al asomarse, se vuelve a esconder sola salvo que el mouse suba a la barra
             HoverHandler { onHoveredChanged: if (hovered) { dock.hovering = true; revealTimer.interval = 1500; revealTimer.restart(); } }
@@ -92,10 +131,10 @@ Variants {
         IpcHandler {
             target: "dock"
             enabled: dock.modelData === Quickshell.screens[0]
-            function hover(i: int): void { const b = taskbar.buttonAt(i); dock.hoverItem = b; dock.hoverGroup = b?.g ?? null; }
-            function menu(i: int): void { const b = taskbar.buttonAt(i); dock.menuItem = b; dock.menuGroup = b?.g ?? null; }
-            function click(i: int): void { taskbar.buttonAt(i)?.clicked(); }
-            function launch(i: int): void { taskbar.buttonAt(i)?.middleClicked(); }
+            function hover(i: int): void { const b = dock.taskbar?.buttonAt(i); dock.hoverItem = b; dock.hoverGroup = b?.g ?? null; }
+            function menu(i: int): void { const b = dock.taskbar?.buttonAt(i); dock.menuItem = b; dock.menuGroup = b?.g ?? null; }
+            function click(i: int): void { dock.taskbar?.buttonAt(i)?.clicked(); }
+            function launch(i: int): void { dock.taskbar?.buttonAt(i)?.middleClicked(); }
             function clear(): void { dock.closeMenu(); dock.hoverGroup = null; dock.hoverItem = null; }
         }
 
@@ -109,17 +148,18 @@ Variants {
 
         Card {
             id: card
-            anchors.bottom: parent.bottom
-            anchors.bottomMargin: dock.gap
+            // posición vertical calculada (sin cambiar anclajes: al pasar de arriba a abajo quedaban los dos
+            // un instante y la barra se estiraba)
+            y: dock.top ? dock.gap : parent.height - height - dock.gap
             x: dock.full ? dock.gap : (parent.width - width) / 2
-            width: dock.full ? parent.width - 2 * dock.gap : row.implicitWidth + 16
+            width: dock.full ? parent.width - 2 * dock.gap : row.implicitWidth + (rightRow.visible ? rightRow.implicitWidth + 10 : 0) + 16
             height: dock.barH
             radius: dock.floating ? Math.round(20 * Theme.dockScale) * Theme.radius / 16 : 0
-            color: Theme.alpha(Theme.surface, Math.min(0.97, Theme.glassOpacity("dock") + 0.04))
-            border.width: dock.floating ? 1 : 0
+            color: Theme.alpha(Theme.panelBase, dock.bgOpacity)
+            border.width: dock.floating && !dock.clear ? 1 : 0
             opacity: dock.shown ? 1 : 0
             transform: Translate {
-                y: dock.shown && dock.revealed ? 0 : dock.barH + dock.gap + 6
+                y: dock.shown && dock.revealed ? 0 : (dock.top ? -1 : 1) * (dock.barH + dock.gap + 6)
                 Behavior on y { NumberAnimation { duration: Theme.anim; easing.type: Easing.OutCubic } }
             }
             Behavior on opacity { NumberAnimation { duration: Theme.anim } }
@@ -132,10 +172,10 @@ Variants {
                 }
             }
 
-            // línea superior cuando está pegada
+            // línea del borde cuando está pegada
             Rectangle {
-                visible: !dock.floating
-                anchors.top: parent.top
+                visible: !dock.floating && !dock.clear
+                y: dock.top ? parent.height - height : 0
                 width: parent.width
                 height: 1
                 color: Theme.alpha(Theme.fg, 0.08)
@@ -143,7 +183,7 @@ Variants {
 
             // brillo superior con los colores de Quantum
             Rectangle {
-                visible: dock.floating
+                visible: dock.floating && !dock.clear
                 anchors.top: parent.top
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: parent.width - 2 * parent.radius
@@ -159,15 +199,18 @@ Variants {
                 }
             }
 
-            RowLayout {
-                id: row
-                anchors.verticalCenter: parent.verticalCenter
-                x: !dock.full ? 8 : dock.alignLeft ? 8 : Math.max(8, (card.width - width) / 2)
-                Behavior on x { NumberAnimation { duration: Theme.anim; easing.type: Easing.OutCubic } }
-                spacing: 2
-
+            // Cada elemento de la barra (en el orden de Personalizar)
+            component Item_: Loader {
+                required property string modelData
+                Layout.alignment: Qt.AlignVCenter
+                sourceComponent: ({ start: cStart, search: cSearch, quarki: cQuarki, sep: cSep, apps: cApps, tray: cTray,
+                                    clock: cClock, weather: cWeather, sysmon: cSysmon, desktop: cDesktop })[modelData] ?? null
+                // la lista de apps necesita la ventana (globos, menú); aquí «dock» es la ventana
+                onLoaded: if (modelData === "apps") { item.dock = dock; dock.taskbar = item; }
+            }
+            Component {
+                id: cStart
                 DockButton {
-                    visible: Settings.dock.showStart && !Serp.on
                     tip: "Inicio"
                     active: Shell.launcherOpen && !Shell.clipboardMode
                     onClicked: Shell.toggleLauncher(false)
@@ -180,16 +223,20 @@ Variants {
                         Behavior on rotation { NumberAnimation { duration: Theme.animSlow; easing.type: Easing.OutBack } }
                     }
                 }
+            }
+            Component {
+                id: cSearch
                 DockButton {
-                    visible: Settings.dock.showSearch && !Serp.on
                     tip: "Buscar"
                     onClicked: Shell.toggleLauncher(false)
                     Icon { anchors.centerIn: parent; text: "search"; size: Math.round(24 * Theme.dockScale); color: Theme.fg }
                 }
-                // Quarki, el asistente: duerme aquí hasta que lo llamas
+            }
+            // Quarki, el asistente: duerme aquí hasta que lo llamas
+            Component {
+                id: cQuarki
                 DockButton {
                     id: quarkiBtn
-                    visible: Settings.dock.showQuarki && !Serp.on
                     tip: "Quarki"
                     active: Shell.aiOpen
                     onClicked: Shell.toggleAi()
@@ -199,25 +246,38 @@ Variants {
                         mood: Quarki.mood === "sleep" && quarkiBtn.hovered ? "peek" : Quarki.mood
                     }
                 }
-                Rectangle {
-                    visible: (Settings.dock.showStart || Settings.dock.showSearch || Settings.dock.showQuarki) && !Serp.on
-                    Layout.leftMargin: 4
-                    Layout.rightMargin: 4
-                    implicitWidth: 1
-                    implicitHeight: 28
-                    color: Theme.alpha(Theme.fg, 0.14)
-                }
-                Taskbar { id: taskbar; dock: dock }
             }
+            Component {
+                id: cSep
+                Item {
+                    implicitWidth: 9; implicitHeight: 28
+                    Rectangle { anchors.centerIn: parent; width: 1; height: 28; color: Theme.alpha(Theme.fg, 0.14) }
+                }
+            }
+            Component { id: cApps; Taskbar {} }
+            // bandeja, estado, notificaciones y apagado (modo «una sola barra»)
+            Component { id: cTray; SystemArea { window: dock; compact: dock.width < 1300; showClock: false } }
+            Component { id: cClock; Clock { compact: dock.width < 1300 } }
+            Component { id: cWeather; WeatherItem {} }
+            Component { id: cSysmon; SysmonItem {} }
+            Component { id: cDesktop; DesktopButton {} }
 
-            // Modo «una sola barra»: bandeja, estado, hora y apagado a la derecha
-            SystemArea {
-                visible: dock.single
-                anchors.right: parent.right
-                anchors.rightMargin: 8
+            RowLayout {
+                id: row
                 anchors.verticalCenter: parent.verticalCenter
-                window: dock
-                compact: dock.width < 1300
+                x: !dock.full ? 8 : dock.alignLeft ? 8 : Math.max(8, (card.width - width) / 2)
+                Behavior on x { NumberAnimation { duration: Theme.anim; easing.type: Easing.OutCubic } }
+                spacing: 2
+                Repeater { model: dock.leftIds; Item_ {} }
+            }
+            // lo que va después de las apps: a la derecha (en forma de dock, justo después)
+            RowLayout {
+                id: rightRow
+                visible: dock.rightIds.length > 0
+                anchors.verticalCenter: parent.verticalCenter
+                x: dock.full ? card.width - width - 8 : row.x + row.implicitWidth + 10
+                spacing: 2
+                Repeater { model: dock.rightIds; Item_ {} }
             }
         }
 
@@ -229,8 +289,7 @@ Variants {
             visible: g !== null && dock.menuGroup === null && dock.hoverItem !== null
             x: dock.hoverItem ? Math.max(8, Math.min(dock.width - width - 8,
                    dock.hoverItem.mapToItem(dock.contentItem, dock.hoverItem.width / 2, 0).x - width / 2)) : 0
-            anchors.bottom: card.top
-            anchors.bottomMargin: 8
+            y: dock.top ? card.y + card.height + 8 : card.y - height - 8
             radius: Theme.radius
             color: Theme.alpha(Theme.surfaceHigh, 0.97)
             implicitWidth: bubbleCol.implicitWidth + 20
@@ -302,8 +361,7 @@ Variants {
             visible: g !== null && dock.menuItem !== null
             x: dock.menuItem ? Math.max(8, Math.min(dock.width - width - 8,
                    dock.menuItem.mapToItem(dock.contentItem, dock.menuItem.width / 2, 0).x - width / 2)) : 0
-            anchors.bottom: card.top
-            anchors.bottomMargin: 8
+            y: dock.top ? card.y + card.height + 8 : card.y - height - 8
             radius: Theme.radius
             color: Theme.alpha(Theme.surfaceHigh, 0.98)
             implicitWidth: 240

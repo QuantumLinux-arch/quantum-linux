@@ -1,0 +1,11 @@
+# Intermediario de «Ayuda y sugerencias»: recibe los reportes de Quantum y los guarda como issues en el
+# repositorio privado QuantumLinux-arch/quantum-reportes. La clave de GitHub vive solo aquí (variable de
+# entorno GITHUB_TOKEN en Netlify), nunca dentro de Quantum.
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/reporte"
+  to = "/.netlify/functions/reporte"
+  status = 200

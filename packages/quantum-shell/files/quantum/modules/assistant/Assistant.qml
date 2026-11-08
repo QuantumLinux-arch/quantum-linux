@@ -147,14 +147,36 @@ Scope {
                         Layout.fillHeight: true
                         clip: true
                         spacing: 10
-                        model: Quarki.messages
-                        onCountChanged: Qt.callLater(positionViewAtEnd)
-                        onContentHeightChanged: Qt.callLater(positionViewAtEnd)
+                        // Un ListModel con solo el id de cada mensaje: Quarki reemplaza la lista entera en cada palabra
+                        // que escribe, y usarla directo recreaba todos los globos (saltaban y no dejaban hacer scroll).
+                        // Así solo se agregan los nuevos y cada globo lee su texto actualizado.
+                        model: ListModel { id: chatIds }
+                        function sync(): void {
+                            const ms = Quarki.messages;
+                            let same = chatIds.count <= ms.length;
+                            for (let i = 0; same && i < chatIds.count; i++) same = chatIds.get(i).mid === ms[i].id;
+                            if (!same) chatIds.clear();
+                            for (let i = chatIds.count; i < ms.length; i++) {
+                                if (ms[i].from === "me") follow = true;      // al escribir tú, siempre se baja
+                                chatIds.append({ mid: ms[i].id });
+                            }
+                        }
+                        Connections { target: Quarki; function onMessagesChanged() { chat.sync(); } }
+                        Component.onCompleted: sync()
+                        // baja sola mientras Quarki escribe, salvo que hayas subido a leer algo
+                        property bool follow: true
+                        property bool autoMove: false
+                        function toEnd(): void { if (!follow) return; autoMove = true; positionViewAtEnd(); autoMove = false; }
+                        onContentYChanged: if (!autoMove && (moving || dragging)) follow = contentY + height >= contentHeight - 40
+                        onMovementEnded: follow = contentY + height >= contentHeight - 40
+                        onCountChanged: Qt.callLater(toEnd)
+                        onContentHeightChanged: Qt.callLater(toEnd)
                         add: Transition { NumberAnimation { properties: "opacity"; from: 0; to: 1; duration: 220 } }
 
                         delegate: Item {
                             id: msg
-                            required property var modelData
+                            required property int mid
+                            readonly property var modelData: Quarki.messages.find(m => m.id === mid) ?? ({ id: mid, from: "", text: "", card: null })
                             readonly property bool mine: modelData.from === "me"
                             readonly property var c: modelData.card
                             width: chat.width

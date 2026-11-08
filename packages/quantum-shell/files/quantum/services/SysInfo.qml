@@ -10,6 +10,7 @@ Singleton {
     id: root
 
     property bool active: false
+    property int users: 0           // widgets que lo muestran siempre (p. ej. «Uso del PC» en la barra)
     property real cpu: 0            // 0..1
     property real ram: 0            // 0..1
     property real ramUsedGb: 0
@@ -25,7 +26,7 @@ Singleton {
     Timer {
         interval: 1500
         repeat: true
-        running: root.active
+        running: root.active || root.users > 0
         triggeredOnStart: true
         onTriggered: {
             stat.reload();

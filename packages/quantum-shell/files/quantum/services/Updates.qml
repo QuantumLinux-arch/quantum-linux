@@ -84,13 +84,21 @@ Singleton {
 
     Process {
         id: proc
-        command: ["sh", "-c", "checkupdates 2>/dev/null; pacman -Sl quantum 2>/dev/null | awk '{print \"#\" $2}'"]
+        // también las apps de Flatpak (p. ej. Sober/Roblox deja de funcionar si no se actualiza)
+        command: ["sh", "-c", "checkupdates 2>/dev/null; pacman -Sl quantum 2>/dev/null | awk '{print \"#\" $2}'; "
+                  + "command -v flatpak >/dev/null && flatpak remote-ls --updates --app --columns=name,application,version 2>/dev/null "
+                  + "| awk -F'\\t' 'NF >= 2 {print \"@\" $1 \"\\t\" $2 \"\\t\" $3}'"]
         stdout: StdioCollector {
             onStreamFinished: {
                 const quantum = {};
                 const items = [];
                 for (const line of text.split("\n")) {
                     if (line.startsWith("#")) { quantum[line.slice(1)] = true; continue; }
+                    if (line.startsWith("@")) {                    // Flatpak: nombre, id, versión nueva
+                        const f = line.slice(1).split("\t");
+                        items.push({ name: f[0] || f[1], from: "Flatpak", to: f[2] || "nueva", flatpak: true });
+                        continue;
+                    }
                     const m = line.match(/^(\S+) (\S+) -> (\S+)/);
                     if (m) items.push({ name: m[1], from: m[2], to: m[3] });
                 }

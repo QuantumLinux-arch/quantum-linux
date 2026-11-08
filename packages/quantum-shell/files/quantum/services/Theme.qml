@@ -67,6 +67,13 @@ Singleton {
     readonly property real dockScale: Settings.dock?.size === "small" ? 0.86 : (Settings.dock?.size === "large" ? 1.18 : 1.0)
     readonly property real panelOpacity: Settings.appearance?.panelOpacity ?? 0.86
     // Efecto vidrio: opacidad de cada parte (bar, dock, panels); sin vidrio, casi opaca
+    // Color del vidrio de barras y paneles (Personalizar → Fondo y colores): neutro, el acento o uno propio
+    readonly property string glassTint: Settings.appearance?.glassTint ?? ""
+    readonly property color panelBase: {
+        if (!glassTint) return surface;
+        const t = glassTint === "accent" ? primary : glassTint;
+        return Qt.tint(surface, alpha(t, dark ? 0.22 : 0.16));
+    }
     function glassOpacity(kind: string): real {
         if (Atomic.on) return 0;        // Atomic: el cristal (Glass) es el fondo
         return (Settings.appearance?.glass?.[kind] ?? true) ? panelOpacity : 0.97;

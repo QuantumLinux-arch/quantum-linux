@@ -54,13 +54,30 @@ Singleton {
     //   ["bash", "-c", Settings.wallListScript, "bash", carpeta1, carpeta2, …]
     readonly property string wallListScript:
         "stills=\"" + stillsDir + "\"; mkdir -p \"$stills\"; " +
-        "for d in \"$@\"; do [ -d \"$d\" ] && find \"$d\" -maxdepth 1 -type f \\( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' " +
-        "-o -iname '*.gif' -o -iname '*.mp4' -o -iname '*.webm' -o -iname '*.mkv' -o -iname '*.mov' -o -iname '*.m4v' \\); done | sort -u | " +
+        "for d in \"$@\"; do if [ -d \"$d\" ]; then find \"$d\" -maxdepth 1 -type f \\( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' " +
+        "-o -iname '*.gif' -o -iname '*.mp4' -o -iname '*.webm' -o -iname '*.mkv' -o -iname '*.mov' -o -iname '*.m4v' \\) | sort; " +
+        "elif [ -f \"$d\" ]; then printf '%s\\n' \"$d\"; fi; done | awk '!seen[$0]++' | " +
         "while IFS= read -r f; do case \"${f,,}\" in *.gif|*.mp4|*.webm|*.mkv|*.mov|*.m4v) " +
         "h=$(printf %s \"$f\" | md5sum | cut -c1-32); [ -s \"$stills/$h.jpg\" ] || ffmpeg -v error -y -ss 0.3 -i \"$f\" -frames:v 1 -vf scale=480:-2 \"$stills/$h.jpg\" </dev/null;; esac; " +
         "printf '%s\\n' \"$f\"; done"
     // miniatura: thumbs/<nombre>.jpg si la hay; si no, el cuadro fijo (animados) o la imagen
     function wallThumbFallback(p: string): string { return "file://" + stillFor(p); }
+    // Fondos propios (elegidos desde cualquier carpeta): quedan en el selector hasta que los quites
+    function isSystemWall(p: string): bool {
+        return !p.startsWith("/") || p.startsWith("/usr/share/backgrounds/") || p.startsWith(Quickshell.env("QUANTUM_WALLPAPERS") || "/usr/share/backgrounds/quantum");
+    }
+    // true cuando el archivo ya se leyó entero: antes de eso NO se escribe nada (mientras carga, las demás
+    // opciones aún tienen los valores de fábrica y se guardarían encima de las tuyas)
+    property bool loaded: false
+    function rememberWallpaper(p: string): void {
+        if (!loaded || !p || isSystemWall(p)) return;
+        const old = appearance.customWallpapers ?? [];
+        if (old[0] === p) return;
+        set("appearance", "customWallpapers", [p].concat(old.filter(x => x !== p)).slice(0, 40));
+    }
+    function forgetWallpaper(p: string): void {
+        set("appearance", "customWallpapers", (appearance.customWallpapers ?? []).filter(x => x !== p));
+    }
     Connections {
         target: root.appearance
         function onWallpaperChanged() { root.makeStill(root.appearance.wallpaper); }
@@ -70,10 +87,12 @@ Singleton {
     // Valores de fábrica de todo lo visual (= estilo «Quantum»). Los estilos se
     // aplican encima de esto, así un estilo siempre se ve igual.
     readonly property var defaults: ({
-        appearance: { mode: "dark", dynamicColors: false, accent: "#6A5CFF", panelOpacity: 0.86, blur: true, textScale: 1.0,
+        appearance: { mode: "dark", dynamicColors: false, accent: "#6A5CFF", panelOpacity: 0.86, blur: true, textScale: 1.0, glassTint: "",
                       glass: { bar: true, dock: true, panels: true, windows: false }, windowOpacity: 0.9, cursorTrail: false },
         layout: { style: "split", topBar: { floating: true, showApp: true, island: true } },
-        dock: { floating: true, align: "center", size: "medium", autohide: false, showSearch: true, showStart: true, showTray: true, showUpdates: true, showQuarki: true },
+        dock: { floating: true, align: "center", size: "medium", autohide: false, showSearch: true, showStart: true, showTray: true, showUpdates: true, showQuarki: true,
+                position: "bottom", shape: "auto", opacity: -1, showClock: true, showDesktop: false, showSysmon: false, showWeather: false,
+                order: ["start", "search", "quarki", "apps", "weather", "sysmon", "tray", "clock", "desktop"] },
         clock: { format24h: true, showDate: true, showSeconds: false },
         lock: { left: ["weather", "fetch", "media"], right: ["stats", "notifs"], showNotifContent: false, city: "" },
         windows: { tiling: false, corners: "soft", animations: "normal", openAnimation: "zoom", minimizeAnimation: "squeezimize", buttonsLeft: false,
@@ -147,11 +166,11 @@ Singleton {
         if (adapter[section] === undefined)
             return;
         adapter[section][key] = value;
-        if (key !== "wallpaper" && key !== "iconTheme" && !["display", "mouse", "touchpad", "sounds"].includes(section))   // no son parte de los estilos
+        if (key !== "wallpaper" && key !== "iconTheme" && key !== "customWallpapers" && key !== "desktopIcons" && !["display", "mouse", "touchpad", "sounds"].includes(section))   // no son parte de los estilos
             adapter.ui.style = "custom";
         changed = true;
         file.writeAdapter();
-        applyTheme();
+        if (key !== "customWallpapers" && key !== "desktopIcons") applyTheme();     // la lista de fondos propios no cambia el tema
     }
 
     // Cambia una clave anidada: setPath("layout.topBar.floating", false)
@@ -235,7 +254,7 @@ Singleton {
         // En un sistema nuevo el archivo aún no existe y no se puede vigilar: se crea
         // con los valores de fábrica para que los cambios de otros programas
         // (quantum-theme, Centro Quantum) lleguen al shell.
-        onLoadFailed: error => { if (error === FileViewError.FileNotFound) writeAdapter(); }
+        onLoadFailed: error => { if (error === FileViewError.FileNotFound) writeAdapter(); root.loaded = true; }
         // Barra de tareas de fábrica de la 1.0 (con Fotón y la Store): si nadie la
         // cambió, pasa a la nueva, más limpia. Si la personalizaste, no se toca.
         onLoaded: {
@@ -248,6 +267,8 @@ Singleton {
             if (pins.join(",") !== (adapter.dock.pinned ?? []).join(","))
                 root.setPinned(pins);
             if (!adapter.ui.filesPinned) root.setUi("filesPinned", true);
+            root.loaded = true;
+            root.rememberWallpaper(adapter.appearance.wallpaper);
         }
 
         JsonAdapter {
@@ -258,6 +279,9 @@ Singleton {
                 property bool dynamicColors: false
                 property string accent: "#6A5CFF"
                 property string wallpaper: "quantum:live"
+                property var customWallpapers: []        // fondos propios guardados en el selector
+                property bool desktopIcons: true         // íconos en el escritorio (carpeta Escritorio + Papelera)
+                property string glassTint: ""            // color del vidrio de barras y paneles ("" = neutro, "accent" o #RRGGBB)
                 property string iconTheme: "papirus"     // papirus | tela | fluent | whitesur | colloid | candy
                 property real panelOpacity: 0.86
                 property bool blur: true
@@ -332,6 +356,15 @@ Singleton {
                 property bool showTray: true
                 property bool showUpdates: true
                 property bool showQuarki: true           // Quarki (el asistente) en la barra de tareas
+                property string position: "bottom"       // bottom | top (arriba: siempre en modo «una sola barra»)
+                property string shape: "auto"            // auto (según el estilo) | floating | attached | dock
+                property real opacity: -1                // fondo de la barra 0..1 (0 = totalmente transparente); -1 = según «vidrio»
+                property bool showClock: true            // reloj en la barra (modo «una sola barra»)
+                property bool showDesktop: false         // botón «Mostrar escritorio»
+                property bool showSysmon: false          // uso del procesador y la memoria
+                property bool showWeather: false         // clima
+                // orden de los elementos; los que van después de «apps» se alinean a la derecha
+                property var order: ["start", "search", "quarki", "apps", "weather", "sysmon", "tray", "clock", "desktop"]
             }
             property JsonObject layout: JsonObject {
                 property string style: "split"           // split (barra arriba + dock) | single (una barra abajo)

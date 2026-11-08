@@ -143,6 +143,7 @@ Singleton {
         function sound(name: string): void { Sounds.play(name); }
         function lock(): void { root.lock(); }
         function gameMode(): void { root.setGameMode(!root.gameMode); }
+        function appSlot(n: int): void { Wm.activateSlot(n); }
         function brightnessUp(): void { Brightness.step(0.05); }
         function brightnessDown(): void { Brightness.step(-0.05); }
     }

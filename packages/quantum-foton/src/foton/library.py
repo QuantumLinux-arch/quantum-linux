@@ -208,6 +208,62 @@ def desktop_games():
     return out
 
 
+# ------------------------------------------------------------- Roblox
+# Se juega con Sober (Flathub). Siempre aparece en la biblioteca: si falta, «Jugar» lo instala; al abrirlo se
+# actualiza antes (Roblox deja de funcionar con un Sober viejo).
+SOBER = "org.vinegarhq.Sober"
+SOBER_CONFIG = Path.home() / ".var/app" / SOBER / "config/sober/config.json"
+# «Gráficos papa»: solo fast flags de la lista que Roblox todavía permite (las demás las ignora desde 2025)
+POTATO = {
+    "DFFlagTextureQualityOverrideEnabled": True,
+    "DFIntTextureQualityOverride": 0,           # texturas al mínimo
+    "DFIntDebugFRMQualityLevelOverride": 1,     # calidad gráfica mínima
+    "FIntDebugForceMSAASamples": 0,             # sin antialiasing
+    "FIntFRMMinGrassDistance": 0,               # sin pasto
+    "FIntFRMMaxGrassDistance": 0,
+    "DFIntCSGLevelOfDetailSwitchingDistance": 0,      # menos detalle a lo lejos
+    "DFIntCSGLevelOfDetailSwitchingDistanceL12": 0,
+    "DFIntCSGLevelOfDetailSwitchingDistanceL23": 0,
+    "DFIntCSGLevelOfDetailSwitchingDistanceL34": 0,
+}
+
+
+def roblox_launch():
+    return ["sh", "-c", f"flatpak update -y --noninteractive {SOBER} >/dev/null 2>&1; exec flatpak run {SOBER}"]
+
+
+def roblox_game(installed):
+    c = next((x for x in catalog() if x["ref"] == SOBER), {})
+    g = game("foton", SOBER, "Roblox", roblox_launch(), cover=c.get("cover", ""), hero=c.get("hero", ""), icon=SOBER)
+    g.update(installed=installed, roblox=True)
+    return g
+
+
+def _sober_config():
+    try:
+        return json.loads(SOBER_CONFIG.read_text())
+    except (OSError, ValueError):
+        return {}
+
+
+def potato_on():
+    flags = _sober_config().get("fflags") or {}
+    return all(flags.get(k) == v for k, v in POTATO.items())
+
+
+def set_potato(on):
+    cfg = _sober_config()
+    flags = dict(cfg.get("fflags") or {})
+    for k, v in POTATO.items():
+        if on:
+            flags[k] = v
+        else:
+            flags.pop(k, None)
+    cfg["fflags"] = flags
+    SOBER_CONFIG.parent.mkdir(parents=True, exist_ok=True)
+    SOBER_CONFIG.write_text(json.dumps(cfg, indent=4))
+
+
 def all_games(lookup=False):
     games = steam_games() + heroic_games() + desktop_games() + windows_games(lookup)
     h = history()
@@ -218,6 +274,14 @@ def all_games(lookup=False):
         c = art.get(g["id"]) if g["source"] == "local" else None
         if c:
             g.update(name=c["name"], cover=c["cover"], hero=c["hero"], source="foton", key="foton:" + g["id"])
+    # Roblox: siempre en la biblioteca, y al abrirlo se actualiza Sober
+    rob = next((g for g in games if g["id"] == SOBER), None)
+    if rob:
+        rob.update(launch=roblox_launch(), installed=True, roblox=True)
+    else:
+        rg = roblox_game(False)
+        rg["lastPlayed"] = h.get(rg["key"], 0)
+        games.append(rg)
     games.sort(key=lambda g: (-g["lastPlayed"], g["name"].lower()))
     return games
 

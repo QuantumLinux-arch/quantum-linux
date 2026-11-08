@@ -4,7 +4,7 @@
 
 pkgname=quantum-settings
 pkgver=1.0.0
-pkgrel=11
+pkgrel=12
 pkgdesc="Configuración del sistema de Quantum Linux"
 arch=('any')
 url="https://github.com/quantum-linux"
@@ -27,10 +27,19 @@ package() {
   # Aviso de reinicio después de actualizar (lo muestra Quantum Shell)
   install -Dm644 hooks/quantum-reboot.hook "$pkgdir/usr/share/libalpm/hooks/zz-quantum-reboot.hook"
   install -Dm755 lib/reboot-required "$pkgdir/usr/lib/quantum/reboot-required"
+  # Idiomas elegidos al instalar que no quedaron generados
+  install -Dm755 lib/fix-locales "$pkgdir/usr/lib/quantum/fix-locales"
 
   # Rendimiento
   install -Dm644 etc/zram-generator.conf "$pkgdir/etc/systemd/zram-generator.conf"
   install -Dm644 etc/90-quantum.conf "$pkgdir/etc/sysctl.d/90-quantum.conf"
+
+  # Terminal: sudo muestra * al escribir la contraseña
+  install -Dm440 etc/sudoers.d/10-quantum-pwfeedback "$pkgdir/etc/sudoers.d/10-quantum-pwfeedback"
+  # Wi-Fi estable: sin ahorro de energía que corta la conexión
+  install -Dm644 etc/modprobe.d/quantum-wifi.conf "$pkgdir/etc/modprobe.d/quantum-wifi.conf"
+  install -Dm644 etc/udev/90-quantum-usb-wifi.rules "$pkgdir/usr/lib/udev/rules.d/90-quantum-usb-wifi.rules"
+  install -Dm644 etc/nm/20-quantum-wifi-powersave.conf "$pkgdir/etc/NetworkManager/conf.d/20-quantum-wifi-powersave.conf"
 
   # Listas de paquetes en el primer arranque (para Quantum Store)
   install -Dm644 systemd/quantum-pacman-db.service "$pkgdir/usr/lib/systemd/system/quantum-pacman-db.service"

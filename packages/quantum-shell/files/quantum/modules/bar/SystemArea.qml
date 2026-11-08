@@ -10,6 +10,7 @@ RowLayout {
 
     required property var window
     property bool compact: false
+    property bool showClock: true
     spacing: 4
 
     Tray { window: root.window; visible: Settings.dock.showTray }
@@ -60,7 +61,7 @@ RowLayout {
         }
     }
     Status {}
-    Clock { compact: root.compact }
+    Clock { compact: root.compact; visible: root.showClock }
     IconButton {
         icon: Notifs.count > 0 ? "notifications_unread" : Settings.notifications.dnd ? "notifications_off" : "notifications"
         onClicked: Shell.toggleControlCenter()

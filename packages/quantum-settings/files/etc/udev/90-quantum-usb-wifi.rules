@@ -1,0 +1,3 @@
+# Quantum: los adaptadores Wi-Fi USB se desconectan del puerto (error -71) si el USB se suspende para ahorrar
+# energía. Cuando una interfaz USB se une a un driver de Wi-Fi conocido, el dispositivo queda siempre encendido.
+ACTION=="bind", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_interface", DRIVER=="rtw88_*|rtw89_*|rtl8*|r8188eu|8821au|8812au|88x2bu|8821cu|mt76*|mt7601u|ath9k_htc|carl9170|rt2800usb", RUN+="/bin/sh -c 'echo on > /sys%p/../power/control'"

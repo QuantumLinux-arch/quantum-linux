@@ -449,11 +449,14 @@ Item {
                                 onTextChanged: root.lock.password = text
                                 onAccepted: root.preview ? root.closePreview() : root.lock.tryUnlock()
                                 Keys.onEscapePressed: if (root.preview) root.closePreview()
+                                // la tecla que despierta el campo dormido no se escribe
+                                Keys.onPressed: e => { if (!root.preview && root.lock.wake()) e.accepted = true; }
                                 Component.onCompleted: forceActiveFocus()
+                                TapHandler { onTapped: { root.lock.wake(); input.forceActiveFocus(); } }
                                 Txt {
                                     anchors.verticalCenter: parent.verticalCenter
                                     visible: !input.text
-                                    text: root.lock.busy ? "Verificando…" : "Escribe tu contraseña"
+                                    text: root.lock.busy ? "Verificando…" : (root.lock.asleep && !root.preview) ? "Presiona una tecla para escribir" : "Escribe tu contraseña"
                                     color: Theme.fgMuted
                                     font.pixelSize: Theme.textNormal + 1
                                 }

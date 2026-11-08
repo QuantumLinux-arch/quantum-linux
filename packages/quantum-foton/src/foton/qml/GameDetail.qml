@@ -74,6 +74,13 @@ Overlay {
                     }
                 }
                 InstallButton { Layout.topMargin: 10; g: d.g; big: true }
+                // Roblox: gráficos papa (texturas y calidad al mínimo, sin pasto ni antialiasing)
+                RowLayout {
+                    visible: !!d.g && d.g.ref === "org.vinegarhq.Sober" && d.g.installed
+                    Layout.topMargin: 6; spacing: 10
+                    ToolPill { icon: "bolt"; text: "Gráficos papa"; on: foton.tools.potato; onClicked: foton.setPotato(!on) }
+                    T { text: "Más FPS en PCs modestos. Se aplica al abrir Roblox."; color: theme.muted; font.pixelSize: 13 }
+                }
             }
         }
     }

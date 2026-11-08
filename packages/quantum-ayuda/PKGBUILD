@@ -2,7 +2,7 @@
 
 pkgname=quantum-ayuda
 pkgver=1.0.0
-pkgrel=2
+pkgrel=3
 pkgdesc="Ayuda y sugerencias: reportar un problema o enviar una idea a quienes hacen Quantum"
 arch=('any')
 url="https://github.com/quantum-linux"

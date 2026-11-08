@@ -32,7 +32,8 @@ for p in *.pkg.tar.zst; do
 done
 
 msg "Creando la base de datos firmada"
-repo-add -q -s -k "$KEY" quantum.db.tar.gz ./*.pkg.tar.zst
+# en orden de versión (ls -v): en orden alfabético «-10» queda antes que «-9» y la base apuntaría al viejo
+repo-add -q -s -k "$KEY" quantum.db.tar.gz $(ls -v ./*.pkg.tar.zst)
 # GitHub no guarda enlaces simbólicos: se suben archivos reales con el nombre que pide pacman
 for f in quantum.db quantum.db.sig quantum.files quantum.files.sig; do
     [[ -L "$f" ]] && cp --remove-destination "$(readlink "$f")" "$f"

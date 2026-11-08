@@ -111,7 +111,20 @@ class Arch:
         return ["pkexec", "pacman", "-Syu", "--needed", "--noconfirm", id_]
 
     def remove_cmd(self, id_):
-        return ["pkexec", "pacman", "-Rns", "--noconfirm", id_]
+        return ["pkexec", "pacman", "-Rns", "--noconfirm", id_, *addons(id_)]
+
+
+def addons(id_, installed=None):
+    """Paquetes de idioma de la app (firefox-i18n-es-cl, thunderbird-i18n-es-es, libreoffice-fresh-es…), que
+    dependen de ella: sin quitarlos junto con la app, pacman se niega («breaks dependency»)."""
+    if installed is None:
+        try:
+            installed = subprocess.run(["pacman", "-Qq"], capture_output=True, text=True, timeout=20).stdout.split()
+        except (OSError, subprocess.SubprocessError):
+            return []
+    pre = re.escape(id_)
+    pat = re.compile(rf"^{pre}-(i18n|langpack|l10n|lang)-[\w-]+$|^{pre}-(es|pt|en)(-[a-z]+)?$")
+    return [p for p in installed if p != id_ and pat.match(p)]
 
 
 # ---------------------------------------------------------------- Flathub
@@ -205,7 +218,7 @@ class Aur:
                 "--removemake", "--sudo", "pkexec", "--sudoflags", "", id_]
 
     def remove_cmd(self, id_):
-        return ["pkexec", "pacman", "-Rns", "--noconfirm", id_]
+        return ["pkexec", "pacman", "-Rns", "--noconfirm", id_, *addons(id_)]
 
 
 SOURCES = {"arch": Arch(), "flathub": Flathub(), "aur": Aur()}

@@ -97,6 +97,7 @@ polkit-gnome
 xdg-desktop-portal-wlr
 xdg-desktop-portal-gtk
 wdisplays
+wlr-randr
 default-cursors
 xdg-user-dirs
 xdg-utils

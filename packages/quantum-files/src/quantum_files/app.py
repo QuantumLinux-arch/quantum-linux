@@ -935,6 +935,9 @@ def main():
     for a in sys.argv[1:]:
         if a.startswith("-"):
             continue
+        if a.startswith("quantum:"):           # vistas especiales (quantum:trash desde la Papelera del escritorio)
+            start.append(a)
+            continue
         if a.startswith("file://"):
             a = urllib.parse.unquote(urllib.parse.urlparse(a).path)
         a = os.path.abspath(os.path.expanduser(a))

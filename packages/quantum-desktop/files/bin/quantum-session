@@ -31,6 +31,21 @@ rm -f "$state/gamemode"   # el modo juego no sobrevive a un reinicio de sesión
 # colores se regeneran en paralelo (Wayfire recarga el archivo si cambia).
 # Tras una actualización (plantilla más nueva) se regenera antes: lo que se agrega al
 # inicio automático solo corre si está en el archivo cuando arranca Wayfire.
+# Carpetas personales con el nombre del idioma (Escritorio, Descargas, Documentos…)
+command -v xdg-user-dirs-update >/dev/null && xdg-user-dirs-update >/dev/null 2>&1
+# Cuentas nuevas: accesos iniciales en el escritorio (Centro Quantum, Quantum Store, Fotón), una sola vez
+seed="${XDG_CONFIG_HOME:-$HOME/.config}/quantum/seed-desktop"
+if [ -e "$seed" ]; then
+    desk="$(xdg-user-dir DESKTOP 2>/dev/null)"
+    [ -z "$desk" ] || [ "$desk" = "$HOME" ] && desk="$HOME/Escritorio"
+    mkdir -p "$desk"
+    for app in quantum-center quantum-store foton; do
+        f="/usr/share/applications/$app.desktop"
+        [ -f "$f" ] && [ ! -e "$desk/$app.desktop" ] && cp "$f" "$desk/" && chmod +x "$desk/$app.desktop"
+    done
+    rm -f "$seed"
+fi
+
 template=/usr/share/quantum/wayfire/wayfire.ini
 if [ -s "$state/wayfire.ini" ] && ! [ "$template" -nt "$state/wayfire.ini" ]; then
     quantum-theme apply >/dev/null 2>&1 &

@@ -1,6 +1,7 @@
 """Ayuda y sugerencias: reportar un problema o mandar una idea a quienes hacen Quantum (PyQt6 + QML).
 
-Se envía a un formulario de Formspree (la dirección está en /usr/share/quantum-ayuda/endpoint).
+Se envía al intermediario de reportes de Quantum, que lo guarda como issue en un repositorio privado de GitHub
+(la dirección está en /usr/share/quantum-ayuda/endpoint).
 Antes de enviar, la persona ve exactamente qué se manda y puede quitar cada parte. Los registros
 se limpian de nombres de usuario, del nombre del PC, de redes Wi-Fi y de direcciones IP y MAC.
 Sin internet, el envío queda guardado y se manda solo la próxima vez que se abra la app.
@@ -146,7 +147,7 @@ def recent_logs():
 def endpoint():
     try:
         e = ENDPOINT_FILE.read_text().strip()
-        return e if e.startswith("https://formspree.io/") else ""
+        return e if e.startswith("https://") else ""          # el intermediario de reportes (o Formspree)
     except OSError:
         return ""
 

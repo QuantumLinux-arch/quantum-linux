@@ -11,8 +11,19 @@ remove_if_installed() {
 }
 
 # NVIDIA: clase PCI 03xx (pantalla) con fabricante 10de
-if lspci -nd 10de: | awk '{print $2}' | grep -q '^03'; then
-    echo "GPU NVIDIA detectada: se conservan los drivers"
+# El driver abierto (nvidia-open) solo sirve desde Turing (GTX 16 / RTX 20, id 0x1E00 en adelante). En tarjetas
+# más antiguas no carga («probe failed») y además choca con el driver correcto (580xx/470xx del AUR), que
+# instala la app Drivers. Ahí se quita y la tarjeta funciona con el driver básico (nouveau) hasta entonces.
+nv_ids=$(lspci -nd 10de: | awk '$2 ~ /^03/ {split($3, a, ":"); print a[2]}')
+if [ -n "$nv_ids" ]; then
+    modern=0
+    for id in $nv_ids; do [ $((16#$id)) -ge $((16#1e00)) ] && modern=1; done
+    if [ $modern = 1 ]; then
+        echo "GPU NVIDIA moderna detectada: se conserva el driver abierto"
+    else
+        echo "GPU NVIDIA antigua ($nv_ids): se quita nvidia-open (la app Drivers instala el correcto)"
+        remove_if_installed nvidia-settings nvidia-open-dkms lib32-nvidia-utils nvidia-utils
+    fi
 else
     remove_if_installed nvidia-open-dkms nvidia-utils lib32-nvidia-utils nvidia-settings
 fi

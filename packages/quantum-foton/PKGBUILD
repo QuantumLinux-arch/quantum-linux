@@ -2,7 +2,7 @@
 
 pkgname=quantum-foton
 pkgver=1.0.0
-pkgrel=5
+pkgrel=6
 pkgdesc="Fotón: la biblioteca y tienda de juegos de Quantum Linux (Steam, Epic, GOG, Windows y juegos gratis)"
 arch=('any')
 url="https://quantumlinux-arch.github.io"

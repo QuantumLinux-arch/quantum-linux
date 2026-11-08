@@ -12,6 +12,7 @@ Uso:
   quantum-theme wallpaper RUTA     cambia el fondo y aplica
   quantum-theme get CLAVE          muestra un ajuste
   quantum-theme gamemode on|off    modo juego (sin animaciones ni desenfoque)
+  quantum-theme save-outputs       guarda la resolución, posición y escala actuales de cada monitor
 """
 import hashlib
 import json
@@ -369,6 +370,55 @@ def has_wayfire_plugin(name):
     return any(p and (Path(p) / f"lib{name}.so").exists() for p in paths)
 
 
+def outputs_ini():
+    """[output:NOMBRE] guardados por save-outputs (resolución, posición, escala, giro de cada monitor)."""
+    try:
+        return (CONFIG / "quantum" / "outputs.ini").read_text()
+    except OSError:
+        return ""
+
+
+def save_outputs():
+    """Lee los monitores con wlr-randr y los guarda en ~/.config/quantum/outputs.ini. Sin esto, los cambios hechos
+    en Pantallas (wdisplays) se pierden al reiniciar o cuando quantum-theme reescribe wayfire.ini (p. ej. Modo juego)."""
+    try:
+        data = json.loads(subprocess.run(["wlr-randr", "--json"], capture_output=True, text=True,
+                                         timeout=10, check=True).stdout)
+    except (OSError, subprocess.SubprocessError, ValueError) as e:
+        print(f"quantum-theme: no se pudieron leer los monitores ({e})", file=sys.stderr)
+        return 1
+    path = CONFIG / "quantum" / "outputs.ini"
+    old = {}
+    cur = None
+    for line in (path.read_text().splitlines() if path.exists() else []):
+        if line.startswith("[output:"):
+            cur = line.strip(); old[cur] = [line]
+        elif cur:
+            old[cur].append(line)
+    for o in data:
+        name = o.get("name")
+        if not name:
+            continue
+        lines = [f"[output:{name}]"]
+        if not o.get("enabled", True):
+            lines.append("mode = off")
+        else:
+            m = next((m for m in o.get("modes", []) if m.get("current")), None)
+            if m:
+                hz = round(float(m.get("refresh") or 0) * 1000)       # Wayfire usa mHz; los modos a medida no tienen
+                lines.append(f"mode = {m['width']}x{m['height']}" + (f"@{hz}" if hz else ""))
+            pos = o.get("position") or {}
+            lines.append(f"position = {pos.get('x', 0)},{pos.get('y', 0)}")
+            lines.append(f"scale = {float(o.get('scale', 1)):.6f}")
+            lines.append(f"transform = {o.get('transform', 'normal')}")
+        old[f"[output:{name}]"] = lines + [""]        # los monitores desconectados conservan lo último guardado
+    path.parent.mkdir(parents=True, exist_ok=True)
+    head = "# Quantum: resolución, posición y escala de cada monitor (lo escribe quantum-theme save-outputs).\n\n"
+    path.write_text(head + "\n".join("\n".join(v).rstrip() + "\n" for v in old.values()))
+    print(f"quantum-theme: monitores guardados en {path}")
+    return 0
+
+
 def write_wayfire(c, s):
     layout, variant = s["keyboard"].get("layout"), s["keyboard"].get("variant")
     if not layout:
@@ -420,7 +470,7 @@ def write_wayfire(c, s):
                          if not l.startswith(("button_icon_color", "button_hover_color", "close_hover_color")))
     text = text.replace("[quantum-decor]", f"[{decor}]")
     user = CONFIG / "quantum" / "wayfire-user.ini"
-    extra = personalize_ini(s, decor) + "\n" + input_ini(s)
+    extra = personalize_ini(s, decor) + "\n" + input_ini(s) + "\n" + outputs_ini()
     if use_color:
         extra += f"[quantum-color]\nsaturation = {saturation:.2f}\n"
     user_text = user.read_text() if user.exists() else ""
@@ -645,6 +695,10 @@ def main(argv):
             flag.touch()
         else:
             flag.unlink(missing_ok=True)
+        apply(s)
+    elif cmd == "save-outputs":
+        if save_outputs() != 0:
+            return 1
         apply(s)
     elif cmd == "get" and len(argv) == 3:
         print(json.dumps(get_key(s, argv[2]), ensure_ascii=False))

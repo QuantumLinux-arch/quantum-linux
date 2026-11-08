@@ -91,8 +91,11 @@ class Drivers(QObject):
         self._proc = p
         p.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
 
+        self._out = []
+
         def read():
             for line in bytes(p.readAll()).decode(errors="ignore").splitlines():
+                self._out.append(line)
                 m = re.match(r"PASO (\d) (.+)", line.strip())
                 if m:
                     self._set(int(m.group(1)), m.group(2))
@@ -106,13 +109,15 @@ class Drivers(QObject):
             elif code in (126, 127):
                 self._set(0, "", "")
             else:
-                self._set(self._step, self._stepText or "Algo salió mal", "error")
+                self._set(self._step, explain(self._out, self._stepText), "error")
         p.readyRead.connect(read)
         p.finished.connect(done)
         if g["aur"]:
             # drivers antiguos: se compilan desde el AUR con yay (como Quantum Store) y después lo de root
             pk = " ".join(g["pkgs"])
-            p.start("sh", ["-c", f"echo 'PASO 1 Descargando el driver'; yay -S --needed --noconfirm --answerdiff None "
+            # primero se quita el driver abierto (choca con el antiguo y yay con --noconfirm no lo reemplaza)
+            p.start("sh", ["-c", f"pkexec {HELPER} clean && echo 'PASO 1 Descargando el driver' && "
+                                 f"yay -S --needed --noconfirm --answerdiff None "
                                  f"--answerclean None --removemake --sudo pkexec --sudoflags '' linux-zen-headers {pk} "
                                  f"&& pkexec {HELPER} post"])
         else:
@@ -132,6 +137,31 @@ class Drivers(QObject):
     @pyqtSlot()
     def reset(self):
         self._set(0, "", "")
+
+
+LOG = Path.home() / ".local/state/quantum/drivers.log"
+
+
+def explain(out, last):
+    """Mensaje claro según lo que pasó, y deja el registro completo en ~/.local/state/quantum/drivers.log."""
+    try:
+        LOG.parent.mkdir(parents=True, exist_ok=True)
+        LOG.write_text("\n".join(out[-400:]) + "\n")
+    except OSError:
+        pass
+    text = "\n".join(out).lower()
+    if any(k in text for k in ("could not resolve", "failed to connect", "couldn't resolve", "network is unreachable",
+                               "timed out", "no route to host", "temporary failure in name resolution")):
+        return "No hay conexión a internet. Conéctate e inténtalo de nuevo."
+    if "in conflict" in text or "conflicting" in text:
+        return "Otro driver de NVIDIA instalado choca con este. Inténtalo de nuevo; si sigue, reporta el problema desde Ayuda."
+    if "dkms" in text and ("error" in text or "failed" in text) or "failed to build" in text or "error making" in text or "a failure occurred" in text:
+        return "No se pudo compilar el driver para tu sistema. Actualiza Quantum, reinicia e inténtalo de nuevo."
+    if "not enough free disk space" in text or "no space left" in text:
+        return "No hay espacio suficiente en el disco."
+    if last and last not in ("Descargando el driver", "Quitando el driver que no sirve para tu tarjeta"):
+        return last[:1].upper() + last[1:] + "."
+    return "No se pudo instalar el driver."
 
 
 def check():

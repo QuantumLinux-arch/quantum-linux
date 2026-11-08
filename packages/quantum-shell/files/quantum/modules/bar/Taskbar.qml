@@ -11,7 +11,7 @@ import qs.components
 RowLayout {
     id: root
 
-    required property var dock
+    property var dock: null           // la ventana de la barra (la pone Dock.qml al crearla)
     spacing: 2
     function buttonAt(i: int): Item { return rep.itemAt(i); }
 

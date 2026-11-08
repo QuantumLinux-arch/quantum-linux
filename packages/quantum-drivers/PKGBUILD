@@ -2,7 +2,7 @@
 
 pkgname=quantum-drivers
 pkgver=1.0.0
-pkgrel=1
+pkgrel=2
 pkgdesc="Drivers: revisa la tarjeta gráfica e instala el driver de NVIDIA con un clic"
 arch=('any')
 url="https://github.com/quantum-linux"

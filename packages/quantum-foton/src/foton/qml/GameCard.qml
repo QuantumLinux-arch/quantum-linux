@@ -105,6 +105,14 @@ Item {
         text: card.g.name
         font.pixelSize: 14; font.weight: Font.DemiBold
     }
+    // Roblox sin instalar: «Jugar» lo instala primero
+    Rectangle {
+        visible: card.g.installed === false
+        anchors.right: cover.right; anchors.bottom: cover.bottom; anchors.margins: 10
+        implicitWidth: instTxt.implicitWidth + 18; implicitHeight: 26; radius: 13
+        color: Qt.rgba(0, 0, 0, 0.65)
+        T { id: instTxt; anchors.centerIn: parent; text: "Instalar y jugar"; color: "white"; font.pixelSize: 11; font.weight: Font.Bold }
+    }
 
     MouseArea {
         id: area

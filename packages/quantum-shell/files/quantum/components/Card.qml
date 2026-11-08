@@ -5,7 +5,7 @@ import qs.services
 Rectangle {
     id: card
     radius: Theme.radiusLarge
-    color: Theme.alpha(Theme.surface, Theme.glassOpacity("panels"))
+    color: Theme.alpha(Theme.panelBase, Theme.glassOpacity("panels"))
     border.width: Atomic.on ? 0 : 1
     border.color: Theme.alpha(Theme.fg, 0.08)
     Loader {

@@ -108,6 +108,36 @@ Singleton {
             win.activate();
     }
 
+    // Super + número (como en Windows): la app en esa posición de la barra. Cerrada: se abre. Abierta: se enfoca;
+    // si ya está al frente se minimiza; con varias ventanas, cada vez pasa a la siguiente.
+    function activateSlot(n: int): void {
+        const g = groups[n - 1];
+        if (!g) return;
+        const wins = g.wins;
+        if (!wins.length) {
+            if (g.entry) Apps.launch(g.entry);
+            return;
+        }
+        if (wins.length === 1) { toggle(wins[0]); return; }
+        const cur = wins.findIndex(w => w.activated && !w.minimized);
+        const next = wins[(cur + 1) % wins.length];
+        next.activate();
+    }
+
+    // «Mostrar escritorio» (como el rincón de Windows): minimiza todo; otra vez, vuelve a como estaba
+    property var _hidden: []
+    function toggleDesktop(): void {
+        const vis = ToplevelManager.toplevels.values.filter(w => !w.minimized);
+        if (vis.length) {
+            _hidden = vis;
+            for (const w of vis) w.minimized = true;
+        } else {
+            for (const w of _hidden) { try { w.minimized = false; } catch (e) {} }
+            if (_hidden.length) _hidden[_hidden.length - 1].activate();
+            _hidden = [];
+        }
+    }
+
     function logout(): void {
         Quickshell.execDetached(["sh", "-c", "loginctl terminate-session \"$XDG_SESSION_ID\""]);
     }

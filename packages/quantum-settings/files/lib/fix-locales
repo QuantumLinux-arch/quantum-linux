@@ -1,0 +1,26 @@
+#!/bin/bash
+# Genera los idiomas que el sistema usa (LANG y LC_* de /etc/locale.conf) y que no estén generados.
+# Los instaladores antiguos de Quantum no podían activar idiomas fuera de la lista corta (por ejemplo pt_BR),
+# y todo programa avisaba «failed to set locale».
+conf=/etc/locale.conf; gen=/etc/locale.gen
+[[ -f $conf && -f $gen ]] || exit 0
+have=$(locale -a 2>/dev/null | sed 's/utf8/UTF-8/I')
+missing=()
+for loc in $(sed -n 's/^\(LANG\|LC_[A-Z]*\)=//p' "$conf" | tr -d '"' | sort -u); do
+    [[ -z $loc || $loc == C* || $loc == POSIX ]] && continue
+    grep -qixF "$loc" <<<"$have" && continue
+    line=$(grep -m1 -E "^#?\s*${loc//./\\.}\s" /usr/share/i18n/SUPPORTED 2>/dev/null || true)
+    [[ -z $line ]] && line=$(grep -m1 -E "^${loc//./\\.}\s" /usr/share/i18n/SUPPORTED)
+    [[ -z $line ]] && continue                     # idioma desconocido: no se toca
+    if grep -qE "^#\s*${loc//./\\.}\s" "$gen"; then
+        sed -i -E "s/^#\s*(${loc//./\\.}\s)/\1/" "$gen"
+    elif ! grep -qE "^${loc//./\\.}\s" "$gen"; then
+        echo "$line" >> "$gen"
+    fi
+    missing+=("$loc")
+done
+if ((${#missing[@]})); then
+    echo ":: Quantum: generando idiomas que faltaban: ${missing[*]}"
+    locale-gen >/dev/null
+fi
+exit 0

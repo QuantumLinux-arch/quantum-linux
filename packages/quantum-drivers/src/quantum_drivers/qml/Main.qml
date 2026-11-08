@@ -242,7 +242,7 @@ Window {
                 wrapMode: Text.WordWrap; elide: Text.ElideNone
                 color: theme.muted
                 text: drivers.job === "done" ? "Reinicia el PC para empezar a usarlo. Si algo no te gusta, Cronos puede volver a como estaba antes."
-                                             : (drivers.stepText || "Algo salió mal.") + " Revisa tu internet e inténtalo de nuevo."
+                                             : (drivers.stepText || "No se pudo instalar el driver.") + " Los detalles quedaron en ~/.local/state/quantum/drivers.log."
             }
             RowLayout {
                 Layout.alignment: Qt.AlignHCenter

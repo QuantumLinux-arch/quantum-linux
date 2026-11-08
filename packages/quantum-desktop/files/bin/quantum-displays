@@ -1,0 +1,5 @@
+#!/bin/sh
+# Pantallas: abre wdisplays y, al cerrarlo, guarda la configuración de los monitores para que se mantenga
+# al reiniciar y al activar el Modo juego (wdisplays solo la cambia mientras dura la sesión).
+wdisplays "$@"
+exec quantum-theme save-outputs

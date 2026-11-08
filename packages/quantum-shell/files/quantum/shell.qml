@@ -23,6 +23,7 @@ import "modules/session"
 import "modules/welcome"
 import "modules/lock"
 import "modules/serpantium"
+import "modules/desktop"
 import "modules/updates"
 
 // Quantum Shell: el escritorio de Quantum Linux.
@@ -45,6 +46,7 @@ ShellRoot {
         activeAsync: true
         Scope {
             Background {}
+            DesktopIcons {}
             // La forma del shell: Caelestial (barra + dock) o Serpantium (píldoras arriba)
             LazyLoader {
                 active: !Serp.on

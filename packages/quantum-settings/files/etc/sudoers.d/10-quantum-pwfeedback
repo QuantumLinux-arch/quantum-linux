@@ -1,0 +1,3 @@
+# Quantum: muestra un * por cada tecla al escribir la contraseña de sudo.
+# Sin esto parece que la terminal no responde (sobre todo para quien viene de Windows).
+Defaults pwfeedback

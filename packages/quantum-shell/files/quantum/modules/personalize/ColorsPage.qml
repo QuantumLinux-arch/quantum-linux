@@ -19,10 +19,9 @@ ColumnLayout {
     Component.onCompleted: lister.running = true
     Process {
         id: lister
-        command: ["bash", "-c", Settings.wallListScript, "bash", Quickshell.env("QUANTUM_WALLPAPERS") || "/usr/share/backgrounds/quantum",
+        command: ["bash", "-c", Settings.wallListScript, "bash"].concat(Settings.appearance.customWallpapers ?? []).concat([Quickshell.env("QUANTUM_WALLPAPERS") || "/usr/share/backgrounds/quantum",
                   (Quickshell.env("QUANTUM_WALLPAPERS") || "/usr/share/backgrounds/quantum") + "/animados",
-                  Quickshell.env("HOME") + "/Imágenes/Fondos", Quickshell.env("HOME") + "/Pictures/Wallpapers",
-                  Settings.appearance.wallpaper.substring(0, Settings.appearance.wallpaper.lastIndexOf("/"))]
+                  Quickshell.env("HOME") + "/Imágenes/Fondos", Quickshell.env("HOME") + "/Pictures/Wallpapers"])
         stdout: StdioCollector { onStreamFinished: page.walls = text.trim().split("\n").filter(s => s.length) }
     }
 
@@ -359,7 +358,7 @@ ColumnLayout {
             Rectangle {
                 anchors.centerIn: parent
                 width: 360; height: 90; radius: Theme.radiusLarge
-                color: Theme.alpha(Theme.surface, Settings.appearance.panelOpacity)
+                color: Theme.alpha(Theme.panelBase, Settings.appearance.panelOpacity)
                 border.width: 1; border.color: Theme.alpha(Theme.fg, 0.14)
                 Txt { anchors.centerIn: parent; text: "Así se ve el vidrio"; font.weight: Font.Bold; font.pixelSize: Theme.textLarge }
             }
@@ -410,6 +409,30 @@ ColumnLayout {
             }
         }
         OptionRow {
+            title: "Color del vidrio"
+            help: "Un tinte suave en barras y paneles."
+            Row {
+                spacing: 8
+                Repeater {
+                    model: [{ v: "", t: "Neutro" }, { v: "accent", t: "Acento" }, { v: "#4FD8FF" }, { v: "#6A5CFF" }, { v: "#B14DFF" },
+                            { v: "#FF4F8B" }, { v: "#FF8A3D" }, { v: "#2ECC71" }]
+                    Rectangle {
+                        id: tint
+                        required property var modelData
+                        readonly property bool on: (Settings.appearance.glassTint ?? "") === modelData.v
+                        width: modelData.t ? tintTxt.implicitWidth + 24 : 30; height: 30; radius: 15
+                        color: modelData.t ? (on ? Theme.primaryContainer : Theme.surfaceHigh) : modelData.v
+                        border.width: on ? 3 : 1
+                        border.color: on ? Theme.fg : Theme.alpha(Theme.fg, 0.15)
+                        Txt { id: tintTxt; visible: !!tint.modelData.t; anchors.centerIn: parent; text: tint.modelData.t ?? ""
+                              font.pixelSize: Theme.textSmall; font.weight: Font.DemiBold; color: tint.on ? Theme.primaryContainerFg : Theme.fg }
+                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                                    onClicked: Settings.set("appearance", "glassTint", tint.modelData.v) }
+                    }
+                }
+            }
+        }
+        OptionRow {
             visible: Settings.appearance.glass.windows
             title: "Opacidad de las ventanas de apps"
             help: "Las ventanas se vuelven translúcidas (sin desenfoque). Se aplica a las que abras desde ahora; muy bajo puede costar leer."
@@ -443,4 +466,6 @@ ColumnLayout {
             }
         }
     }
+
+    MoreOptions { hint: "tamaño del texto" }
 }

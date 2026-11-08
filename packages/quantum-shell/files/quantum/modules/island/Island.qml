@@ -53,7 +53,11 @@ Variants {
         WlrLayershell.namespace: "quantum-island"
         exclusionMode: ExclusionMode.Ignore
         anchors { top: true }
-        margins.top: Settings.layout.style === "single" ? 8 : (Settings.layout.topBar.floating ? 9 : 5)
+        // con la barra de tareas arriba, la isla va justo debajo de ella
+        readonly property bool dockTop: !Serp.on && Settings.dock.position === "top"
+        readonly property bool dockAttached: Settings.dock.shape === "attached" || (Settings.dock.shape === "auto" && !Settings.dock.floating && !Atomic.on)
+        margins.top: dockTop ? Math.round(56 * Theme.dockScale) + (dockAttached ? 0 : 10) + 8
+                   : Settings.layout.style === "single" ? 8 : (Settings.layout.topBar.floating ? 9 : 5)
         implicitWidth: 640
         implicitHeight: 190
         color: "transparent"
@@ -61,7 +65,12 @@ Variants {
         mask: Region { item: pill }
 
         // ------------------------------------------------------------ estado
-        readonly property var player: Mpris.players.values.find(p => p.isPlaying) ?? null
+        // el que suena; si se pausó con el mouse encima, sigue a la vista para poder darle play de nuevo
+        readonly property var playing: Mpris.players.values.find(p => p.isPlaying) ?? null
+        property var lastPlayer: null
+        onPlayingChanged: if (playing) lastPlayer = playing
+        readonly property var player: playing
+            ?? (hovered && lastPlayer && Mpris.players.values.indexOf(lastPlayer) >= 0 ? lastPlayer : null)
         property string flash: ""                  // volume | brightness | game
         property bool hovered: false
         Timer { id: flashTimer; interval: 1800; onTriggered: win.flash = "" }
@@ -200,10 +209,11 @@ Variants {
             MouseArea {
                 anchors.fill: parent
                 z: -1
-                hoverEnabled: true
-                onContainsMouseChanged: win.hovered = containsMouse
                 onClicked: if (win.mode === "idle") Shell.toggleDashboard()
             }
+            // HoverHandler y no el MouseArea de abajo: este sigue viendo el mouse cuando pasa sobre los botones
+            // (antes la isla se achicaba al llegar a pausa y el botón «se escapaba»)
+            HoverHandler { onHoveredChanged: win.hovered = hovered }
 
             // Cada contenido: lo anterior se va rápido y lo nuevo entra cuando la forma ya cambió,
             // subiendo un poco y con un fundido (nunca se ven dos encimados).

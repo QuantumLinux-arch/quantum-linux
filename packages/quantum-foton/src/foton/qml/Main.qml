@@ -123,6 +123,13 @@ ApplicationWindow {
                     onClicked: foton.setFps(!on)
                 }
                 ToolPill {
+                    // Roblox (Sober) con las fast flags permitidas al mínimo: más FPS en PCs modestos
+                    visible: (foton.games || []).some(g => g.roblox && g.installed)
+                    icon: "bolt"; text: "Roblox: gráficos papa"
+                    on: foton.tools.potato
+                    onClicked: foton.setPotato(!on)
+                }
+                ToolPill {
                     visible: foton.tools.steam
                     icon: foton.tools.ge.busy ? "downloading" : "rocket_launch"
                     text: foton.tools.ge.busy ? "Proton-GE " + Math.round(foton.tools.ge.progress * 100) + "%"

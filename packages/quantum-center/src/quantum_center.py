@@ -16,10 +16,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-from PyQt6.QtCore import Qt, QFileSystemWatcher, QProcess, QSize, QTimer, QUrl
+from PyQt6.QtCore import Qt, QDateTime, QFileSystemWatcher, QLocale, QProcess, QSize, QTimer, QUrl
 from PyQt6.QtGui import QDesktopServices, QFont, QFontDatabase, QIcon, QPixmap
 from PyQt6.QtWidgets import (
-    QApplication, QButtonGroup, QCheckBox, QComboBox, QDialog, QFileDialog, QFrame,
+    QApplication, QButtonGroup, QCheckBox, QComboBox, QCompleter, QDateTimeEdit, QDialog, QFileDialog, QFrame,
     QGridLayout, QHBoxLayout, QLabel, QMainWindow, QMessageBox, QProgressBar, QPushButton,
     QScrollArea, QStackedWidget, QVBoxLayout, QWidget,
 )
@@ -429,6 +429,125 @@ def choice_row(options, current, on_pick):
     return row
 
 
+def timedate(*props):
+    """Valores de timedatectl show (NTP, Timezone, LocalRTC…)."""
+    try:
+        out = subprocess.run(["timedatectl", "show", *[f"-p{p}" for p in props]],
+                             capture_output=True, text=True, timeout=5).stdout
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    return dict(l.split("=", 1) for l in out.splitlines() if "=" in l)
+
+
+def date_time_card(lay):
+    """Fecha y hora: automática (internet) o a mano, zona horaria y el arreglo para PCs con Windows."""
+    c, cl = card()
+    cl.addWidget(label("Fecha y hora", "h2"))
+    cl.addWidget(label("Con internet la hora se pone sola. Si está mal, revisa la zona horaria o ajústala a mano.", "muted"))
+    info = timedate("NTP", "Timezone", "LocalRTC")
+    now = label("", "h2")
+    status = label("", "muted")
+
+    def tick():
+        now.setText(QLocale.system().toString(QDateTime.currentDateTime(), "dddd d 'de' MMMM 'de' yyyy  ·  HH:mm:ss").capitalize())
+    tick()
+    timer = QTimer(now)
+    timer.timeout.connect(tick)
+    timer.start(1000)
+    cl.addWidget(now)
+
+    procs = []
+
+    def run(cmd, ok_text, after=None):
+        """Ejecuta timedatectl sin congelar la ventana (puede pedir la contraseña)."""
+        p = QProcess(c)
+        procs.append(p)
+        status.setText("Aplicando…")
+
+        def done(code, _st):
+            err = bytes(p.readAllStandardError()).decode(errors="ignore").strip()
+            if code == 0:
+                status.setText(ok_text)
+            elif "authoriz" in err.lower() or "dismiss" in err.lower() or "not authorized" in err.lower():
+                status.setText("Se canceló (hace falta tu contraseña).")
+            else:
+                status.setText("No se pudo: " + (err.splitlines()[-1] if err else "error desconocido"))
+            if after:
+                after(code == 0)
+            procs.remove(p)
+        p.finished.connect(done)
+        p.start(cmd[0], cmd[1:])
+
+    # automática o manual
+    manual_box = QWidget()
+    ml = QHBoxLayout(manual_box)
+    ml.setContentsMargins(0, 0, 0, 0)
+    edit = QDateTimeEdit(QDateTime.currentDateTime())
+    edit.setCalendarPopup(True)
+    edit.setDisplayFormat("dd/MM/yyyy  HH:mm")
+    ml.addWidget(edit)
+
+    def apply_manual():
+        t = edit.dateTime().toString("yyyy-MM-dd HH:mm:00")
+        run(["timedatectl", "set-time", t], "Listo: hora cambiada.")
+    ml.addWidget(button("Aplicar", apply_manual, primary=True))
+    ml.addStretch()
+
+    def pick_mode(v):
+        manual_box.setVisible(v == "manual")
+        if v == "manual":
+            edit.setDateTime(QDateTime.currentDateTime())
+        run(["timedatectl", "set-ntp", "false" if v == "manual" else "true"],
+            "Ahora la cambias tú." if v == "manual" else "Listo: la hora se pone sola con internet.")
+    cl.addLayout(choice_row([("auto", "Automática"), ("manual", "Manual")],
+                            "auto" if info.get("NTP", "yes") == "yes" else "manual", pick_mode))
+    manual_box.setVisible(info.get("NTP", "yes") != "yes")
+    cl.addWidget(manual_box)
+
+    # zona horaria (con buscador)
+    cl.addWidget(label("Zona horaria", "muted"))
+    zone = QComboBox()
+    zone.setEditable(True)
+    zone.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+    try:
+        zones = subprocess.run(["timedatectl", "list-timezones"], capture_output=True, text=True, timeout=5).stdout.split()
+    except (OSError, subprocess.SubprocessError):
+        zones = []
+    cur = info.get("Timezone", "")
+    for z in zones:
+        zone.addItem(z.replace("_", " "), z)
+    if cur in zones:
+        zone.setCurrentIndex(zones.index(cur))
+    comp = QCompleter([z.replace("_", " ") for z in zones], zone)
+    comp.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+    comp.setFilterMode(Qt.MatchFlag.MatchContains)
+    zone.setCompleter(comp)
+    zone.setMinimumWidth(320)
+
+    def pick_zone(_):
+        z = zone.currentData()
+        if z and z != timedate("Timezone").get("Timezone"):
+            run(["timedatectl", "set-timezone", z], f"Listo: zona horaria {z.replace('_', ' ')}.")
+    zone.activated.connect(pick_zone)
+    cl.addWidget(zone, alignment=Qt.AlignmentFlag.AlignLeft)
+
+    # PCs con Windows y Linux: Windows guarda la hora local en el reloj del PC y Linux la universal
+    win = QCheckBox("Uso Windows en este mismo PC (evita que la hora quede corrida al cambiar de sistema)")
+    win.setChecked(info.get("LocalRTC", "no") == "yes")
+
+    def pick_rtc(on):
+        run(["timedatectl", "set-local-rtc", "1" if on else "0", "--adjust-system-clock"],
+            "Listo: el reloj del PC usa la hora local, como Windows." if on else "Listo: el reloj del PC usa la hora universal.",
+            lambda ok: win.blockSignals(True) or win.setChecked(on if ok else not on) or win.blockSignals(False))
+    win.toggled.connect(pick_rtc)
+    cl.addWidget(win)
+    cl.addWidget(status)
+    if LIVE:
+        c.setEnabled(False)
+        c.setToolTip("Disponible después de instalar Quantum Linux")
+    lay.addWidget(c)
+
+
 def settings_page():
     w, lay = page("Ajustes", "Teclado, pantallas, red, sonido y más. Para cambiar cómo se ve tu escritorio, usa Personalizar.")
 
@@ -460,11 +579,14 @@ def settings_page():
     cl.addWidget(combo, alignment=Qt.AlignmentFlag.AlignLeft)
     lay.addWidget(c)
 
+    # Fecha y hora
+    date_time_card(lay)
+
     # Más ajustes (apps dedicadas)
     lay.addWidget(label("Más ajustes", "h2"))
     tile_grid(lay, [
         ("video-display", "Pantallas", "Resolución, frecuencia, escala y varios monitores.",
-         "Abrir", lambda: launch("wdisplays")),
+         "Abrir", lambda: launch("quantum-displays")),
         ("network-wireless", "Red", "Wi-Fi, cable, VPN y contraseñas guardadas.",
          "Abrir", lambda: launch("nm-connection-editor")),
         ("bluetooth", "Bluetooth", "Vincula audífonos, controles y teclados.",
